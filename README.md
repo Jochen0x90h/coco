@@ -7,7 +7,7 @@ on bare metal microcontrollers using C++20 coroutines. It removes the need for a
 operating system for many use cases.
 
 ## Import
-Add coco/<version> to your conanfile where version corresponds to the git tags
+Add coco/\<version> to your conanfile where version corresponds to the git tags
 
 ## Features
 * Central event loop
@@ -45,3 +45,36 @@ Add coco/<version> to your conanfile where version corresponds to the git tags
   * stm32f098xx
 
 Pass -o platform=\<platform> to conan to set the platform. When no platform is given, the platform dependent code is omitted in the resulting conan package.
+
+## Development
+
+### Visual Studio Code
+
+Install these extensions
+- C/C++
+- C/C++ Extension Pack
+- conan (disroop)
+
+Add to settings.json
+```
+"cmake.useCMakePresets": "always",
+"cmake.debugConfig": {
+    "cwd": "${workspaceFolder}"
+}
+```
+
+Install the arm gcc toolchain
+
+Open coco* projects for the first time
+- Copy the conan profiles from coco/support/conan/ to your ~/.conan/profiles (make sure CC and CXX point to the arm toolchain)
+- Copy conan-settings.json from coco/support/vscode to .vscode/ in each project
+- Copy presets.py from coco/support/vscode to top level directory of each project
+- Open Visual Studio Code
+- Install conan dependencies by clicking on "Install" on the blue bar (cloud download icon)
+- Run presets.py by right-clicking and selecting "Run Python File in Terminal" to generate CMakeUserPresets.json
+
+Configure and run
+- If "requires" in conanfile.py have changed (e.g. new version), click on "Install" again
+- Select CMake configure and build presets on the blue bar (tools icon)
+- Build (gear icon)
+- Now debug (bug icon) or run (play icon) the application

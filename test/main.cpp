@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <coco/Array.hpp>
+#include <coco/Buffer.hpp>
 #include <coco/convert.hpp>
 #include <coco/enum.hpp>
 #include <coco/IsSubclass.hpp>
@@ -19,28 +20,67 @@ constexpr String strings[] = {"a", "bar", "bar2", "foo", "foo2", "foobar", "foob
 // Array
 // -----
 
+template <typename T>
+int byteSize(const T &array) {
+	return std::size(array) * sizeof(*std::data(array));
+}
+
+
 // array with fixed size
 TEST(cocoTest, ArrayN) {
-	int a1[] = {10, 11, 12};
-	int const a2[] = {20, 21, 22};
-	
-	// construct arrays from c-arrays
-	Array<int, 3> b1(a1);
-	Array<int const, 3> b2(a2);
-	Array<char const, 4> str("foo");
-		
-	EXPECT_EQ(b1[1], a1[1]);
-	EXPECT_EQ(b2[1], a2[1]);
-	EXPECT_EQ(str[1], 'o');
 
-	EXPECT_FALSE(b1.isEmpty());
-	EXPECT_FALSE(b2.isEmpty());
-	EXPECT_EQ(b1.count(), 3);
-	EXPECT_EQ(b2.count(), 3);
-	
+	// construct array from c-array
+	int a1[] = {10, 11, 12};
+	Array<int, 3> b1(a1);
+	EXPECT_EQ(a1, b1);
+	EXPECT_EQ(b1.size(), 3);
+	EXPECT_EQ(std::size(b1), 3);
+	EXPECT_FALSE(b1.empty());
+	for (int i = 0; i < 3; ++i) {
+		EXPECT_EQ(b1[i], a1[i]);
+		EXPECT_EQ(b1.data()[i], a1[i]);
+		EXPECT_EQ(std::data(b1)[i], a1[i]);
+	}
+	{
+		int i = 0;
+		for (int e : b1) {
+			EXPECT_EQ(e, a1[i++]);
+		}
+	}
+
+	// construct array from const c-array
+	const int a2[] = {20, 21, 22};
+	Array<const int, 3> b2(a2);
+	EXPECT_EQ(a2, b2);
+	EXPECT_EQ(b2.size(), 3);
+	EXPECT_EQ(std::size(b2), 3);
+	EXPECT_FALSE(b2.empty());
+	for (int i = 0; i < 3; ++i) {
+		EXPECT_EQ(b2[i], a2[i]);
+		EXPECT_EQ(b2.data()[i], a2[i]);
+		EXPECT_EQ(std::data(b2)[i], a2[i]);
+	}
+	{
+		int i = 0;
+		for (int e : b2) {
+			EXPECT_EQ(e, a2[i++]);
+		}
+	}
+
+	// construct array from const c-string
+	Array<const char, 4> str("foo");
+	EXPECT_EQ(str.size(), 4);
+	EXPECT_EQ(std::size(str), 4);
+	EXPECT_FALSE(str.empty());
+	for (int i = 0; i < 4; ++i) {
+		EXPECT_EQ(str[i], "foo"[i]);
+		EXPECT_EQ(str.data()[i], "foo"[i]);
+		EXPECT_EQ(std::data(str)[i], "foo"[i]);
+	}
+
 	// construct const array from non-const array
-	Array<int const, 3> b3(b1);
-	EXPECT_EQ(b3.count(), 3);
+	Array<const int, 3> b3(b1);
+	EXPECT_EQ(b3.size(), 3);
 
 	// comparison
 	EXPECT_TRUE(b1 != b2);
@@ -65,26 +105,66 @@ TEST(cocoTest, ArrayN) {
 		EXPECT_EQ(i, 50);
 	}
 	EXPECT_EQ(count, 3);
+
+	// byte size
+	EXPECT_EQ(byteSize(a1), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(a2), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(b1), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(b2), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(str), 4);
 }
 
 // array with variable size
 TEST(cocoTest, Array) {
+	
+	// construct array from c-array
 	int a1[] = {10, 11, 12};
-	int const a2[] = {20, 21, 22};
-	
-	// construct arrays from c-arrays
 	Array<int> b1(a1);
-	Array<int const> b2(a2);
-	Array<char const> str("foo");
-	
-	EXPECT_EQ(b1[1], a1[1]);
-	EXPECT_EQ(b2[1], a2[1]);
-	EXPECT_EQ(str[1], 'o');
-
-	EXPECT_FALSE(b1.empty());
-	EXPECT_FALSE(b2.empty());
+	EXPECT_EQ(a1, b1);
 	EXPECT_EQ(b1.size(), 3);
+	EXPECT_EQ(std::size(b1), 3);
+	EXPECT_FALSE(b1.empty());
+	for (int i = 0; i < 3; ++i) {
+		EXPECT_EQ(b1[i], a1[i]);
+		EXPECT_EQ(b1.data()[i], a1[i]);
+		EXPECT_EQ(std::data(b1)[i], a1[i]);
+	}
+	{
+		int i = 0;
+		for (int e : b1) {
+			EXPECT_EQ(e, a1[i++]);
+		}
+	}
+
+	// construct array from const c-array
+	const int a2[] = {20, 21, 22};
+	Array<const int> b2(a2);
+	EXPECT_EQ(a2, b2);
 	EXPECT_EQ(b2.size(), 3);
+	EXPECT_EQ(std::size(b2), 3);
+	EXPECT_FALSE(b2.empty());
+	for (int i = 0; i < 3; ++i) {
+		EXPECT_EQ(b2[i], a2[i]);
+		EXPECT_EQ(b2.data()[i], a2[i]);
+		EXPECT_EQ(std::data(b2)[i], a2[i]);
+	}
+	{
+		int i = 0;
+		for (int e : b2) {
+			EXPECT_EQ(e, a2[i++]);
+		}
+	}
+
+	// construct array from const c-string
+	Array<const char> str("foo");
+	EXPECT_EQ(str.size(), 4);
+	EXPECT_EQ(std::size(str), 4);
+	EXPECT_FALSE(str.empty());
+	for (int i = 0; i < 4; ++i) {
+		EXPECT_EQ(str[i], "foo"[i]);
+		EXPECT_EQ(str.data()[i], "foo"[i]);
+		EXPECT_EQ(std::data(str)[i], "foo"[i]);
+	}
 
 	// construct const array from non-const array
 	Array<int const> b3(b1);
@@ -112,6 +192,99 @@ TEST(cocoTest, Array) {
 	// assign
 	b1.assign(a2);
 	EXPECT_EQ(b1[2], 22);
+
+	// byte size
+	EXPECT_EQ(byteSize(a1), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(a2), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(b1), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(b2), 3 * sizeof(int));
+	EXPECT_EQ(byteSize(str), 4);
+}
+
+
+// Buffer
+// ------
+
+TEST(cocoTest, Buffer) {
+	Buffer<int, 7> b;
+	EXPECT_TRUE(b.empty());
+	EXPECT_EQ(b.size(), 0);
+	EXPECT_EQ(b.capacity(), 7);
+	EXPECT_EQ(b.MAX_SIZE, 7);
+
+	// append element
+	b.append(50);
+	EXPECT_FALSE(b.empty());
+	EXPECT_EQ(b.size(), 1);
+	EXPECT_EQ(std::size(b), 1);
+	EXPECT_EQ(b[0], 50);
+	EXPECT_EQ(b.data()[0], 50);
+	EXPECT_EQ(std::data(b)[0], 50);
+
+	// test overflow
+	for (int i = 0; i < 10; ++i) {
+		b.append(10);
+	}
+	EXPECT_FALSE(b.empty());
+	EXPECT_EQ(b.size(), 7);
+
+	// clear
+	b.clear();
+	EXPECT_TRUE(b.empty());
+	EXPECT_EQ(b.size(), 0);
+
+	// append array
+	int a1[] = {10, 11, 12};
+	b.append(a1);
+	EXPECT_EQ(b.size(), 3);
+	Array<int> b1(a1);
+	b.append(b1);
+	EXPECT_EQ(b.size(), 6);
+
+	// append buffer
+	Buffer<int, 10> b2;
+	b2.append(1337);
+	b2.append(0);
+	b.append(b2);
+	EXPECT_EQ(b.size(), 7);
+	EXPECT_EQ(b[6], 1337);
+
+	// iterate over buffer
+	int count = 0;
+	for (int i : b) {
+		++count;
+	}
+	EXPECT_EQ(count, 7);
+
+	// resize
+	b2.resize(5);
+	EXPECT_EQ(b2.size(), 5);
+
+	// fill
+	b2.fill(1337);
+	for (int i : b2)
+		EXPECT_EQ(i, 1337);
+
+	// const buffer
+	const Buffer<int, 7> &cb = b;
+	EXPECT_FALSE(cb.empty());
+	EXPECT_EQ(cb.size(), 7);
+	EXPECT_EQ(std::size(cb), 7);
+	EXPECT_EQ(cb[1], 11);
+	EXPECT_EQ(cb.data()[1], 11);
+	EXPECT_EQ(std::data(cb)[1], 11);
+
+	// iterate over const buffer
+	count = 0;
+	for (int i : cb) {
+		++count;
+	}
+	EXPECT_EQ(count, 7);
+
+	// byte size
+	EXPECT_EQ(byteSize(b), 7 * sizeof(int));
+	EXPECT_EQ(byteSize(b2), 5 * sizeof(int));
+	EXPECT_EQ(byteSize(cb), 7 * sizeof(int));
 }
 
 
@@ -199,24 +372,24 @@ using MyList = LinkedList<MyListElement>;
 TEST(cocoTest, LinkedListNode) {
 	// create list
 	MyList list;
-	EXPECT_TRUE(list.isEmpty());
+	EXPECT_TRUE(list.empty());
 	EXPECT_EQ(list.count(), 0);
 
 	// create an element
 	MyListElement element(10);
-	EXPECT_FALSE(element.isInList());
+	EXPECT_FALSE(element.inList());
 
 	// add element to list
 	list.add(element);
-	EXPECT_FALSE(list.isEmpty());
+	EXPECT_FALSE(list.empty());
 	EXPECT_EQ(list.count(), 1);
-	EXPECT_TRUE(element.isInList());
+	EXPECT_TRUE(element.inList());
 
 	// create another element and add to list in constructor
 	MyListElement element2(list, 50);
-	EXPECT_FALSE(list.isEmpty());
+	EXPECT_FALSE(list.empty());
 	EXPECT_EQ(list.count(), 2);
-	EXPECT_TRUE(element.isInList());
+	EXPECT_TRUE(element.inList());
 
 	// iterate over elements
 	int count = 0;
@@ -229,12 +402,12 @@ TEST(cocoTest, LinkedListNode) {
 	// remove elements
 	element.remove();
 	EXPECT_EQ(list.count(), 1);
-	EXPECT_FALSE(element.isInList());
-	EXPECT_TRUE(element2.isInList());
+	EXPECT_FALSE(element.inList());
+	EXPECT_TRUE(element2.inList());
 
 	element2.remove();
 	EXPECT_EQ(list.count(), 0);
-	EXPECT_FALSE(element2.isInList());
+	EXPECT_FALSE(element2.inList());
 
 	// call remove second time
 	element.remove();
@@ -292,6 +465,11 @@ TEST(cocoTest, StringBuffer) {
 	const char *space = " ";
 	
 	StringBuffer<100> b;
+	EXPECT_TRUE(b.empty());
+	EXPECT_EQ(b.size(), 0);
+	EXPECT_EQ(std::size(b), 0);
+	EXPECT_EQ(b.MAX_SIZE, 100);
+	EXPECT_EQ(b.capacity(), 100);
 	b << dec(123456) << ' ';
 	b << dec(-99, 3) << " ";
 	b << hex(0x5, 1) << space;
@@ -306,13 +484,28 @@ TEST(cocoTest, StringBuffer) {
 	b << flt(-5.9f) << " ";
 	b << flt(100.9999f) << " ";
 	b << flt(2000000000);
-	EXPECT_EQ(b.string(), "123456 -099 5 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
+	EXPECT_EQ(b, "123456 -099 5 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
 
-	StringBuffer<5> c = flt(0.000000001f, 9);
-	EXPECT_EQ(c.string(), "0.000");
+	StringBuffer<5> c;
+	c << flt(0.000000001f, 9);
+	EXPECT_EQ(c, "0.000");
+	EXPECT_FALSE(c.empty());
+	EXPECT_EQ(c.size(), 5);
+	EXPECT_EQ(std::size(c), 5);
+	EXPECT_EQ(c.MAX_SIZE, 5);
+	EXPECT_EQ(c.capacity(), 5);
+	for (int i = 0; i < 5; ++i) {
+		EXPECT_EQ(c[i], "0.000"[i]);
+		EXPECT_EQ(c.data()[i], "0.000"[i]);
+		EXPECT_EQ(std::data(c)[i], "0.000"[i]);
+	}
 
-	//StringBuffer<32> d = 'x' + hex(0xff) + String("foo") + dec(50) + '-';
-	//EXPECT_EQ(d.string(), "x000000fffoo50-");*/
+	// not equal is implemented automatically
+	EXPECT_NE(b, c);
+
+	// byte size
+	EXPECT_EQ(byteSize(b), 71);
+	EXPECT_EQ(byteSize(c), 5);
 }
 
 
