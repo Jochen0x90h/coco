@@ -1,7 +1,7 @@
 #pragma once
 
 #include "assert.hpp"
-#include <cstdint>
+#include <iterator>
 
 
 namespace coco {
@@ -16,26 +16,26 @@ class Array {
 public:
 
 	/**
-	 * Construct from pointer
+	 * Explicitly construct from any data using reinterpret_cast
 	 */
-	explicit Array(T *data) noexcept : d(data) {}
+	template <typename T2>
+	explicit Array(T2 *data) noexcept : buffer(reinterpret_cast<T2 *>(data)) {}
 
 	/**
 	 * Construct from C-array or C-string
 	 */
+	constexpr Array(T (&array)[N]) noexcept : buffer(array) {}
+
+	/**
+	 * Copy construct from array with compatible data type (e.g. non-const to const)
+	 */
 	template <typename T2>
-	constexpr Array(T2 (&array)[N]) noexcept : d(array) {}
+	Array(Array<T2, N> array) noexcept : buffer(array.data()) {}
 
 	/**
 	 * Default copy constructor
 	 */
 	Array(Array const &array) = default;
-
-	/**
-	 * Copy construct from buffer with different data type (e.g. non-const to const)
-	 */
-	template <typename T2>
-	Array(Array<T2, N> array) noexcept : d(array.data()) {}
 
 	/**
 	 * Default assignment operator
@@ -47,7 +47,7 @@ public:
 	 */
 	template <typename T2>
 	Array &operator =(Array<T2, N> array) {
-		this->d = array.data();
+		this->buffer = array.data();
 		return *this;
 	}
 
@@ -55,13 +55,13 @@ public:
 	 * Check if the array is empty
 	 * @return true when empty
 	 */
-	static bool isEmpty() {return N == 0;}
+	static bool empty() {return N == 0;}
 
 	/**
-	 * Number of elements in the array
+	 * Number of elements in the array which is O(1)
 	 * @return number of elements
 	 */
-	static int count() {return N;}
+	static int size() {return N;}
 
 	/**
 	 * Fill whole buffer with a value
@@ -87,61 +87,55 @@ public:
 	}
 
 	/**
-	 * Comparison operator
-	 */
-	bool operator ==(Array<T const, N> array) const {
-		auto b = array.data();
-		for (int i = 0; i < N; ++i) {
-			if (this->d[i] != b[i])
-				return false;
-		}
-		return true;
-	}
-
-	/**
 	 * Element-wise xor assignment operator
 	 */
-	Array &operator ^=(Array<T const, N> array) {
+	/*Array &operator ^=(Array<T const, N> array) {
 		auto b = array.data();
 		for (int i = 0; i < N; ++i)
-			this->d[i] ^= b[i];
+			this->buffer[i] ^= b[i];
 		return *this;
-	}
+	}*/
 
 	/**
 	 * Index operator
 	 */
 	T &operator [](int index) const {
 		assert(uint32_t(index) < N);
-		return this->d[index];
+		return this->buffer[index];
 	}
 
+	/**
+	 * Get an array staring at the given index
+	 */
 	template <int M>
 	Array<T, M> array(int index) const {
 		assert(uint32_t(index) <= N - M);
-		return Array<T, M>(this->d + index);
+		return Array<T, M>(this->buffer + index);
 	}
 
 	/**
 	 * Get pointer to data
 	 */
-	T *data() {return this->d;}
+	T *data() {return this->buffer;}
+	const T *data() const {return this->buffer;}
 
 	/**
 	 * Iterators
 	 */
-	T *begin() const {return this->d;}
-	T *end() const {return this->d + N;}
+	T *begin() {return this->buffer;}
+	T *end() {return this->buffer + N;}
+	const T *begin() const {return this->buffer;}
+	const T *end() const {return this->buffer + N;}
 
 protected:
 
-	T *d;
+	T *buffer;
 };
 
 
 /**
  * Array with variable size that only references the data, similar to std::span
- * @tparam T type of buffer element, e.g. int const for a bufferof constant integers
+ * @tparam T type of array element, e.g. Array<const int> for an array of constant integers
  */
 template <typename T>
 class Array<T, -1> {
@@ -150,34 +144,35 @@ public:
 	/**
 	 * Default constructor
 	 */
-	constexpr Array() noexcept : d(nullptr), length(0) {}
+	constexpr Array() noexcept : buffer(nullptr), length(0) {}
 
 	/**
-	 * Construct from C-array or C-string
+	 * Construct from data and lenth
 	 */
-	template <int N>
-	constexpr Array(T (&array)[N]) noexcept : d(array), length(N) {}
+	Array(T *data, int length) noexcept : buffer(data), length(length) {}
 
 	/**
-	 * Construct from lenth and data
+	 * Explicitly construct from any data and length using reinterpret_cast
 	 */
-	Array(T *data, int length) noexcept : d(data), length(length) {}
+	template <typename T2>
+	explicit Array(T2 *data, int length) noexcept : buffer(reinterpret_cast<T2 *>(data)), length(length) {}
+
+	/**
+	 * Construct from container supporting std::data() and std::size() with compatible data type (e.g. non-const to const)
+	 */
+	template <typename T2>
+	constexpr Array(T2 &container) noexcept : buffer(std::data(container)), length(std::size(container)) {}
 
 	/**
 	 * Default copy constructor
 	 */
-	Array(Array const &array) = default;
+	Array(Array const &) = default;
 
-	/**
-	 * Copy construct from buffer with different data type (e.g. non-const to const)
-	 */
-	template <typename T2>
-	Array(Array<T2> array) noexcept : d(array.data()), length(array.size()) {}
 
 	/**
 	 * Default assignment operator
 	 */
-	Array &operator =(Array const &array) = default;
+	Array &operator =(Array const &) = default;
 
 	/**
 	 * Check if the array is empty
@@ -186,7 +181,7 @@ public:
 	bool empty() {return this->length <= 0;}
 
 	/**
-	 * Number of elements in the array
+	 * Number of elements in the array which is O(1)
 	 * @return number of elements
 	 */
 	int size() const {return this->length;}
@@ -219,24 +214,47 @@ public:
 	 */
 	T &operator [](int index) const {
 		assert(uint32_t(index) < this->length);
-		return this->d[index];
+		return this->buffer[index];
 	}
 
 	/**
 	 * Get pointer to the data
 	 */
-	T *data() {return this->d;}
+	T *data() {return this->buffer;}
+	const T *data() const {return this->buffer;}
 
 	/**
 	 * Iterators
 	 */
-	T *begin() const {return this->d;}
-	T *end() const {return this->d + this->length;}
+	T *begin() {return this->buffer;}
+	T *end() {return this->buffer + this->length;}
+	const T *begin() const {return this->buffer;}
+	const T *end() const {return this->buffer + this->length;}
 
 protected:
 
-	T *d;
+	T *buffer;
 	int length;
 };
+
+
+/**
+ * Array comparison operator
+ * @param array first array to compare
+ * @param container second array of any type that supports std::data() and std::size()
+ */
+template <typename T, int N, typename T2>
+bool operator ==(const Array<T, N> &a, const T2 &b) {
+	if (a.size() != std::size(b))
+		return false;
+
+	auto da = a.data();
+	auto db = std::data(b);
+	for (int i = 0; i < a.size(); ++i) {
+		if (da[i] != db[i])
+			return false;
+	}
+	return true;
+}
 
 } // namespace coco

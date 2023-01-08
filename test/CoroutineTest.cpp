@@ -73,13 +73,13 @@ TEST(cocoTest, Coroutine) {
 
 	// resume coroutine
 	std::cout << "!resume wait1" << std::endl;
-	EXPECT_FALSE(waitlist1.isEmpty());
+	EXPECT_FALSE(waitlist1.empty());
 	waitlist1.resumeAll();
-	EXPECT_TRUE(waitlist1.isEmpty());
+	EXPECT_TRUE(waitlist1.empty());
 	std::cout << "!resume wait2" << std::endl;
-	EXPECT_FALSE(waitlist2.isEmpty());
+	EXPECT_FALSE(waitlist2.empty());
 	waitlist2.resumeAll();
-	EXPECT_TRUE(waitlist2.isEmpty());
+	EXPECT_TRUE(waitlist2.empty());
 }
 
 TEST(cocoTest, DestroyCoroutine) {
@@ -101,9 +101,9 @@ TEST(cocoTest, NestedCoroutine) {
 	waitlist2.resumeAll();
 
 	std::cout << "!resume outer wait2" << std::endl;
-	EXPECT_FALSE(waitlist2.isEmpty());
+	EXPECT_FALSE(waitlist2.empty());
 	waitlist2.resumeAll();
-	EXPECT_TRUE(waitlist2.isEmpty());
+	EXPECT_TRUE(waitlist2.empty());
 	EXPECT_EQ(selectResult, 2);
 }
 
@@ -239,7 +239,7 @@ TEST(cocoTest, AwaitableMove) {
 	move();
 
 	waitlist1.resumeAll();
-	EXPECT_TRUE(waitlist1.isEmpty());
+	EXPECT_TRUE(waitlist1.empty());
 }
 
 

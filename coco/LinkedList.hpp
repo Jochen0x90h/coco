@@ -42,7 +42,7 @@ public:
 	/**
 	 * Return true if the node part of a list
 	 */
-	bool isInList() const {
+	bool inList() const {
 		return this->next != this;
 	}
 
@@ -85,13 +85,13 @@ public:
 	/**
 	 * Return true if the node is an empty list head
 	 */
-	bool isEmpty() const {
+	bool empty() const {
 		return this->next == this;
 	}
 
 	/**
-	 * Return the number of entries in the list
-	 * @return number of entries
+	 * Count the number of elements in the list which is O(n)
+	 * @return number of elements
 	 */
 	int count() const {
 		int count = 0;

@@ -180,7 +180,7 @@ public:
 	 * Check if the list is empty
 	 * @return true if empty
 	 */
-	bool isEmpty() {
+	bool empty() {
 		return this->head.next == &this->head;
 	}
 
@@ -206,7 +206,7 @@ public:
 	 * @return first element
 	 */
 	auto &getFirst() {
-		assert(!isEmpty());
+		assert(!empty());
 		auto first = this->head.next;
 		return Selector::get(static_cast<Element*>(first));
 	}
@@ -215,7 +215,7 @@ public:
 	 * Visit the first element
 	 * @tparam V visitor type, e.g. a lambda function
 	 * @param visitor visitor
-	 * @param true if a first element exists
+	 * @return true if a first element exists
 	 */
 	template <typename V>
 	bool visitFirst(V const &visitor) {
@@ -233,7 +233,7 @@ public:
 	 * operation that has just finished.
 	 * @tparam V visitor type, e.g. a lambda function
 	 * @param visitor visitor
-	 * @param true if a second element exists
+	 * @return true if a second element exists
 	 */
 	template <typename V>
 	bool visitSecond(V const &visitor) {
@@ -247,6 +247,21 @@ public:
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Visit all elements
+	 * @tparam V visitor type, e.g. a lambda function
+	 * @param visitor visitor
+	 */
+	template <typename V>
+	void visitAll(V const &visitor) {
+		auto it = this->head.next;
+		auto end = &this->head;
+		while (it != end) {
+			visitor(Selector::get(static_cast<Element*>(it)));
+			it = it->next;
+		}
 	}
 
 	/**

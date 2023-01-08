@@ -45,8 +45,7 @@ struct Dec {
 template <typename S, typename T>
 S &operator <<(S &s, Dec<T> dec) {
 	char buffer[11];
-	s.write(toString(buffer, int32_t(dec.value), dec.digitCount));
-	return s;
+	return s << toString(buffer, int32_t(dec.value), dec.digitCount);
 }
 
 /**
@@ -71,8 +70,7 @@ struct Hex {
 template <typename S, typename T>
 S &operator <<(S &s, Hex<T> hex) {
 	char buffer[16];
-	s.write(toHexString(buffer, uint64_t(hex.value), hex.digitCount));
-	return s;
+	return s << toHexString(buffer, uint64_t(hex.value), hex.digitCount);
 }
 
 /**
@@ -101,8 +99,7 @@ struct Flt {
 template <typename S>
 inline S &operator <<(S &s, Flt flt) {
 	char buffer[21];
-	s.write(toString(buffer, flt.value, flt.digitCount, flt.decimalCount));
-	return s;
+	return s << toString(buffer, flt.value, flt.digitCount, flt.decimalCount);
 }
 
 /**

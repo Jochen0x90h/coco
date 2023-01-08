@@ -85,7 +85,7 @@ class Project(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = ["coco"]
+        self.cpp_info.libs = [self.name]
 
     def deploy(self):
         # install if CONAN_INSTALL_PREFIX env variable is set
