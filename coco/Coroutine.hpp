@@ -43,6 +43,14 @@ public:
 	// delete copy constructor
 	WaitlistNode(WaitlistNode const &) = delete;
 
+	// add this new node to a list
+	/*WaitlistNode(WaitlistNode &list) {
+		this->prev = list.prev;
+		this->next = &list;
+		list.prev->next = this;
+		list.prev = this;
+	}*/
+
 	/**
 	 * Destructor. It is an error to destroy a waitlist node that is still part of a list
 	 */
@@ -58,18 +66,29 @@ public:
 	}
 
 	/**
-	 * Add the node to a list
-	 * @param list list to add to
+	 * Add a node before this node
+	 * @param node node to add
 	 */
-	void add(WaitlistNode &list) noexcept {
-		list.prev = this->prev;
-		list.next = this;
-		this->prev->next = &list;
-		this->prev = &list;
+	void addBefore(WaitlistNode &node) noexcept {
+		node.prev = this->prev;
+		node.next = this;
+		this->prev->next = &node;
+		this->prev = &node;
 	}
 
 	/**
-	 * Check if a node is part of a list. Can only be called after either setNotInList() or add() has been called
+	 * Add a node after this node
+	 * @param node node to add
+	 */
+	void addAfter(WaitlistNode &node) noexcept {
+		node.prev = this;
+		node.next = this->next;
+		this->next->prev = &node;
+		this->next = &node;
+	}
+
+	/**
+	 * Check if a node is part of a list. Can only be called after either setNotInList() has been called or the node has been added to a list
 	 */
 	bool isInList() const {
 		return this->next != nullptr;
@@ -110,7 +129,7 @@ public:
  */
 class WaitlistElement : public WaitlistNode {
 public:
-	void append(WaitlistNode &list) noexcept {list.add(*this);}
+	//void append(WaitlistNode &list) noexcept {list.add(*this);}
 
 	void cancel() noexcept {remove();}
 
@@ -174,6 +193,13 @@ public:
 	 */
 	~Waitlist() {
 		this->head.remove();
+	}
+
+	void add(WaitlistNode &node) {
+		node.prev = this->head.prev;
+		node.next = &this->head;
+		this->head.prev->next = &node;
+		this->head.prev = &node;
 	}
 
 	/**
@@ -289,7 +315,7 @@ public:
 	void resumeAll() {
 		// add end marker node
 		WaitlistNode end;
-		this->head.add(end);
+		this->head.addBefore(end);
 
 		// iterate over elements
 		while (this->head.next != &end) {
@@ -358,11 +384,11 @@ public:
 	void resumeAll(P const &predicate) {
 		// add iterator node at the beginning
 		WaitlistNode it;
-		this->head.next->add(it);
+		this->head.addAfter(it);
 
 		// add end marker node
 		WaitlistNode end;
-		this->head.add(end);
+		this->head.addBefore(end);
 
 		// iterate over elements
 		while (it.next != &end) {
@@ -378,7 +404,7 @@ public:
 			} else {
 				// advance iterator node
 				it.remove();
-				current->next->add(it);
+				current->addAfter(it);
 			}
 		}
 
@@ -404,9 +430,10 @@ struct Awaitable {
 		this->element.setNotInList();
 	}
 
-	template <typename ...Args>
-	Awaitable(Waitlist<T> &list, Args &&...args) noexcept : element(std::forward<Args>(args)...) {
-		this->element.append(list.head);
+	template <typename L, typename ...Args>
+	Awaitable(L &list, Args &&...args) noexcept : element(std::forward<Args>(args)...) {
+		list.add(this->element);
+		//this->element.append(list.head);
 #ifdef COROUTINE_DEBUG_PRINT
 		std::cout << "Awaitable add" << std::endl;
 #endif
@@ -552,9 +579,9 @@ public:
 	AwaitableCoroutineElement() = default;
 	explicit AwaitableCoroutineElement(std::coroutine_handle<> context) : context(context) {}
 
-	void append(WaitlistNode &list) {
-		list.add(*this);
-	}
+	//void append(WaitlistNode &list) {
+	//	list.add(*this);
+	//}
 
 	void take(AwaitableCoroutineElement &element) {
 		element.pass(*this);

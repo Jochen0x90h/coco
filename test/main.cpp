@@ -360,7 +360,7 @@ struct ElementBaseClass {
 	int i;
 };
 
-struct MyListElement : public ElementBaseClass, public LinkedListNode {
+struct MyListElement : public ElementBaseClass, public LinkedListNode<MyListElement> {
 	int foo;
 
 	MyListElement(int foo) : foo(foo) {}
@@ -412,6 +412,25 @@ TEST(cocoTest, LinkedListNode) {
 	// call remove second time
 	element.remove();
 	element2.remove();
+}
+
+
+struct MyListElement2 : public MyListElement, public LinkedListNode<MyListElement2> {
+	MyListElement2(int foo) : MyListElement(foo) {}
+};
+
+using MyList2 = LinkedList<MyListElement2>;
+
+TEST(cocoTest, LinkedListNode2) {
+	// create list
+	MyList2 list;
+	MyListElement2 element(50);
+	list.add(element);
+
+
+	for (MyListElement2 &element : list) {
+		
+	}
 }
 
 
@@ -470,6 +489,12 @@ TEST(cocoTest, StringBuffer) {
 	EXPECT_EQ(std::size(b), 0);
 	EXPECT_EQ(b.MAX_SIZE, 100);
 	EXPECT_EQ(b.capacity(), 100);
+
+	// check if append omits the zero termination
+	b.append("foo");
+	EXPECT_EQ(b.size(), 3);
+	b.clear();
+
 	b << dec(123456) << ' ';
 	b << dec(-99, 3) << " ";
 	b << hex(0x5, 1) << space;
@@ -485,6 +510,7 @@ TEST(cocoTest, StringBuffer) {
 	b << flt(100.9999f) << " ";
 	b << flt(2000000000);
 	EXPECT_EQ(b, "123456 -099 5 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
+	EXPECT_STREQ(b.c_str(), "123456 -099 5 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
 
 	StringBuffer<5> c;
 	c << flt(0.000000001f, 9);

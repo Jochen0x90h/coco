@@ -15,7 +15,7 @@ namespace coco {
 /**
  * Yield handler for loop::yield() and emulated transfers
  */
-class YieldHandler : public LinkedListNode {
+class YieldHandler : public LinkedListNode<YieldHandler> {
 public:
 	virtual ~YieldHandler();
 	virtual void activate() = 0;
@@ -26,7 +26,7 @@ extern YieldHandlerList yieldHandlers;
 /**
  * Time handler for loop::sleep() and Calendar
  */
-class TimeHandler : public LinkedListNode {
+class TimeHandler : public LinkedListNode<TimeHandler> {
 public:
 	virtual ~TimeHandler();
 	virtual void activate() = 0;
@@ -39,7 +39,7 @@ extern TimeHandlerList timeHandlers;
 /**
  * Socket handlers to observe readable/writable events e.g. for networking
  */
-class SocketHandler : public LinkedListNode {
+class SocketHandler : public LinkedListNode<SocketHandler> {
 public:
 	virtual ~SocketHandler();
 	virtual void activate(uint16_t events) = 0;

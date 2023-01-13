@@ -95,20 +95,6 @@ public:
 	}
 
 	/**
-	 * Get pointer to data
-	 */
-	T *data() {return this->buffer;}
-	const T *data() const {return this->buffer;}
-
-	/**
-	 * Iterators
-	 */
-	T *begin() {return this->buffer;}
-	T *end() {return reinterpret_cast<T *>(reinterpret_cast<uint8_t *>(this->buffer) + this->length);}
-	const T *begin() const {return this->buffer;}
-	const T *end() const {return reinterpret_cast<const T *>(reinterpret_cast<const uint8_t *>(this->buffer) + this->length);}
-
-	/**
 	 * Append an element to the container
 	 * @param element element to append
 	 */
@@ -136,6 +122,21 @@ public:
 			*it1 = *it2;
 		this->length = l;
 	}
+
+	/**
+	 * Get pointer to data
+	 */
+	T *data() {return this->buffer;}
+	const T *data() const {return this->buffer;}
+
+	/**
+	 * Iterators
+	 */
+	T *begin() {return this->buffer;}
+	T *end() {return reinterpret_cast<T *>(reinterpret_cast<uint8_t *>(this->buffer) + this->length);}
+	const T *begin() const {return this->buffer;}
+	const T *end() const {return reinterpret_cast<const T *>(reinterpret_cast<const uint8_t *>(this->buffer) + this->length);}
+
 
 	// length in bytes(!), not protected to be able to pass length as result to transfer methods
 	int length;
@@ -237,20 +238,6 @@ public:
 	}
 
 	/**
-	 * Get pointer to data
-	 */
-	char *data() {return this->buffer;}
-	const char *data() const {return this->buffer;}
-
-	/**
-	 * Iterators
-	 */
-	char *begin() {return this->buffer;}
-	char *end() {return this->buffer + this->length;}
-	const char *begin() const {return this->buffer;}
-	const char *end() const {return this->buffer + this->length;}
-
-	/**
 	 * Append an element to the container
 	 * @param element element to append
 	 */
@@ -267,7 +254,7 @@ public:
 	 * @tparam T2 container type
 	 * @param container container whose contents are appended
 	 */
-	template <typename T2>
+	template <typename T2> requires (!StringConcept<T2>)
 	void append(const T2 &container) {
 		auto it1 = this->buffer + this->length;
 		auto it2 = std::begin(container);
@@ -277,6 +264,17 @@ public:
 		for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
 			*it1 = *it2;
 		this->length = l;
+#ifdef DEBUG
+		this->buffer[this->length] = 0;
+#endif
+	}
+
+	template <typename T2> requires (StringConcept<T2>)
+	void append(const T2 &string) {
+		String s(string);
+		int l = std::min(N - this->length, s.size());
+		std::copy(s.begin(), s.begin() + l, this->buffer + this->length);
+		this->length += l;
 #ifdef DEBUG
 		this->buffer[this->length] = 0;
 #endif
@@ -293,15 +291,9 @@ public:
 	/**
 	 * Stream a string, either C-string or coco::String
 	 */
-	template <typename T> requires StringConcept<T>
-	Buffer &operator <<(T const &str) {
-		String s(str);
-		int l = std::min(N - this->length, s.size());
-		std::copy(s.begin(), s.begin() + l, this->buffer + this->length);
-		this->length += l;
-#ifdef DEBUG
-		this->buffer[this->length] = 0;
-#endif
+	template <typename T> requires (StringConcept<T>)
+	Buffer &operator <<(T const &string) {
+		append(String(string));
 		return *this;
 	}
 
@@ -309,13 +301,28 @@ public:
 		return {this->buffer, this->length};
 	}
 
+	/**
+	 * Get pointer to data
+	 */
+	char *data() {return this->buffer;}
+	const char *data() const {return this->buffer;}
+	const char *c_str() {
+		this->buffer[this->length] = 0;
+		return this->buffer;
+	}
+
+	/**
+	 * Iterators
+	 */
+	char *begin() {return this->buffer;}
+	char *end() {return this->buffer + this->length;}
+	const char *begin() const {return this->buffer;}
+	const char *end() const {return this->buffer + this->length;}
+
+
 	// length in bytes(!), not protected to be able to pass length as result to transfer methods
 	int length;
-#ifdef DEBUG
 	char buffer[N + 1];
-#else
-	char buffer[N];
-#endif
 };
 
 } // namespace coco
