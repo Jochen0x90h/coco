@@ -168,13 +168,14 @@ public:
 	// default constructor
 	explicit Parameters1(int value) : value(value) {}
 
-	void append(WaitlistNode &list) {
+	/*void append(WaitlistNode &list) {
 		std::cout << "Parameters::append" << std::endl;
 		list.add(*this);
-	}
+	}*/
 
+	// overload cancel e.g. to lock the waitlist against concurrent modification
 	void cancel() {
-		std::cout << "Parameters::cancel" << std::endl;
+		std::cout << "Parameters1::cancel" << std::endl;
 		remove();
 	}
 
@@ -184,7 +185,15 @@ public:
 	int value;
 };
 
-Waitlist<Parameters1> waitListValue;
+class MyWaitlist : public Waitlist<Parameters1> {
+public:
+	// overload add e.g. to lock the waitlist against concurrent modification
+	void add(WaitlistNode &node) {
+		std::cout << "MyWaitlist::add" << std::endl;
+		Waitlist<Parameters1>::add(node);
+	}
+};
+MyWaitlist waitListValue;
 
 Awaitable<Parameters1> delay2(int value) {
 	return {waitListValue, value};
@@ -192,6 +201,12 @@ Awaitable<Parameters1> delay2(int value) {
 
 Coroutine waitForDelay1() {
 	Object o("waitForDelay1()");
+
+	{
+		auto awaitable = delay2(50);		
+		// awaitable goes out of scope and therefore cancel() gets called
+	}
+
 	co_await delay2(5);
 	std::cout << "resumed delay(5)" << std::endl;
 }

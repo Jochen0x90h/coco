@@ -4,8 +4,10 @@
 namespace coco {
 
 /**
- * Linked list node for list head and elements
+ * Linked list node for list head and elements to be inherited from, e.g. class Foo : public LinkedListNode<Foo> {};
+ * @tparam T type to make a list element. Only needed to be able to inherit from LinkedListNode multiple times, e.g. class Bar : public Foo, public LinkedListNode<Bar> {}; 
  */
+template <typename T>
 class LinkedListNode {
 public:
 	/**
@@ -80,7 +82,7 @@ public:
  * @tparam T list element type that inherits LinkedListNode, e.g class Element : public LinkedListNode {};
  */
 template <typename T>
-class LinkedList : public LinkedListNode {
+class LinkedList : public LinkedListNode<T> {
 public:
 	/**
 	 * Return true if the node is an empty list head
@@ -107,7 +109,7 @@ public:
 	 * Add one or multiple elements at the end of the list
 	 * @param node element to add, can be part of a "ring" of nodes
 	 */
-	void add(T &node) {
+	void add(LinkedListNode<T> &node) {
 		auto p = node.prev;
 		node.prev->next = this;
 		node.prev = this->prev;
@@ -119,7 +121,8 @@ public:
 	 * Add one list to another, take care to remove the other list from the "ring" of nodes afterwards
 	 * @param node list to add
 	 */
-	void add(LinkedList &node) {
+	void add(LinkedList &list) {
+		LinkedListNode<T> &node = list;
 		auto p = node.prev;
 		node.prev->next = this;
 		node.prev = this->prev;
@@ -131,7 +134,7 @@ public:
 	 * Iterator. Do not remove() an element that an iterator points to
 	 */
 	struct Iterator {
-		LinkedListNode *node;
+		LinkedListNode<T> *node;
 		T &operator *() {return *static_cast<T *>(this->node);}
 		T *operator ->() {return static_cast<T *>(this->node);}
 		Iterator &operator ++() {this->node = this->node->next; return *this;}
