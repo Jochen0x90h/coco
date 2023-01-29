@@ -2,6 +2,7 @@
 
 #include "Array.hpp"
 #include "String.hpp"
+#include "StringConcept.hpp"
 
 
 namespace coco {

@@ -58,12 +58,6 @@ public:
 	static bool empty() {return N == 0;}
 
 	/**
-	 * Number of elements in the array which is O(1)
-	 * @return number of elements
-	 */
-	static int size() {return N;}
-
-	/**
 	 * Fill whole buffer with a value
 	 * @param value fill value
 	 */
@@ -114,13 +108,14 @@ public:
 	}
 
 	/**
-	 * Get pointer to data
+	 * Array access data() and size() which is O(1)
 	 */
 	T *data() {return this->buffer;}
 	const T *data() const {return this->buffer;}
+	static int size() {return N;}
 
 	/**
-	 * Iterators
+	 * Iterators begin() and end()
 	 */
 	T *begin() {return this->buffer;}
 	T *end() {return this->buffer + N;}
@@ -180,11 +175,6 @@ public:
 	 */
 	bool empty() {return this->length <= 0;}
 
-	/**
-	 * Number of elements in the array which is O(1)
-	 * @return number of elements
-	 */
-	int size() const {return this->length;}
 
 	/**
 	 * Fill whole buffer with a value
@@ -218,13 +208,14 @@ public:
 	}
 
 	/**
-	 * Get pointer to the data
+	 * Array access data() and size() which is O(1)
 	 */
 	T *data() {return this->buffer;}
 	const T *data() const {return this->buffer;}
+	int size() const {return this->length;}
 
 	/**
-	 * Iterators
+	 * Iterators begin() and end()
 	 */
 	T *begin() {return this->buffer;}
 	T *end() {return this->buffer + this->length;}

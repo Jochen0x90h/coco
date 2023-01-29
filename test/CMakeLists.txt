@@ -1,7 +1,7 @@
 # unit tests for "normal" operating systems
 add_executable(gTest
-	CoroutineTest.cpp	
-	main.cpp
+	CoroutineTest.cpp
+	gTest.cpp
 )
 target_include_directories(gTest
 	PRIVATE

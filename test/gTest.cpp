@@ -1,13 +1,18 @@
 #include <gtest/gtest.h>
 #include <coco/Array.hpp>
+#include <coco/ArrayConcept.hpp>
 #include <coco/Buffer.hpp>
 #include <coco/convert.hpp>
+#include <coco/CStringConcept.hpp>
 #include <coco/enum.hpp>
 #include <coco/IsSubclass.hpp>
 #include <coco/LinkedList.hpp>
+#include <coco/PointerConcept.hpp>
+#include <coco/PseudoRandom.hpp>
 #include <coco/StreamOperators.hpp>
 #include <coco/String.hpp>
 #include <coco/StringBuffer.hpp>
+#include <coco/StringConcept.hpp>
 #include <coco/Time.hpp>
 
 
@@ -16,15 +21,15 @@ using namespace coco;
 // test data
 constexpr String strings[] = {"a", "bar", "bar2", "foo", "foo2", "foobar", "foobar2", "z"}; 
 
-
-// Array
-// -----
-
+// util
 template <typename T>
 int byteSize(const T &array) {
 	return std::size(array) * sizeof(*std::data(array));
 }
 
+
+// Array
+// -----
 
 // array with fixed size
 TEST(cocoTest, ArrayN) {
@@ -202,6 +207,40 @@ TEST(cocoTest, Array) {
 }
 
 
+// ArrayConcept
+// ------------
+
+template <typename T> requires (ArrayConcept<T>)
+bool testArrayConcept(T const &x) {return true;}
+
+template <typename T> requires (!ArrayConcept<T>)
+bool testArrayConcept(T const &x) {return false;}
+
+TEST(cocoTest, ArrayConcept) {
+	int a1[] = {1, 2, 3};
+	const int a2[] = {1, 2, 3};
+	volatile int a3[] = {1, 2, 3};
+	Array<int> a4(a1);
+	Array<int, 3> a5(a1);
+	Buffer<int, 10> b1;
+	String s1 = "foo";
+	int i1 = 0;
+	const int i2 = 0;
+	int *p1 = nullptr;
+
+	EXPECT_TRUE(testArrayConcept(a1));
+	EXPECT_TRUE(testArrayConcept(a2));
+	EXPECT_TRUE(testArrayConcept(a3));
+	EXPECT_TRUE(testArrayConcept(a4));
+	EXPECT_TRUE(testArrayConcept(a5));
+	EXPECT_TRUE(testArrayConcept(b1));
+	EXPECT_TRUE(testArrayConcept(s1));
+	EXPECT_FALSE(testArrayConcept(i1));
+	EXPECT_FALSE(testArrayConcept(i2));
+	EXPECT_FALSE(testArrayConcept(p1));
+}
+
+
 // Buffer
 // ------
 
@@ -285,6 +324,7 @@ TEST(cocoTest, Buffer) {
 	EXPECT_EQ(byteSize(b), 7 * sizeof(int));
 	EXPECT_EQ(byteSize(b2), 5 * sizeof(int));
 	EXPECT_EQ(byteSize(cb), 7 * sizeof(int));
+
 }
 
 
@@ -306,6 +346,39 @@ TEST(cocoTest, convert) {
 }
 
 
+// CStringConcept
+// --------------
+
+template <typename T> requires (CStringConcept<T>)
+bool testCStringConcept(T const &x) {return true;}
+
+template <typename T> requires (!CStringConcept<T>)
+bool testCStringConcept(T const &x) {return false;}
+
+TEST(cocoTest, CStringConcept) {
+	const char s1[] = "foo";
+	const char *s2 = s1;
+	char s3[] = {'f', 'o', 'o'};
+	char dummy = 'x';
+	char s4[] = {'f', 'o', 'o', 0};
+	char *s5 = s4;
+	int i1 = 0;
+
+	EXPECT_TRUE(testCStringConcept(s1));
+	EXPECT_TRUE(testCStringConcept(s2));
+	EXPECT_TRUE(testCStringConcept(s3));
+	EXPECT_TRUE(testCStringConcept(s4));
+	EXPECT_TRUE(testCStringConcept(s5));
+	EXPECT_FALSE(testCStringConcept(i1));
+
+	EXPECT_EQ(length(s1), 3);
+	EXPECT_EQ(length(s2), 3);
+	EXPECT_EQ(length(s3), 3);
+	EXPECT_EQ(length(s4), 3);
+	EXPECT_EQ(length(s5), 3);
+}
+
+
 // enum
 // ----
 
@@ -324,19 +397,34 @@ TEST(cocoTest, cocoEnum) {
 	EXPECT_EQ(a, Flags::BAR);
 }
 
-
+/*
 // IsArray
 // ----------
 
-using ArrayType = int[10];
+using CharArrayType = char[10];
+using IntArrayType = int[10];
 
 TEST(cocoTest, IsArray) {
-	EXPECT_TRUE((IsArray<ArrayType>::value));
-	EXPECT_FALSE((IsArray<ArrayType &>::value));
-	EXPECT_FALSE((IsArray<ArrayType *>::value));
+	EXPECT_TRUE((IsArray<char[10]>::value));
+	EXPECT_TRUE((IsArray<int[10]>::value));
+	EXPECT_FALSE((IsArray<IntArrayType &>::value));
+	EXPECT_FALSE((IsArray<IntArrayType *>::value));
 	EXPECT_FALSE((IsArray<int>::value));
 }
 
+
+// IsCString
+// ----------
+
+TEST(cocoTest, IsCString) {
+	EXPECT_TRUE((IsCString<const char *>::value));
+	EXPECT_TRUE((IsCString<char[10]>::value));
+	EXPECT_FALSE((IsCString<IntArrayType>::value));
+	EXPECT_FALSE((IsArray<CharArrayType &>::value));
+	EXPECT_FALSE((IsArray<CharArrayType *>::value));
+	EXPECT_FALSE((IsArray<char>::value));
+}
+*/
 
 // IsSubclass
 // ----------
@@ -434,38 +522,127 @@ TEST(cocoTest, LinkedListNode2) {
 }
 
 
+// PointerConcept
+// --------------
+
+template <typename T> requires (PointerConcept<T>)
+bool testPointerConcept(T x) {return true;}
+
+template <typename T> requires (!PointerConcept<T>)
+bool testPointerConcept(T const &x) {return false;}
+
+TEST(cocoTest, PointerConcept) {
+	int *p1 = nullptr;
+	const int *p2 = nullptr;
+	int *const p3 = nullptr;
+	const int *const p4 = nullptr;
+	int i1 = 0;
+	const int i2 = 0;
+
+	EXPECT_TRUE(testPointerConcept(p1));
+	EXPECT_TRUE(testPointerConcept(p2));
+	EXPECT_TRUE(testPointerConcept(p3));
+	EXPECT_TRUE(testPointerConcept(p4));
+	EXPECT_FALSE(testPointerConcept(i1));
+	EXPECT_FALSE(testPointerConcept(i2));
+}
+
+
+// PseudoRandom
+// ------------
+
+TEST(cocoTest, PseudoRandom) {
+
+	// check if sequence does not repeat for 1 mio numbers
+	std::vector<uint32_t> numbers(1000000, 0);
+
+	// xor shift
+	{
+		XorShiftRandom random(1);
+		for (int i = 0; i < std::size(numbers); ++i) {
+			auto number = random.draw();
+			numbers[i] = number;
+		}
+		std::sort(std::begin(numbers), std::end(numbers));
+		int count = 0;
+		int maxCount = 0;
+		for (int i = 1; i < std::size(numbers); ++i) {
+			if (numbers[i-1] == numbers[i]) {
+				++count;
+				if (count > maxCount)
+					maxCount = count;
+			}
+		}
+		EXPECT_EQ(maxCount, 0);
+	}
+
+	// kiss
+	{
+		KissRandom random;
+		for (int i = 0; i < std::size(numbers); ++i) {
+			auto number = random.draw();
+			numbers[i] = number;
+		}
+		std::sort(std::begin(numbers), std::end(numbers));
+		int count = 0;
+		int maxCount = 0;
+		for (int i = 1; i < std::size(numbers); ++i) {
+			if (numbers[i-1] == numbers[i]) {
+				++count;
+				if (count > maxCount)
+					maxCount = count;
+			}
+		}
+		EXPECT_EQ(maxCount, 106); // kiss can draw some equal numbers
+	}
+}
+
+
 // String
 // ------
 
 TEST(cocoTest, String) {
-	// constructor from c-string
+	// construct from c-string
 	{
+		// from c-string array
 		String foo("foo");
 		EXPECT_TRUE(foo == "foo");
 		EXPECT_FALSE(foo != "foo");
 		EXPECT_EQ(foo, "foo");
 		EXPECT_EQ(foo.size(), 3);
 
-		char const *cstr = "bar";
-		EXPECT_EQ(length(cstr), 3);
+		// from c-string pointer
+		const char *cstr = "bar";
 		String bar(cstr);
+		EXPECT_TRUE(bar == "bar");
+		EXPECT_FALSE(bar != "bar");
 		EXPECT_EQ(bar, "bar");
 		EXPECT_EQ(bar.size(), 3);
 		
 		// from r-value
-		String bar2(reinterpret_cast<char const *>(cstr));
+		String bar2(reinterpret_cast<const char *>(cstr));
 		EXPECT_EQ(bar2, "bar");
 		EXPECT_EQ(bar2.size(), 3);
 	}
 	
-	// constructor from c-array
+	// construct from c-array
 	{
 		char ar[] = {'f', 'o', 'o'};
 		char dummy = 'x';
-		EXPECT_EQ(length(ar), 3);
 		String foo(ar);
 		EXPECT_EQ(foo, "foo");
 		EXPECT_EQ(foo.size(), 3);
+	}
+
+	// construct from data
+	{
+		const char *cstr = "foo";
+		String f(cstr, 1);
+		EXPECT_EQ(f, "f");
+
+		uint8_t data[] = {'b', 'a', 'r'};
+		String b(data, 1);
+		EXPECT_EQ(b, "b");
 	}
 
 	// less operator
@@ -532,6 +709,35 @@ TEST(cocoTest, StringBuffer) {
 	// byte size
 	EXPECT_EQ(byteSize(b), 71);
 	EXPECT_EQ(byteSize(c), 5);
+}
+
+
+// StringConcept
+// --------------
+
+template <typename T> requires (StringConcept<T>)
+bool testStringConcept(T const &x) {return true;}
+
+template <typename T> requires (!StringConcept<T>)
+bool testStringConcept(T const &x) {return false;}
+
+TEST(cocoTest, StringConcept) {
+	const char s1[] = "foo";
+	const char *s2 = s1;
+	char s3[] = {'f', 'o', 'o'};
+	char dummy = 'x';
+	char s4[] = {'f', 'o', 'o', 0};
+	char *s5 = s4;
+	String s6(s1);
+	int i1 = 0;
+
+	EXPECT_TRUE(testStringConcept(s1));
+	EXPECT_TRUE(testStringConcept(s2));
+	EXPECT_TRUE(testStringConcept(s3));
+	EXPECT_TRUE(testStringConcept(s4));
+	EXPECT_TRUE(testStringConcept(s5));
+	EXPECT_TRUE(testStringConcept(s6));
+	EXPECT_FALSE(testStringConcept(i1));
 }
 
 

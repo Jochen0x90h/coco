@@ -70,28 +70,6 @@ inline void configureInput(int pin, Pull pull = Pull::DISABLED) {
 	// set mode to input
 	port->MODER = (port->MODER & ~(3 << pos2)) | (int(Mode::INPUT) << pos2);
 }
-/*
-
-// for boardConfig.hpp
-struct InputConfig {
-	int pin; // port and index
-	Pull pull;
-	bool invert;
-};
-
-// add input config, pin can also be an output (used in input.cpp)
-inline void addInputConfig(InputConfig const &config) {
-	auto port = getPort(config.pin);
-	int pos2 = (config.pin & 15) << 1;
-
-	// enable peripheral clock for the port
-	RCC->AHBENR = RCC->AHBENR | (1 << (RCC_AHBENR_GPIOAEN_Pos + (config.pin >> 4)));
-
-	// configure
-	// MODER is either input (reset state) or output (addOutputConfig() already called)
-	port->PUPDR = (port->PUPDR & ~(3 << pos2)) | (int(config.pull) << pos2);
-}
-*/
 
 // get input value
 inline bool getInput(int pin) {
@@ -121,38 +99,7 @@ inline void configureOutput(int pin, Pull pull = Pull::DISABLED, Speed speed = S
 	// set mode to output
 	port->MODER = (port->MODER & ~(3 << pos2)) | (int(Mode::OUTPUT) << pos2);
 }
-/*
-// for boardConfig.hpp
-struct OutputConfig {
-	int pin; // port and index
-	Pull pull;
-	Speed speed;
-	Drive drive;
-	bool enabled;
-	bool invert;
-	bool initialValue;
-};
 
-// add output config, pin can also be an input (used in output.cpp)
-inline void addOutputConfig(OutputConfig const &config) {
-	auto port = getPort(config.pin);
-	int pos = config.pin & 15;
-	int pos2 = (config.pin & 15) << 1;
-
-	// enable peripheral clock for the port
-	RCC->AHBENR = RCC->AHBENR | (1 << (RCC_AHBENR_GPIOAEN_Pos + (config.pin >> 4)));
-
-	// set initial value
-	port->BSRR = 1 << (pos + (config.initialValue != config.invert ? 0 : 16));
-
-	// configure
-	port->PUPDR = (port->PUPDR & ~(3 << pos2)) | (int(config.pull) << pos2);
-	port->OSPEEDR = (port->OSPEEDR & ~(3 << pos2)) | (int(config.speed) << pos2);
-	port->OTYPER = (port->OTYPER & ~(1 << pos)) | (int(config.drive) << pos);
-	if (config.enabled)
-		port->MODER = port->MODER | (int(Mode::OUTPUT) << pos2);
-}
-*/
 // set output value
 inline void setOutput(int pin, bool value) {
 	auto port = getPort(pin);

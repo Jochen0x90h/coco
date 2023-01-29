@@ -1,54 +1,12 @@
 #pragma once
 
-#include "IsArray.hpp"
+//#include "IsArray.hpp"
+#include "CStringConcept.hpp"
 #include <limits>
 #include <algorithm>
 
 
 namespace coco {
-
-/**
- * Check if a type is a C-style string, e.g. IsCString<Foo>::value
- * @tparam T type to check if it is an array
- */
-template <typename T>
-struct IsCString {
-	static constexpr bool value = false;
-};
-template <int N>
-struct IsCString<char[N]> {
-	static constexpr bool value = true;
-};
-template <>
-struct IsCString<char const *> {
-	static constexpr bool value = true;
-};
-
-// c-string concept, either char array or char pointer
-template <typename T>
-concept CStringConcept = IsCString<T>::value;
-
-
-constexpr int getLength(char const *str, False) {
-	int length = 0;
-	while (str[length] != 0)
-		++length;
-	return length;
-}
-
-template <int N>
-constexpr int getLength(char const (&str)[N], True) {
-	int length = 0;
-	while (length < N && str[length] != 0)
-		++length;
-	return length;
-}
-
-template <typename T> requires CStringConcept<T>
-constexpr int length(T const &str) {
-	return getLength(str, IsArray<T>());
-}
-
 
 /**
  * String, only references the data
@@ -58,7 +16,7 @@ struct String {
 	friend bool operator <(String a, String b);
 public:
 	constexpr String() noexcept
-		: d(), length(0)
+		: buffer(), length(0)
 	{}
 
 	String(String &str) = default;
@@ -68,16 +26,23 @@ public:
 	/**
 	 * Construct from c-string (const char *) or char array (char[])
 	 */
-	template <typename T> requires CStringConcept<T>
+	template <typename T> requires (CStringConcept<T>)
 	constexpr String(T const &str) noexcept
-		: d(str), length(getLength(str, IsArray<T>()))
+		: buffer(str), length(coco::length(str))
 	{}
 
 	/**
 	 * Construct String from any type of data
 	 */
-	String(void const *data, int length)
-		: d(reinterpret_cast<char const*>(data)), length(length)
+	constexpr String(const char *data, int length)
+		: buffer(data), length(length)
+	{}
+
+	/**
+	 * Construct String from any type of data
+	 */
+	explicit String(void const *data, int length)
+		: buffer(reinterpret_cast<char const*>(data)), length(length)
 	{}
 
 	/**
@@ -87,8 +52,6 @@ public:
 
 	bool empty() const {return this->length <= 0;}
 	
-	int size() const {return this->length;}
-	
 	/**
 	 * Get a substring
 	 * @param startIndex start of substring
@@ -96,7 +59,7 @@ public:
 	 *
 	 */
 	String substring(int startIndex) const {
-		return String(this->d + startIndex, std::max(this->length - startIndex, 0));
+		return String(this->buffer + startIndex, std::max(this->length - startIndex, 0));
 	}
 
 	/**
@@ -107,7 +70,7 @@ public:
 	 *
 	 */
 	String substring(int startIndex, int endIndex) const {
-		return String(this->d + startIndex, std::max(std::min(endIndex, this->length) - startIndex, 0));
+		return String(this->buffer + startIndex, std::max(std::min(endIndex, this->length) - startIndex, 0));
 	}
 
 	/**
@@ -119,7 +82,7 @@ public:
 	 */
 	int indexOf(char ch, int startIndex = 0, int defaultValue = -1) const {
 		for (int i = startIndex; i < this->length; ++i) {
-			if (this->d[i] == ch)
+			if (this->buffer[i] == ch)
 				return i;
 		}
 		return defaultValue;
@@ -136,7 +99,7 @@ public:
 		int i = std::min(startIndex, this->length);
 		while (i > 0) {
 			--i;
-			if (this->d[i] == ch)
+			if (this->buffer[i] == ch)
 				return i;
 		}
 		return defaultValue;
@@ -145,7 +108,7 @@ public:
 	/**
 	 * Index operator
 	 */
-	constexpr char const operator [](int index) const {return this->d[index];}
+	constexpr char const operator [](int index) const {return this->buffer[index];}
 
 	/**
 	 * Calculate a hash of the string
@@ -160,13 +123,21 @@ public:
 		return h;
 	}
 
-	const char *data() const {return this->d;}	
-	char const *begin() const {return this->d;}
-	char const *end() const {return this->d + this->length;}
+	/**
+	 * Array access data() and size() which is O(1)
+	 */
+	const char *data() const {return this->buffer;}	
+	int size() const {return this->length;}
+
+	/**
+	 * Iterators begin() and end()
+	 */
+	char const *begin() const {return this->buffer;}
+	char const *end() const {return this->buffer + this->length;}
 
 protected:
 
-	const char *d;
+	const char *buffer;
 	int length;
 };
 
@@ -174,7 +145,7 @@ inline bool operator ==(String a, String b) {
 	if (a.length != b.length)
 		return false;
 	for (int i = 0; i < a.length; ++i) {
-		if (a.d[i] != b.d[i])
+		if (a.buffer[i] != b.buffer[i])
 			return false;
 	}
 	return true;
@@ -185,8 +156,8 @@ inline bool operator ==(String a, String b) {
 inline bool operator <(String a, String b) {
 	int length = std::min(a.length, b.length);
 	for (int i = 0; i < length; ++i) {
-		auto c = (unsigned char)a.d[i];
-		auto d = (unsigned char)b.d[i];
+		auto c = (unsigned char)a.buffer[i];
+		auto d = (unsigned char)b.buffer[i];
 		if (c < d)
 			return true;
 		if (c > d)
@@ -214,31 +185,5 @@ inline void assign(char (&str)[N], String const &s) {
 		str[i] = 0;
 	}
 }
-
-
-/**
- * Check if a type is a string, either C-string or coco::String, IsString<Foo>::value
- * @tparam T type to check if it is an array
- */
-template <typename T>
-struct IsString {
-	static constexpr bool value = false;
-};
-template <int N>
-struct IsString<char[N]> {
-	static constexpr bool value = true;
-};
-template <>
-struct IsString<char const *> {
-	static constexpr bool value = true;
-};
-template <>
-struct IsString<String> {
-	static constexpr bool value = true;
-};
-
-// string concept, either C-string or coco::String
-template <typename T>
-concept StringConcept = IsString<T>::value;
 
 } // namespace coco

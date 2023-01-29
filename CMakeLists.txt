@@ -88,7 +88,7 @@ message("*** Series: ${SERIES}")
 add_subdirectory(coco)
 
 
-# check if we are on a "native" operating system such as Windows or Linux
+# check if we are on a "normal" operating system such as Windows or Linux
 if(NOT ${CMAKE_CROSSCOMPILING})
 	find_package(GTest CONFIG)
 
