@@ -2,18 +2,22 @@ add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME}
 	PUBLIC FILE_SET headers TYPE HEADERS FILES
 		Array.hpp
+		ArrayConcept.hpp
 		assert.hpp
 		Buffer.hpp
 		convert.hpp
 		Coroutine.hpp
+		CStringConcept.hpp
 		debug.hpp
 		enum.hpp
-		IsArray.hpp
 		IsSubclass.hpp
 		LinkedList.hpp
+		PointerConcept.hpp
+		PseudoRandom.hpp
 		StreamOperators.hpp
 		String.hpp
 		StringBuffer.hpp
+		StringConcept.hpp
 		Time.hpp
 	PRIVATE
 		convert.cpp
@@ -24,9 +28,7 @@ if(${PLATFORM} STREQUAL "native")
 	target_sources(${PROJECT_NAME}
 		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/native FILES
 			native/coco/platform/File.hpp
-			native/coco/platform/Handler.hpp
-		PRIVATE
-			native/coco/platform/Handler.cpp
+		#PRIVATE
 	)
 elseif(${PLATFORM} MATCHES "^nrf52")
 	file(GENERATE OUTPUT nrf52.h CONTENT "#include <coco/platform/system/${PLATFORM}.h>\n#include <coco/platform/system/${PLATFORM}_bitfields.h>\n#include <coco/platform/system/${PLATFORM}_peripherals.h>")
@@ -34,7 +36,6 @@ elseif(${PLATFORM} MATCHES "^nrf52")
 		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/nrf52 FILES
 			nrf52/coco/platform/gpio.hpp
 			nrf52/coco/platform/platform.hpp
-			nrf52/coco/platform/Handler.hpp
 			nrf52/coco/platform/system/cmsis_compiler.h
 			nrf52/coco/platform/system/cmsis_gcc.h
 			nrf52/coco/platform/system/cmsis_version.h
@@ -47,7 +48,6 @@ elseif(${PLATFORM} MATCHES "^nrf52")
 		PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
 			${CMAKE_CURRENT_BINARY_DIR}/nrf52.h
 		PRIVATE
-			nrf52/coco/platform/Handler.cpp
 			nrf52/coco/platform/system/gcc_startup_${PLATFORM}.S
 	)
 elseif(${PLATFORM} MATCHES "^stm32f0")
@@ -56,7 +56,6 @@ elseif(${PLATFORM} MATCHES "^stm32f0")
 		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/stm32f0 FILES
 			stm32f0/coco/platform/gpio.hpp
 			stm32f0/coco/platform/platform.hpp
-			stm32f0/coco/platform/Handler.hpp
 			stm32f0/coco/platform/system/cmsis_compiler.h
 			stm32f0/coco/platform/system/cmsis_gcc.h
 			stm32f0/coco/platform/system/cmsis_version.h
@@ -66,7 +65,6 @@ elseif(${PLATFORM} MATCHES "^stm32f0")
 		PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
 			${CMAKE_CURRENT_BINARY_DIR}/stm32f0.h
 		PRIVATE
-			stm32f0/coco/platform/Handler.cpp
 			stm32f0/coco/platform/system/startup_${PLATFORM}.S
 	)
 endif()

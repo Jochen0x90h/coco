@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <coco/Coroutine.hpp>
+#include <coco/String.hpp>
 
 
 using namespace coco;

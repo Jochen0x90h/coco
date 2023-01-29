@@ -23,16 +23,15 @@ namespace std {
 namespace coco {
 
 /**
- * Node for Waitlist and and list elements representing waiting coroutines.
+ * Node for Waitlist head and and list elements representing waiting coroutines.
  * These methods need to be implemented by list elements:
  *
- * append(WaitlistNode &list): Append the node to the given list
  * cancel(): Cancel the operation or awaitable coroutine (e.g. to stop a DMA transfer or destroy the awaitable coroutine).
  * take(WaitlistNode &node): Optional for move assignment, take the waiting coroutine from the given node
  *
- * The cancel() method only gets called if the element is still part of a waitlist and also has to remove the element
- * from the waitlist and maybe needs to be protected the list against concurrent modifications. A destructor also needs
- * to be implemented to call cancel() when the node is still part of a waitlist (if (isInList()) cancel();)
+ * The cancel() method gets called either by hand or if an Awaitable goes out of scope where the element is still part of
+ * a waitlist. It also has to remove the element from the waitlist by calling remove() and maybe needs to protect the list
+ * against concurrent modifications.
  * @tparam T
  */
 class WaitlistNode {
@@ -42,14 +41,6 @@ public:
 
 	// delete copy constructor
 	WaitlistNode(WaitlistNode const &) = delete;
-
-	// add this new node to a list
-	/*WaitlistNode(WaitlistNode &list) {
-		this->prev = list.prev;
-		this->next = &list;
-		list.prev->next = this;
-		list.prev = this;
-	}*/
 
 	/**
 	 * Destructor. It is an error to destroy a waitlist node that is still part of a list
@@ -125,7 +116,7 @@ public:
 };
 
 /**
- * Waitlist element with default implementation of append(), cancel() and take().
+ * Waitlist element with default implementation of cancel() and take().
  */
 class WaitlistElement : public WaitlistNode {
 public:
