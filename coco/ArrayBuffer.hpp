@@ -13,14 +13,14 @@ namespace coco {
  * @tparam N maximum size
  */
 template <typename T, int N>
-class Buffer {
+class ArrayBuffer {
 public:
 	static constexpr int MAX_SIZE = N;
 
 	/**
 	 * Default constructor
 	 */
-	Buffer() : length() {}
+	ArrayBuffer() : length() {}
 
 	/**
 	 * Construct from any container supporting std::begin() and std::end()
@@ -28,7 +28,7 @@ public:
 	 * @param container container used to initialize the buffer
 	 */
 	template <typename T2>
-	Buffer(const T2 &container) {
+	ArrayBuffer(const T2 &container) {
 		auto it1 = this->buffer;
 		auto end1 = this->buffer + N;
 		auto it2 = std::begin(container);
@@ -150,14 +150,14 @@ public:
  * @tparam N maximum size
  */
 template <int N>
-class Buffer<char, N> {
+class ArrayBuffer<char, N> {
 public:
 	static constexpr int MAX_SIZE = N;
 
 	/**
 	 * Default constructor
 	 */
-	Buffer() : length() {}
+	ArrayBuffer() : length() {}
 
 	/**
 	 * Construct from any container supporting std::begin() and std::end()
@@ -165,7 +165,7 @@ public:
 	 * @param container container used to initialize the buffer
 	 */
 	template <typename T2>
-	Buffer(const T2 &container) {
+	ArrayBuffer(const T2 &container) {
 		auto it1 = this->buffer;
 		auto it2 = std::begin(container);
 		auto end1 = this->buffer + N;
@@ -239,52 +239,61 @@ public:
 	}
 
 	/**
-	 * Append an element to the container
-	 * @param element element to append
+	 * Append a single character to the buffer
+	 * @param ch char to append
 	 */
-	void append(char element) {
-		if (this->length < N)
-			this->buffer[this->length++] = element;
+	void append(char ch) {
+		auto buffer = this->buffer;
+		auto capacity = N;
+
+		if (this->length < capacity)
+			buffer[this->length++] = ch;
 #ifdef DEBUG
-		this->buffer[this->length] = 0;
+		buffer[this->length] = 0;
 #endif
 	}
 
 	/**
 	 * Append any container supporting std::begin() and std::end() to the buffer 
 	 * @tparam T2 container type
-	 * @param container container whose contents are appended
+	 * @param container container to append
 	 */
 	template <typename T2> requires (!StringConcept<T2>)
 	void append(const T2 &container) {
-		auto it1 = this->buffer + this->length;
+		auto buffer = this->buffer;
+		auto capacity = N;
+
+		auto it1 = buffer + this->length;
 		auto it2 = std::begin(container);
-		auto end1 = this->buffer + N;
+		auto end1 = buffer + capacity;
 		auto end2 = std::end(container);
 		int l = this->length;
 		for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
 			*it1 = *it2;
 		this->length = l;
 #ifdef DEBUG
-		this->buffer[this->length] = 0;
+		buffer[this->length] = 0;
 #endif
 	}
 
 	template <typename T2> requires (StringConcept<T2>)
 	void append(const T2 &string) {
+		auto buffer = this->buffer;
+		auto capacity = N;
+
 		String s(string);
-		int l = std::min(N - this->length, s.size());
-		std::copy(s.begin(), s.begin() + l, this->buffer + this->length);
+		int l = std::min(capacity - this->length, s.size());
+		std::copy(s.begin(), s.begin() + l, buffer + this->length);
 		this->length += l;
 #ifdef DEBUG
-		this->buffer[this->length] = 0;
+		buffer[this->length] = 0;
 #endif
 	}
 
 	/**
 	 * Stream a single character
 	 */
-	Buffer &operator <<(char ch) {
+	ArrayBuffer &operator <<(char ch) {
 		append(ch);
 		return *this;
 	}
@@ -293,7 +302,7 @@ public:
 	 * Stream a string, either C-string or coco::String
 	 */
 	template <typename T> requires (StringConcept<T>)
-	Buffer &operator <<(T const &string) {
+	ArrayBuffer &operator <<(T const &string) {
 		append(String(string));
 		return *this;
 	}

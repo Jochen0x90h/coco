@@ -1,26 +1,6 @@
 {
     "profiles": [
         {
-            "name": "debug",
-            "conanFile": "${workspaceFolder}/conanfile.py",
-            "profile": "debug",
-            "installArg": "-b missing",
-            "buildArg": "",
-            "createUser": "",
-            "createChannel": "",
-            "createArg": ""
-        },
-        {
-            "name": "default",
-            "conanFile": "${workspaceFolder}/conanfile.py",
-            "profile": "default",
-            "installArg": "-b missing",
-            "buildArg": "",
-            "createUser": "",
-            "createChannel": "",
-            "createArg": ""
-        },
-        {
             "name": "native-debug",
             "conanFile": "${workspaceFolder}/conanfile.py",
             "profile": "debug",
@@ -41,22 +21,31 @@
             "createArg": ""
         },
         {
-            "name": "nrf52840",
+            "name": "emu-debug",
             "conanFile": "${workspaceFolder}/conanfile.py",
-            "profileBuild": "default",
-            "profileHost": "armv7",
-            "installArg": "-b missing -o platform=nrf52840",
+            "profile": "debug",
+            "installArg": "-b missing -o platform=emu",
             "buildArg": "",
             "createUser": "",
             "createChannel": "",
             "createArg": ""
         },
         {
-            "name": "stm32f042x6",
+            "name": "emu",
+            "conanFile": "${workspaceFolder}/conanfile.py",
+            "profile": "default",
+            "installArg": "-b missing -o platform=emu",
+            "buildArg": "",
+            "createUser": "",
+            "createChannel": "",
+            "createArg": ""
+        },
+        {
+            "name": "nrf52840",
             "conanFile": "${workspaceFolder}/conanfile.py",
             "profileBuild": "default",
-            "profileHost": "armv6",
-            "installArg": "-b missing -o platform=stm32f042x6",
+            "profileHost": "armv7",
+            "installArg": "-b missing -o platform=nrf52840",
             "buildArg": "",
             "createUser": "",
             "createChannel": "",

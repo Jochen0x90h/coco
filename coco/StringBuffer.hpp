@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Buffer.hpp"
+#include "ArrayBuffer.hpp"
 
 
 namespace coco {
@@ -12,6 +12,6 @@ namespace coco {
  */
 
 template <int N>
-using StringBuffer = Buffer<char, N>;
+using StringBuffer = ArrayBuffer<char, N>;
 
 } // namespace coco

@@ -43,7 +43,7 @@ template <typename T>
 concept CStringConcept = IsCStringPointerValue<T> || IsCStringArrayValue<T>;
 
 
-/** 
+/**
  * Determine the length of a c-string
  */
 template <typename T> requires (CStringPointerConcept<T>)

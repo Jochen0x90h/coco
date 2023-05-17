@@ -11,6 +11,7 @@ inline constexpr bool IsCocoStringValue = false;
 template <>
 inline constexpr bool IsCocoStringValue<String> = true;
 
+
 /**
  * String concept
  * Usage:

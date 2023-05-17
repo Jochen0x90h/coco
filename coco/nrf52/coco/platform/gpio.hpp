@@ -53,10 +53,17 @@ inline void setMode(int pin, Mode mode) {
 
 inline void configureAnalog(int pin) {
 	auto port = getPort(pin);
-	uint32_t c = N(GPIO_PIN_CNF_DIR, Input)
+	port->PIN_CNF[pin & 31] = N(GPIO_PIN_CNF_DIR, Input)
 		| N(GPIO_PIN_CNF_INPUT, Disconnect)
 		| N(GPIO_PIN_CNF_PULL, Disabled);
-	port->PIN_CNF[pin & 31] = c;
+}
+
+
+// only pull up/down (e.g. for peripheral such as I2C)
+
+inline void configurePull(int pin, Pull pull = Pull::DISABLED) {
+	auto port = getPort(pin);
+	port->PIN_CNF[pin & 31] =  V(GPIO_PIN_CNF_PULL, int(pull));
 }
 
 
@@ -66,9 +73,9 @@ inline void configureAnalog(int pin) {
 // configure input
 inline void configureInput(int pin, Pull pull = Pull::DISABLED) {
 	auto port = getPort(pin);
-	port->PIN_CNF[pin & 31] =
-		N(GPIO_PIN_CNF_INPUT, Connect)
-			| V(GPIO_PIN_CNF_PULL, int(pull));
+	port->PIN_CNF[pin & 31] = N(GPIO_PIN_CNF_DIR, Input)
+		| N(GPIO_PIN_CNF_INPUT, Connect)
+		| V(GPIO_PIN_CNF_PULL, int(pull));
 }
 
 // get input value

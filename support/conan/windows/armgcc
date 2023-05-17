@@ -1,0 +1,5 @@
+[settings]
+os=baremetal
+compiler=gcc
+compiler.version=12
+compiler.libcxx=libstdc++11

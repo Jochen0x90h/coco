@@ -1,3 +1,5 @@
+# Generate CMakePresets.json for all conan profiles
+
 # Run this script after installing the conan dependencies for all profiles
 # Command line: python3 presets.py
 # VSCode: Right click on presets.py and select "Run Python File in Terminal"
@@ -13,19 +15,25 @@ testPresets = []
 for dir in os.listdir("build"):
     print(dir)
 
+    # load generated CMakePresets.json
     file = open(f"build/{dir}/CMakePresets.json")
     presets = json.load(file)
     file.close()
 
+    # get presets (each is an array with one element)
     configurePreset = presets["configurePresets"]
     buildPreset = presets["buildPresets"]
     testPreset = presets["testPresets"]
 
     for p in configurePreset:
         p["name"] = dir
+        p["description"] = '(' + p["generator"] + ')'
         p.pop("displayName", None)
         p.pop("binaryDir", None)
     for p in buildPreset:
+        p["name"] = dir
+        p["configurePreset"] = dir
+    for p in testPreset:
         p["name"] = dir
         p["configurePreset"] = dir
 

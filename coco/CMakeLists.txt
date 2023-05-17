@@ -2,9 +2,9 @@ add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME}
 	PUBLIC FILE_SET headers TYPE HEADERS FILES
 		Array.hpp
+		ArrayBuffer.hpp
 		ArrayConcept.hpp
 		assert.hpp
-		Buffer.hpp
 		convert.hpp
 		Coroutine.hpp
 		CStringConcept.hpp
@@ -18,12 +18,13 @@ target_sources(${PROJECT_NAME}
 		String.hpp
 		StringBuffer.hpp
 		StringConcept.hpp
+		Task.hpp
 		Time.hpp
 	PRIVATE
 		convert.cpp
 )
 
-if(${PLATFORM} STREQUAL "native")
+if(${PLATFORM} STREQUAL "native" OR ${PLATFORM} STREQUAL "emu")
 	# native platform (Windows, MacOS, Linux)
 	target_sources(${PROJECT_NAME}
 		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/native FILES
@@ -77,7 +78,7 @@ target_include_directories(${PROJECT_NAME}
 # install the library
 install(TARGETS ${PROJECT_NAME}
 	FILE_SET headers DESTINATION include/coco
-	FILE_SET platform_headers DESTINATION include
+	FILE_SET platform_headers DESTINATION include # goes into include/coco/platform
 	FILE_SET generated_headers DESTINATION include/coco/platform
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
