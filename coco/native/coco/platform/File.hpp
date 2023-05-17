@@ -1,7 +1,6 @@
 #pragma once
 
 #include <coco/enum.hpp>
-//#include <string>
 #include <filesystem>
 #ifdef _WIN32
 #define NOMINMAX
@@ -10,6 +9,8 @@
 #undef INTERFACE
 #undef IN
 #undef OUT
+#undef READ_ATTRIBUTES
+#undef ERROR
 #else
 #include <unistd.h>
 #include <fcntl.h>
@@ -21,6 +22,9 @@ namespace coco {
 
 namespace fs = std::filesystem;
 
+/**
+	Simple file wrapper only for internal use such as in emulator drivers. Otherwise use coco-file
+*/
 class File {
 public:
 	enum class Mode : uint32_t {
@@ -50,7 +54,7 @@ public:
 	 * Destructor
 	 */
 	~File() {
-#ifdef _WIN32		
+#ifdef _WIN32
 		CloseHandle(this->file);
 #else
 		close(this->file);
@@ -101,9 +105,11 @@ public:
 
 	int read(int offset, void *data, int length) {
 #ifdef _WIN32
-		SetFilePointer(this->file, offset, nullptr, FILE_BEGIN);
 		DWORD numRead;
-		ReadFile(this->file, data, length, &numRead, nullptr);
+		OVERLAPPED overlapped;
+		memset(&overlapped, 0, sizeof(overlapped));
+		overlapped.Offset = offset;
+		ReadFile(this->file, data, length, &numRead, &overlapped);
 		return numRead;
 #else
 		return pread(this->file, data, length, offset);
@@ -112,9 +118,11 @@ public:
 
 	int write(int offset, const void *data, int length) {
 #ifdef _WIN32
-		SetFilePointer(this->file, offset, nullptr, FILE_BEGIN);
 		DWORD numWritten;
-		WriteFile(this->file, data, length, &numWritten, nullptr);
+		OVERLAPPED overlapped;
+		memset(&overlapped, 0, sizeof(overlapped));
+		overlapped.Offset = offset;
+		WriteFile(this->file, data, length, &numWritten, &overlapped);
 		return numWritten;
 #else
 		return pwrite(this->file, data, length, offset);
@@ -134,9 +142,9 @@ public:
 protected:
 #ifdef _WIN32
 	HANDLE file;
-#else 
+#else
 	int file;
-#endif	
+#endif
 };
 
 COCO_ENUM(File::Mode)

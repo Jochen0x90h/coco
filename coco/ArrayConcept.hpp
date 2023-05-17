@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Array.hpp"
-#include "Buffer.hpp"
+#include "ArrayBuffer.hpp"
 #include "String.hpp"
 
 
@@ -18,7 +18,7 @@ template <typename T, int N>
 inline constexpr bool IsArrayValue<Array<T, N>> = true;
 
 template <typename T, int N>
-inline constexpr bool IsArrayValue<Buffer<T, N>> = true;
+inline constexpr bool IsArrayValue<ArrayBuffer<T, N>> = true;
 
 template <>
 inline constexpr bool IsArrayValue<String> = true;

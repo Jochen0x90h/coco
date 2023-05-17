@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <coco/Array.hpp>
+#include <coco/ArrayBuffer.hpp>
 #include <coco/ArrayConcept.hpp>
-#include <coco/Buffer.hpp>
 #include <coco/convert.hpp>
 #include <coco/CStringConcept.hpp>
 #include <coco/enum.hpp>
@@ -14,12 +14,13 @@
 #include <coco/StringBuffer.hpp>
 #include <coco/StringConcept.hpp>
 #include <coco/Time.hpp>
+//#include <coco/platform/File.hpp>
 
 
 using namespace coco;
 
 // test data
-constexpr String strings[] = {"a", "bar", "bar2", "foo", "foo2", "foobar", "foobar2", "z"}; 
+constexpr String strings[] = {"a", "bar", "bar2", "foo", "foo2", "foobar", "foobar2", "z"};
 
 // util
 template <typename T>
@@ -95,7 +96,7 @@ TEST(cocoTest, ArrayN) {
 	b1[1] = 10;
 	EXPECT_EQ(b1[1], 10);
 	//b2[1] = 10; // should not compile
-	
+
 	// assign from other buffer
 	b3 = b1;
 	EXPECT_EQ(b3[1], b1[1]);
@@ -121,7 +122,7 @@ TEST(cocoTest, ArrayN) {
 
 // array with variable size
 TEST(cocoTest, Array) {
-	
+
 	// construct array from c-array
 	int a1[] = {10, 11, 12};
 	Array<int> b1(a1);
@@ -207,45 +208,11 @@ TEST(cocoTest, Array) {
 }
 
 
-// ArrayConcept
-// ------------
+// ArrayBuffer
+// -----------
 
-template <typename T> requires (ArrayConcept<T>)
-bool testArrayConcept(T const &x) {return true;}
-
-template <typename T> requires (!ArrayConcept<T>)
-bool testArrayConcept(T const &x) {return false;}
-
-TEST(cocoTest, ArrayConcept) {
-	int a1[] = {1, 2, 3};
-	const int a2[] = {1, 2, 3};
-	volatile int a3[] = {1, 2, 3};
-	Array<int> a4(a1);
-	Array<int, 3> a5(a1);
-	Buffer<int, 10> b1;
-	String s1 = "foo";
-	int i1 = 0;
-	const int i2 = 0;
-	int *p1 = nullptr;
-
-	EXPECT_TRUE(testArrayConcept(a1));
-	EXPECT_TRUE(testArrayConcept(a2));
-	EXPECT_TRUE(testArrayConcept(a3));
-	EXPECT_TRUE(testArrayConcept(a4));
-	EXPECT_TRUE(testArrayConcept(a5));
-	EXPECT_TRUE(testArrayConcept(b1));
-	EXPECT_TRUE(testArrayConcept(s1));
-	EXPECT_FALSE(testArrayConcept(i1));
-	EXPECT_FALSE(testArrayConcept(i2));
-	EXPECT_FALSE(testArrayConcept(p1));
-}
-
-
-// Buffer
-// ------
-
-TEST(cocoTest, Buffer) {
-	Buffer<int, 7> b;
+TEST(cocoTest, ArrayBuffer) {
+	ArrayBuffer<int, 7> b;
 	EXPECT_TRUE(b.empty());
 	EXPECT_EQ(b.size(), 0);
 	EXPECT_EQ(b.capacity(), 7);
@@ -281,7 +248,7 @@ TEST(cocoTest, Buffer) {
 	EXPECT_EQ(b.size(), 6);
 
 	// append buffer
-	Buffer<int, 10> b2;
+	ArrayBuffer<int, 10> b2;
 	b2.append(1337);
 	b2.append(0);
 	b.append(b2);
@@ -305,7 +272,7 @@ TEST(cocoTest, Buffer) {
 		EXPECT_EQ(i, 1337);
 
 	// const buffer
-	const Buffer<int, 7> &cb = b;
+	const ArrayBuffer<int, 7> &cb = b;
 	EXPECT_FALSE(cb.empty());
 	EXPECT_EQ(cb.size(), 7);
 	EXPECT_EQ(std::size(cb), 7);
@@ -325,6 +292,40 @@ TEST(cocoTest, Buffer) {
 	EXPECT_EQ(byteSize(b2), 5 * sizeof(int));
 	EXPECT_EQ(byteSize(cb), 7 * sizeof(int));
 
+}
+
+
+// ArrayConcept
+// ------------
+
+template <typename T> requires (ArrayConcept<T>)
+bool testArrayConcept(T const &x) {return true;}
+
+template <typename T> requires (!ArrayConcept<T>)
+bool testArrayConcept(T const &x) {return false;}
+
+TEST(cocoTest, ArrayConcept) {
+	int a1[] = {1, 2, 3};
+	const int a2[] = {1, 2, 3};
+	volatile int a3[] = {1, 2, 3};
+	Array<int> a4(a1);
+	Array<int, 3> a5(a1);
+	ArrayBuffer<int, 10> b1;
+	String s1 = "foo";
+	int i1 = 0;
+	const int i2 = 0;
+	int *p1 = nullptr;
+
+	EXPECT_TRUE(testArrayConcept(a1));
+	EXPECT_TRUE(testArrayConcept(a2));
+	EXPECT_TRUE(testArrayConcept(a3));
+	EXPECT_TRUE(testArrayConcept(a4));
+	EXPECT_TRUE(testArrayConcept(a5));
+	EXPECT_TRUE(testArrayConcept(b1));
+	EXPECT_TRUE(testArrayConcept(s1));
+	EXPECT_FALSE(testArrayConcept(i1));
+	EXPECT_FALSE(testArrayConcept(i2));
+	EXPECT_FALSE(testArrayConcept(p1));
 }
 
 
@@ -445,10 +446,10 @@ TEST(cocoTest, IsSubclass) {
 // --------------
 
 struct ElementBaseClass {
-	int i;
+	int value = 10;
 };
 
-struct MyListElement : public ElementBaseClass, public LinkedListNode<MyListElement> {
+struct MyListElement : public ElementBaseClass, public LinkedListNode {
 	int foo;
 
 	MyListElement(int foo) : foo(foo) {}
@@ -457,7 +458,7 @@ struct MyListElement : public ElementBaseClass, public LinkedListNode<MyListElem
 
 using MyList = LinkedList<MyListElement>;
 
-TEST(cocoTest, LinkedListNode) {
+TEST(cocoTest, LinkedList) {
 	// create list
 	MyList list;
 	EXPECT_TRUE(list.empty());
@@ -502,22 +503,57 @@ TEST(cocoTest, LinkedListNode) {
 	element2.remove();
 }
 
-
-struct MyListElement2 : public MyListElement, public LinkedListNode<MyListElement2> {
-	MyListElement2(int foo) : MyListElement(foo) {}
+// inherit from LinkedListNode2
+struct MyListElement2 : public LinkedListNode2 {
+	int value = 50;
 };
 
-using MyList2 = LinkedList<MyListElement2>;
+using MyList2 = LinkedList2<MyListElement2>;
 
-TEST(cocoTest, LinkedListNode2) {
+TEST(cocoTest, LinkedList2) {
+	// create an element
+	MyListElement2 element;
+
 	// create list
 	MyList2 list;
-	MyListElement2 element(50);
 	list.add(element);
 
-
+	// iterate over list
 	for (MyListElement2 &element : list) {
-		
+		EXPECT_EQ(element.value, 50);
+	}
+}
+
+// inherit from both LinkedListNode and LinkedListNode2
+struct MyListElement12 : public MyListElement, public LinkedListNode2 {
+	MyListElement12(int foo) : MyListElement(foo) {}
+};
+
+using MyList12 = LinkedList<MyListElement12>;
+using MyList22 = LinkedList2<MyListElement12>;
+
+TEST(cocoTest, LinkedList22) {
+	// create an element
+	MyListElement12 element(50);
+
+	// create list 1
+	MyList12 list;
+	list.add(element);
+
+	// create list 2
+	MyList22 list2;
+	list2.add(element);
+
+	// iterate over list 1
+	for (MyListElement12 &element : list) {
+		EXPECT_EQ(element.value, 10);
+		EXPECT_EQ(element.foo, 50);
+	}
+
+	// iterate over list 2
+	for (MyListElement12 &element : list2) {
+		EXPECT_EQ(element.value, 10);
+		EXPECT_EQ(element.foo, 50);
 	}
 }
 
@@ -618,13 +654,15 @@ TEST(cocoTest, String) {
 		EXPECT_FALSE(bar != "bar");
 		EXPECT_EQ(bar, "bar");
 		EXPECT_EQ(bar.size(), 3);
-		
+
 		// from r-value
 		String bar2(reinterpret_cast<const char *>(cstr));
 		EXPECT_EQ(bar2, "bar");
 		EXPECT_EQ(bar2.size(), 3);
+
+		// todo String utf8(u8"äöü");
 	}
-	
+
 	// construct from c-array
 	{
 		char ar[] = {'f', 'o', 'o'};
@@ -651,6 +689,11 @@ TEST(cocoTest, String) {
 			EXPECT_EQ(i < j, strings[i] < strings[j]);
 		}
 	}
+
+	// trim
+	EXPECT_EQ(String("   ").trim(), "");
+	EXPECT_EQ(String("  foo  ").trim(), "foo");
+	EXPECT_EQ(String("\t\r\n  bar \t\r\n").trim(), "bar");
 }
 
 
@@ -659,7 +702,7 @@ TEST(cocoTest, String) {
 
 TEST(cocoTest, StringBuffer) {
 	const char *space = " ";
-	
+
 	StringBuffer<100> b;
 	EXPECT_TRUE(b.empty());
 	EXPECT_EQ(b.size(), 0);
@@ -743,7 +786,8 @@ TEST(cocoTest, StringConcept) {
 
 // Time
 // ----
-TEST(systemTest, Time) {
+
+TEST(cocoTest, Time) {
 	Time t1 = {0};
 	Time t2 = {0x70000000};
 	Time t3 = {0x90000000};
@@ -753,8 +797,28 @@ TEST(systemTest, Time) {
 	EXPECT_TRUE(t3 < t1);
 }
 
+
+// File
+// ----
+/*
+TEST(cocoTest, File) {
+	File f("foo.txt", File::Mode::READ_WRITE | File::Mode::TRUNCATE);
+	char str[4];
+
+	EXPECT_EQ(f.write(0, "foo", 3), 3);
+	EXPECT_EQ(f.read(0, str, 3), 3);
+	str[3] = 0;
+	EXPECT_STREQ(str, "foo");
+
+	EXPECT_EQ(f.write(3, "bar", 3), 3);
+	EXPECT_EQ(f.read(3, str, 3), 3);
+	str[3] = 0;
+	EXPECT_STREQ(str, "bar");
+}*/
+
+
 int main(int argc, char **argv) {
 	testing::InitGoogleTest(&argc, argv);
-	int success = RUN_ALL_TESTS();	
+	int success = RUN_ALL_TESTS();
 	return success;
 }

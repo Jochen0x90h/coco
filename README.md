@@ -18,7 +18,9 @@ Add coco/\<version> to your conanfile where version corresponds to the git tags
 
 ## Supported Platforms
 * Native
-  * native
+  * Windows
+  * Todo: Macos
+  * Todo: Linux
 * nRF52
   * nrf52805
   * nrf52810
