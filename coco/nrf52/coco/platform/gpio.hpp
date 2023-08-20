@@ -17,26 +17,26 @@ constexpr NRF_GPIO_Type *getPort(int pin) { return (NRF_GPIO_Type *) (pin < 32 ?
 constexpr int DISCONNECTED = 0xffffffff;
 
 
-enum class Mode {
+enum class Mode : uint8_t {
 	INPUT = 0,
 	OUTPUT = 1
 };
 
-enum class Pull {
+enum class Pull : uint8_t {
 	DISABLED = 0,
-	DOWN = 1, // Pull down on pin
-	UP = 3 // Pull up on pin
+	DOWN = 1, // pull down resistor on pin
+	UP = 3 // pull up resistor on pin
 };
 
-enum class Drive {
-	S0S1 = 0, // Standard '0', standard '1'
-	H0S1 = 1, // High drive '0', standard '1'
-	S0H1 = 2, // Standard '0', high drive '1'
-	H0H1 = 3, // High drive '0', high drive '1'
-	D0S1 = 4, // Disconnect '0' standard '1' (normally used for wired-or connections)
-	D0H1 = 5, // Disconnect '0', high drive '1' (normally used for wired-or connections)
-	S0D1 = 6, // Standard '0', disconnect '1' (normally used for wired-and connections)
-	H0D1 = 7  // High drive '0', disconnect '1' (normally used for wired-and connections)
+enum class Drive : uint8_t {
+	S0S1 = 0, // standard '0', standard '1'
+	H0S1 = 1, // high drive '0', standard '1'
+	S0H1 = 2, // standard '0', high drive '1'
+	H0H1 = 3, // high drive '0', high drive '1'
+	D0S1 = 4, // disconnect '0' standard '1' (normally used for wired-or connections)
+	D0H1 = 5, // disconnect '0', high drive '1' (normally used for wired-or connections)
+	S0D1 = 6, // standard '0', disconnect '1' (normally used for wired-and connections)
+	H0D1 = 7  // high drive '0', disconnect '1' (normally used for wired-and connections)
 };
 
 
@@ -45,6 +45,12 @@ inline void setMode(int pin, Mode mode) {
 	auto port = getPort(pin);
 	uint32_t c = port->PIN_CNF[pin & 31];
 	port->PIN_CNF[pin & 31] = (c & ~GPIO_PIN_CNF_DIR_Msk) | V(GPIO_PIN_CNF_DIR, int(mode));
+}
+
+// only pull up/down (e.g. for peripheral such as I2C)
+inline void configurePull(int pin, Pull pull = Pull::DISABLED) {
+	auto port = getPort(pin);
+	port->PIN_CNF[pin & 31] =  V(GPIO_PIN_CNF_PULL, int(pull));
 }
 
 
@@ -59,18 +65,10 @@ inline void configureAnalog(int pin) {
 }
 
 
-// only pull up/down (e.g. for peripheral such as I2C)
-
-inline void configurePull(int pin, Pull pull = Pull::DISABLED) {
-	auto port = getPort(pin);
-	port->PIN_CNF[pin & 31] =  V(GPIO_PIN_CNF_PULL, int(pull));
-}
-
-
 // input
 // -----
 
-// configure input
+// configure as input
 inline void configureInput(int pin, Pull pull = Pull::DISABLED) {
 	auto port = getPort(pin);
 	port->PIN_CNF[pin & 31] = N(GPIO_PIN_CNF_DIR, Input)
@@ -88,9 +86,13 @@ inline bool getInput(int pin) {
 // output
 // ------
 
-// configure output
-inline void configureOutput(int pin, Pull pull = Pull::DISABLED, Drive drive = Drive::S0S1) {
+// configure as output
+inline void configureOutput(int pin, bool initialValue, Drive drive = Drive::S0S1, Pull pull = Pull::DISABLED) {
 	auto port = getPort(pin);
+	if (initialValue)
+		port->OUTSET = 1 << (pin & 31);
+	else
+		port->OUTCLR = 1 << (pin & 31);
 	port->PIN_CNF[pin & 31] = N(GPIO_PIN_CNF_DIR, Output)
 		| N(GPIO_PIN_CNF_INPUT, Disconnect)
 		| V(GPIO_PIN_CNF_PULL, int(pull))
@@ -121,15 +123,21 @@ inline void toggleOutput(int pin) {
 // in/out
 // ------
 
-// configure as input and output
-inline void configureInOut(int pin, Mode mode, Pull pull = Pull::DISABLED, Drive drive = Drive::S0S1) {
+// configure as input and output, default is input
+inline void configureInOut(int pin, Pull pull = Pull::DISABLED, Drive drive = Drive::S0S1) {
 	auto port = getPort(pin);
-	port->PIN_CNF[pin & 31] = V(GPIO_PIN_CNF_DIR, int(mode))
+	port->PIN_CNF[pin & 31] = V(GPIO_PIN_CNF_DIR, int(Mode::INPUT))
 		| N(GPIO_PIN_CNF_INPUT, Connect)
 		| V(GPIO_PIN_CNF_PULL, int(pull))
 		| V(GPIO_PIN_CNF_DRIVE, int(drive));
 }
 
+// enable the output driver
+inline void enableOutput(int pin, bool enable) {
+	auto port = getPort(pin);
+	uint32_t c = port->PIN_CNF[pin & 31];
+	port->PIN_CNF[pin & 31] = (c & ~GPIO_PIN_CNF_DIR_Msk) | V(GPIO_PIN_CNF_DIR, int(enable ? Mode::OUTPUT : Mode::INPUT));
+}
 
 } // namespace gpio
 } // namespace coco

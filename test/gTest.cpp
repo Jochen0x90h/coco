@@ -1,12 +1,15 @@
 #include <gtest/gtest.h>
+#include <coco/align.hpp>
 #include <coco/Array.hpp>
 #include <coco/ArrayBuffer.hpp>
 #include <coco/ArrayConcept.hpp>
 #include <coco/convert.hpp>
 #include <coco/CStringConcept.hpp>
 #include <coco/enum.hpp>
+#include <coco/Frequency.hpp>
 #include <coco/IsSubclass.hpp>
 #include <coco/LinkedList.hpp>
+#include <coco/Queue.hpp>
 #include <coco/PointerConcept.hpp>
 #include <coco/PseudoRandom.hpp>
 #include <coco/StreamOperators.hpp>
@@ -26,6 +29,33 @@ constexpr String strings[] = {"a", "bar", "bar2", "foo", "foo2", "foobar", "foob
 template <typename T>
 int byteSize(const T &array) {
 	return std::size(array) * sizeof(*std::data(array));
+}
+
+
+// align
+// -----
+
+TEST(cocoTest, align) {
+	EXPECT_EQ(align2(2), 2);
+	EXPECT_EQ(align2(3), 4);
+
+	EXPECT_EQ(align4(4), 4);
+	EXPECT_EQ(align4(5), 8);
+
+	EXPECT_EQ(align8(8), 8);
+	EXPECT_EQ(align8(9), 16);
+
+	EXPECT_EQ(align16(16), 16);
+	EXPECT_EQ(align16(17), 32);
+
+	EXPECT_EQ(align32(32), 32);
+	EXPECT_EQ(align32(33), 64);
+
+	EXPECT_EQ(align(4, 4), 4);
+	EXPECT_EQ(align(5, 4), 8);
+
+	EXPECT_EQ(align(32, 32), 32);
+	EXPECT_EQ(align(33, 32), 64);
 }
 
 
@@ -92,6 +122,14 @@ TEST(cocoTest, ArrayN) {
 	EXPECT_TRUE(b1 != b2);
 	EXPECT_TRUE(b1 == b3);
 
+	// sub-array
+	EXPECT_EQ(b1.array<1>(1).size(), 1);
+	EXPECT_EQ(b1.subarray(1).size(), 2);
+	EXPECT_EQ(b1.subarray(1, 2).size(), 1);
+	EXPECT_EQ(b1.array<1>(1)[0], 11);
+	EXPECT_EQ(b1.subarray(1)[0], 11);
+	EXPECT_EQ(b1.subarray(1, 2)[0], 11);
+
 	// assign a value
 	b1[1] = 10;
 	EXPECT_EQ(b1[1], 10);
@@ -118,6 +156,7 @@ TEST(cocoTest, ArrayN) {
 	EXPECT_EQ(byteSize(b1), 3 * sizeof(int));
 	EXPECT_EQ(byteSize(b2), 3 * sizeof(int));
 	EXPECT_EQ(byteSize(str), 4);
+
 }
 
 // array with variable size
@@ -174,6 +213,12 @@ TEST(cocoTest, Array) {
 
 	// construct const array from non-const array
 	Array<int const> b3(b1);
+
+	// sub-array
+	EXPECT_EQ(b1.subarray(1).size(), 2);
+	EXPECT_EQ(b1.subarray(1, 2).size(), 1);
+	EXPECT_EQ(b1.subarray(1)[0], 11);
+	EXPECT_EQ(b1.subarray(1, 2)[0], 11);
 
 	// assign a value
 	b1[1] = 10;
@@ -333,17 +378,30 @@ TEST(cocoTest, ArrayConcept) {
 // -------
 
 TEST(cocoTest, convert) {
-	// int
+	// parse int
 	int i = *parseInt("-50");
 	EXPECT_EQ(i, -50);
 	auto i2 = parseInt("foo");
 	EXPECT_EQ(i2, std::nullopt);
 
-	// float
+	// parse float
 	float f = *parseFloat("50.99");
 	EXPECT_EQ(f, 50.99f);
 	auto f2 = parseFloat("bar");
 	EXPECT_EQ(f2, std::nullopt);
+
+	char buffer16[16];
+
+	// int to string
+	EXPECT_EQ(toString(buffer16, INT64_C(12345678900)), "12345678900");
+	EXPECT_EQ(toString(buffer16, INT64_C(-12345678900)), "-12345678900");
+
+	// hex to string
+	EXPECT_EQ(toHexString(buffer16, INT64_C(0x123456789AB), 11), String("123456789ab"));
+
+	char buffer21[21];
+	EXPECT_EQ(toString(buffer21, 5.5f, 1, 2), "5.5");
+	EXPECT_EQ(toString(buffer21, 5.5f, 2, -2), "05.50");
 }
 
 
@@ -397,6 +455,23 @@ TEST(cocoTest, cocoEnum) {
 	a &= ~Flags::FOO;
 	EXPECT_EQ(a, Flags::BAR);
 }
+
+
+// Frequency
+// ------
+
+TEST(cocoTest, Frequency) {
+	constexpr auto f = 5MHz;
+
+	constexpr Frequency g = f * 2;
+	constexpr Frequency h = f / 2;
+	constexpr int i = f / 2Hz;
+
+	EXPECT_EQ(g, 10MHz);
+	EXPECT_EQ(h, 2500kHz);
+	EXPECT_EQ(i, 2500000);
+}
+
 
 /*
 // IsArray
@@ -503,7 +578,7 @@ TEST(cocoTest, LinkedList) {
 	element2.remove();
 }
 
-// inherit from LinkedListNode2
+// additionally inherit from LinkedListNode2
 struct MyListElement2 : public LinkedListNode2 {
 	int value = 50;
 };
@@ -634,6 +709,48 @@ TEST(cocoTest, PseudoRandom) {
 }
 
 
+// Queue
+// -----
+
+TEST(cocoTest, Queue) {
+	using Q = Queue<int, 4>;
+	Q queue;
+
+	// check if initially empty
+	EXPECT_TRUE(queue.empty());
+
+	// add and remove one element
+	queue.pushBack(5);
+	EXPECT_EQ(queue.back(), 5);
+	queue.popFront();
+	EXPECT_TRUE(queue.empty());
+
+	// add elements until queue is full
+	int i = 0;
+	//int &head = queue.getNextBack();
+	while (!queue.full()) {
+		queue.pushBack(1000 + i);
+		++i;
+	}
+	EXPECT_EQ(i, 4);
+	EXPECT_EQ(queue.size(), 4);
+	//EXPECT_EQ(head, 1000);
+
+	// remove one element
+	queue.popFront();
+	EXPECT_FALSE(queue.empty());
+	EXPECT_FALSE(queue.full());
+	EXPECT_EQ(queue.size(), 3);
+	EXPECT_EQ(queue.front(), 1000 + 1);
+
+	// clear and "resurrect" first element (is used in radio driver)
+	queue.clear();
+	queue.pushBack();
+	EXPECT_EQ(queue.size(), 1);
+	EXPECT_EQ(queue.front(), 1000 + 1);
+}
+
+
 // String
 // ------
 
@@ -689,6 +806,21 @@ TEST(cocoTest, String) {
 			EXPECT_EQ(i < j, strings[i] < strings[j]);
 		}
 	}
+
+	// substring
+	EXPECT_EQ(String("foo").substring(1), "oo");
+	EXPECT_EQ(String("foo").substring(0, 2), "fo");
+	EXPECT_EQ(String("foo").substring(1, 99), "oo");
+
+	// startsWith
+	EXPECT_TRUE(String("foo").startsWith("fo"));
+	EXPECT_FALSE(String("foo").startsWith("bar"));
+	EXPECT_FALSE(String("foo").startsWith("fooo"));
+
+	// endsWith
+	EXPECT_TRUE(String("foo").endsWith("oo"));
+	EXPECT_FALSE(String("foo").endsWith("bar"));
+	EXPECT_FALSE(String("foo").endsWith("fooo"));
 
 	// trim
 	EXPECT_EQ(String("   ").trim(), "");

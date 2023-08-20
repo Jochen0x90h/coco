@@ -28,14 +28,14 @@ std::optional<int> parseInt(String str) {
 			return {};
 		}
 	}
-	
+
 	return minus ? -value : value;
 }
 
 std::optional<float> parseFloat(String str) {
 	if (str.size() <= 0)
 		return {};
-	
+
 	// check for sign
 	int i = 0;
 	bool minus = str[0] == '-';
@@ -44,11 +44,11 @@ std::optional<float> parseFloat(String str) {
 			return {};
 		i = 1;
 	}
-	
+
 	// check if there is only a decimal point
 	if (str.size() == i + 1 && str[i] == '.')
 		return {};
-	
+
 	// parse integer part
 	float value = 0.0f;
 	for (; i < str.size(); ++i) {
@@ -64,7 +64,7 @@ std::optional<float> parseFloat(String str) {
 			return {};
 		}
 	}
-	
+
 	// parse decimal places
 	float decimal = 1.0f;
 	for (; i < str.size(); ++i) {
@@ -78,7 +78,7 @@ std::optional<float> parseFloat(String str) {
 			return {};
 		}
 	}
-	
+
 	return minus ? -value : value;
 }
 /*
@@ -97,7 +97,7 @@ int toString(int length, char *str, uint32_t value, int digitCount) {
 		value /= 10;
 		--digitCount;
 	};
-	
+
 	// copy to output string
 	int i;
 	for (i = 0; i < length && it != end; ++i, ++it) {
@@ -106,16 +106,16 @@ int toString(int length, char *str, uint32_t value, int digitCount) {
 	return i;
 }
 */
-String toString(Array<char, 11> buffer, int32_t value, int digitCount) {
+String toString(Array<char, 16> buffer, int64_t value, int digitCount) {
 	// enforce valid parameters
-	if (digitCount > 10)
-		digitCount = 10;
+	if (digitCount > 15)
+		digitCount = 15;
 
 	// handle sign
 	bool hasSign = value < 0;
 	if (hasSign)
 		value = -value;
-	
+
 	// convert into buffer
 	char *end = buffer.end();
 	char *it = end;
@@ -129,7 +129,7 @@ String toString(Array<char, 11> buffer, int32_t value, int digitCount) {
 		--it;
 		*it = '-';
 	}
-	
+
 	return {it, int(end - it)};
 }
 
@@ -169,7 +169,7 @@ int toString(int length, char *str, float value, int digitCount, int decimalCoun
 		decimalCount = -decimalCount;
 	if (decimalCount > 9)
 		decimalCount = 9;
-	
+
 	// handle sign
 	int i = 0;
 	if (value < 0) {
@@ -177,10 +177,10 @@ int toString(int length, char *str, float value, int digitCount, int decimalCoun
 			str[i++] = '-';
 		value = -value;
 	}
-		
+
 	// round
 	value += roundTable[decimalCount];
-	
+
 	// extract integer and fractional part
 	// check with https://godbolt.org/ and parameters -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -Os
 	uint32_t ipart = uint32_t(value);
@@ -200,13 +200,13 @@ int toString(int length, char *str, float value, int digitCount, int decimalCoun
 	// convert decimal part
 	if (decimalCount > 0 && i < length) {
 		str[i++] = '.';
-		
+
 		// truncate to length
 		while (i + decimalCount > length) {
 			fpart /= 10;
 			--decimalCount;
 		}
-		
+
 		// convert decimal part
 		i += decimalCount;
 		char *it = str + i;
@@ -232,15 +232,15 @@ String toString(Array<char, 21> buffer, float value, int digitCount, int decimal
 		decimalCount = -decimalCount;
 	if (decimalCount > 9)
 		decimalCount = 9;
-	
+
 	// handle sign
 	bool hasSign = value < 0;
 	if (value < 0)
 		value = -value;
-		
+
 	// round
 	value += roundTable[decimalCount];
-	
+
 	// extract integer and fractional part
 	// check with https://godbolt.org/ and parameters -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -Os
 	uint32_t ipart = uint32_t(value);
@@ -249,7 +249,7 @@ String toString(Array<char, 21> buffer, float value, int digitCount, int decimal
 	// if fractional part and digit count of integer part are zero, set to one digit to get at least a '0'
 	if (fpart == 0 && digitCount == 0)
 		digitCount = 1;
-	
+
 	// convert integer part into buffer
 	char *end = buffer.data() + 11;
 	char *it = end;
@@ -263,7 +263,7 @@ String toString(Array<char, 21> buffer, float value, int digitCount, int decimal
 		--it;
 		*it = '-';
 	}
-	
+
 	// remove trailing zeros
 	if (suppressTrailingZeros) {
 		while (decimalCount > 0 && fpart % 10 == 0) {
@@ -276,7 +276,7 @@ String toString(Array<char, 21> buffer, float value, int digitCount, int decimal
 	if (decimalCount > 0) {
 		*end = '.';
 		end += 1 + decimalCount;
-		
+
 		// convert decimal part
 		char *it = end;
 		while (decimalCount > 0) {

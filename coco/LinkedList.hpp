@@ -4,20 +4,25 @@
 namespace coco {
 
 /**
- * Linked list node for list head and elements to be inherited from, e.g. class Foo : public LinkedListNode<Foo> {};
- */
+	Linked list node for list head and elements to be inherited from, e.g. class Foo : public LinkedListNode<Foo> {};
+*/
 class LinkedListNode {
 public:
 	/**
-	 * Construct an empty list or an element that is "not in list"
-	 */
+		Construct an empty list or an element that is "not in list"
+	*/
 	LinkedListNode() noexcept {
 		this->next = this->prev = this;
 	}
 
 	/**
-	 * Construct a new list element and add to given list
-	 */
+		Construct an list node with given next/prev pointers, mainly for internal use
+	*/
+	LinkedListNode(LinkedListNode *next, LinkedListNode *prev) noexcept : next(next), prev(prev) {}
+
+	/**
+		Construct a new list element and add to given list
+	*/
 	LinkedListNode(LinkedListNode &list) {
 		this->next = &list;
 		this->prev = list.prev;
@@ -26,13 +31,28 @@ public:
 	}
 
 	/**
-	 * Delete copy constructor
-	 */
+		Delete copy constructor
+	*/
 	LinkedListNode(LinkedListNode const &) = delete;
 
 	/**
-	 * Destructor removes the node from the list
-	 */
+		Move constructor replaces the given node in the chain of nodes
+	*/
+	LinkedListNode(LinkedListNode &&node) {
+		// replace node
+		node.prev->next = this;
+		node.next->prev = this;
+		this->next = node.next;
+		this->prev = node.prev;
+
+		// set node to "not in list" state
+		node.next = &node;
+		node.prev = &node;
+	}
+
+	/**
+		Destructor removes the node from the list
+	*/
 	~LinkedListNode() {
 		// remove this element from the list
 		this->next->prev = this->prev;
@@ -40,15 +60,35 @@ public:
 	}
 
 	/**
-	 * Return true if the node part of a list
-	 */
+		Move assignment removes itself and then replaces the given node in the chain of nodes
+	*/
+	LinkedListNode &operator =(LinkedListNode &&node) {
+		// remove this
+		this->next->prev = this->prev;
+		this->prev->next = this->next;
+
+		// replace node
+		node.prev->next = this;
+		node.next->prev = this;
+		this->next = node.next;
+		this->prev = node.prev;
+
+		// set node to "not in list" state
+		node.next = &node;
+		node.prev = &node;
+		return *this;
+	}
+
+	/**
+		Return true if the node part of a list
+	*/
 	bool inList() const {
 		return this->next != this;
 	}
 
 	/**
-	 * Remove this element from the list
-	 */
+		Remove this element from the list
+	*/
 	void remove() noexcept {
 		this->next->prev = this->prev;
 		this->prev->next = this->next;
@@ -58,42 +98,56 @@ public:
 		this->prev = this;
 	}
 
+	void advance() noexcept {
+		auto next = this->next;
+
+		// remove
+		next->prev = this->prev;
+		this->prev->next = next;
+
+		// add after next
+		this->next = next->next;
+		this->prev = next;
+		next->next->prev = this;
+		next->next = this;
+	}
+
 	LinkedListNode *next;
 	LinkedListNode *prev;
 };
 
 /**
- * Linked list. The list elements must inherit from LinkedListNode
- * @tparam T list element type that inherits LinkedListNode, e.g class Element : public LinkedListNode {};
- */
+	Linked list. The list elements must inherit from LinkedListNode
+	@tparam T list element type that inherits LinkedListNode, e.g class Element : public LinkedListNode {};
+*/
 template <typename T>
 class LinkedList : public LinkedListNode {
 public:
 	/**
-	 * Return true if the node is an empty list head
-	 */
+		Return true if the list is empty
+	*/
 	bool empty() const {
 		return this->next == this;
 	}
 
 	/**
-	 * Count the number of elements in the list which is O(n)
-	 * @return number of elements
-	 */
+		Count the number of elements in the list which is O(n)
+		@return number of elements
+	*/
 	int count() const {
 		int count = 0;
-		auto node = this->next;
-		while (node != this) {
-			node = node->next;
+		auto current = this->next;
+		while (current != this) {
+			current = current->next;
 			++count;
 		}
 		return count;
 	}
 
 	/**
-	 * Add one or multiple elements at the end of the list
-	 * @param node element to add, can be part of a "ring" of nodes
-	 */
+		Add one or multiple elements at the end of the list
+		@param node element to add, can be part of a "ring" of nodes
+	*/
 	void add(T &element) {
 		LinkedListNode &node = element;
 		auto p = node.prev;
@@ -104,9 +158,9 @@ public:
 	}
 
 	/**
-	 * Add one list to another, take care to remove the other list from the "ring" of nodes afterwards
-	 * @param node list to add
-	 */
+		Add one list to another, take care to remove the other list from the "ring" of nodes afterwards
+		@param node list to add
+	*/
 	void add(LinkedList &list) {
 		LinkedListNode &node = list;
 		auto p = node.prev;
@@ -117,12 +171,12 @@ public:
 	}
 
 	/**
-	 * Iterator. Do not remove() an element that an iterator points to
-	 */
+		Iterator. Do not remove() an element that an iterator points to
+	*/
 	struct Iterator {
 		LinkedListNode *node;
-		T &operator *() {return *static_cast<T *>(this->node);}
-		T *operator ->() {return static_cast<T *>(this->node);}
+		T &operator *() {return static_cast<T &>(*this->node);}
+		T *operator ->() {return &static_cast<T &>(*this->node);}
 		Iterator &operator ++() {this->node = this->node->next; return *this;}
 		Iterator &operator --() {this->node = this->node->prev; return *this;}
 		bool operator ==(Iterator it) const {return this->node == it.node;}
@@ -148,33 +202,33 @@ public:
 
 
 /**
- * Second implementation to be able to add two linked list nodes to a class via inheritance (so that the class can be part of two lists)
- */
+	Second implementation to be able to add two linked list nodes to a class via inheritance (so that the class can be part of two lists)
+*/
 class LinkedListNode2 {
 public:
 	LinkedListNode2() noexcept {
 		this->next = this->prev = this;
 	}
-	
+
 	LinkedListNode2(LinkedListNode2 &list) {
 		this->next = &list;
 		this->prev = list.prev;
 		list.prev->next = this;
 		list.prev = this;
 	}
-	
+
 	LinkedListNode2(LinkedListNode2 const &) = delete;
-	
+
 	~LinkedListNode2() {
 		// remove this element from the list
 		this->next->prev = this->prev;
 		this->prev->next = this->next;
 	}
-	
+
 	bool inList2() const {
 		return this->next != this;
 	}
-	
+
 	void remove2() noexcept {
 		this->next->prev = this->prev;
 		this->prev->next = this->next;
@@ -189,9 +243,9 @@ public:
 };
 
 /**
- * Second implemenation of linked list. The list elements must inherit from LinkedListNode2
- * @tparam T list element type that inherits LinkedListNode, e.g class Element : public LinkedListNode2 {};
- */
+	Second implemenation of linked list. The list elements must inherit from LinkedListNode2
+	@tparam T list element type that inherits LinkedListNode, e.g class Element : public LinkedListNode2 {};
+*/
 template <typename T>
 class LinkedList2 : public LinkedListNode2 {
 public:
@@ -229,8 +283,8 @@ public:
 
 	struct Iterator {
 		LinkedListNode2 *node;
-		T &operator *() {return *static_cast<T *>(this->node);}
-		T *operator ->() {return static_cast<T *>(this->node);}
+		T &operator *() {return static_cast<T &>(*this->node);}
+		T *operator ->() {return &static_cast<T &>(*this->node);}
 		Iterator &operator ++() {this->node = this->node->next; return *this;}
 		Iterator &operator --() {this->node = this->node->prev; return *this;}
 		bool operator ==(Iterator it) const {return this->node == it.node;}

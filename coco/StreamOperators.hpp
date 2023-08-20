@@ -44,8 +44,8 @@ struct Dec {
 
 template <typename S, typename T>
 S &operator <<(S &s, Dec<T> dec) {
-	char buffer[11];
-	return s << toString(buffer, int32_t(dec.value), dec.digitCount);
+	char buffer[16];
+	return s << toString(buffer, int64_t(dec.value), dec.digitCount);
 }
 
 /**
@@ -88,10 +88,10 @@ Hex<T> hex(T value, int digitCount = sizeof(T) * 2) {
 // floating point number
 struct Flt {
 	float value;
-	
+
 	// number of digits before the decimal point (e.g. 2 for 00.0)
 	int digitCount;
-	
+
 	// maximum number of decimals (e.g. 3 for 0.123). Negative value for fixed number of decimals (e.g. -3 for 0.000)
 	int decimalCount;
 };

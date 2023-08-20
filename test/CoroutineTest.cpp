@@ -5,7 +5,6 @@
 
 using namespace coco;
 
-
 // helper object for coroutine tests
 struct Object {
 	Object(char const *name) : name(name) {
@@ -19,8 +18,8 @@ struct Object {
 
 
 // wait lists
-TaskList<> taskList1;
-TaskList<> taskList2;
+CoroutineTaskList<> taskList1;
+CoroutineTaskList<> taskList2;
 
 // wait functions
 Awaitable<> wait1() {
@@ -30,27 +29,63 @@ Awaitable<> wait2() {
 	return {taskList2};
 }
 
-int selectResult = 0;
+TEST(cocoTest, Awaitable) {
+	{
+		auto awaitable = wait1();
+		// awaitable goes out of scope and therefore cancel() gets called
+	}
+
+	{
+		auto awaitable = wait1();
+
+		// execute task when no coroutine is waiting (task should be noop_coroutine_handle)
+		taskList1.doAll();
+	}
+}
 
 Coroutine coroutine() {
 	// an object whose destructor gets called when the coroutine ends or gets cancelled
 	Object o("coroutine()");
 
-	std::cout << "!wait1" << std::endl;
+	std::cout << "wait1" << std::endl;
 	co_await wait1();
-	std::cout << "!wait2" << std::endl;
+	std::cout << "wait2" << std::endl;
 	co_await wait2();
+}
+
+TEST(cocoTest, Coroutine) {
+	// start coroutine
+	coroutine();
+
+	// resume coroutine
+	std::cout << "resume wait1" << std::endl;
+	EXPECT_FALSE(taskList1.empty());
+	taskList1.doAll();
+	EXPECT_TRUE(taskList1.empty());
+	std::cout << "resume wait2" << std::endl;
+	EXPECT_FALSE(taskList2.empty());
+	taskList2.doAll();
+	EXPECT_TRUE(taskList2.empty());
+}
+
+TEST(cocoTest, DestroyCoroutine) {
+	// start coroutine
+	Coroutine c = coroutine();
+
+	// destroy coroutine
+	c.destroy();
 }
 
 AwaitableCoroutine inner() {
 	Object o("inner()");
 
-	std::cout << "!inner wait1" << std::endl;
+	std::cout << "inner wait1" << std::endl;
 	co_await wait1();
-	std::cout << "!inner wait2" << std::endl;
+	std::cout << "inner wait2" << std::endl;
 	co_await wait2();
 }
 
+int selectResult = 0;
 Coroutine outer() {
 	Object o("outer()");
 
@@ -69,53 +104,19 @@ Coroutine outer() {
 	}
 }
 
-TEST(cocoTest, Coroutine) {
-	// start coroutine
-	coroutine();
-
-	// resume coroutine
-	/*
-	std::cout << "!resume wait1" << std::endl;
-	EXPECT_FALSE(taskList1.empty());
-	taskList1.resumeAll();
-	EXPECT_TRUE(taskList1.empty());
-	std::cout << "!resume wait2" << std::endl;
-	EXPECT_FALSE(taskList2.empty());
-	taskList2.resumeAll();
-	EXPECT_TRUE(taskList2.empty());
-
-	*/
-	std::cout << "!resume wait1" << std::endl;
-	EXPECT_FALSE(taskList1.empty());
-	taskList1.resumeAll();
-	EXPECT_TRUE(taskList1.empty());
-	std::cout << "!resume wait2" << std::endl;
-	EXPECT_FALSE(taskList2.empty());
-	taskList2.resumeAll();
-	EXPECT_TRUE(taskList2.empty());
-}
-
-TEST(cocoTest, DestroyCoroutine) {
-	// start coroutine
-	Coroutine c = coroutine();
-
-	// destroy coroutine
-	c.destroy();
-}
-
 TEST(cocoTest, NestedCoroutine) {
 	// start outer coroutine
 	outer();
 
 	// resume inner coroutine
 	std::cout << "!resume inner wait1" << std::endl;
-	taskList1.resumeAll();
+	taskList1.doAll();
 	std::cout << "!resume inner wait2" << std::endl;
-	taskList2.resumeAll();
+	taskList2.doAll();
 
 	std::cout << "!resume outer wait2" << std::endl;
 	EXPECT_FALSE(taskList2.empty());
-	taskList2.resumeAll();
+	taskList2.doAll();
 	EXPECT_TRUE(taskList2.empty());
 	EXPECT_EQ(selectResult, 2);
 }
@@ -130,7 +131,7 @@ TEST(cocoTest, DestroyNestedCoroutine) {
 	c.destroy();
 }
 
-TEST(cocoTest, AwaitAwaitableCoroutine) {
+TEST(cocoTest, AwaitableCoroutine) {
 	AwaitableCoroutine c = inner();
 
 	// check that the coroutine is alive
@@ -149,8 +150,8 @@ TEST(cocoTest, AwaitAwaitableCoroutine) {
 	EXPECT_FALSE(c2.await_ready());
 
 	// resume the coroutine
-	taskList1.resumeAll();
-	taskList2.resumeAll();
+	taskList1.doAll();
+	taskList2.doAll();
 
 	// check that the coroutine has stopped
 	EXPECT_TRUE(c2.await_ready());
@@ -173,27 +174,20 @@ TEST(cocoTest, AwaitAwaitableCoroutine) {
 }
 
 
+
 // Coroutine with parameters
 // -------------------------
 
-class Parameters1 : public Task {
+class Parameters1 : public CoroutineTask {
 public:
 	// default constructor
-	explicit Parameters1(int value) : value(value) {}
+	Parameters1(std::coroutine_handle<> task, int value) : CoroutineTask(task), value(value) {}
 
-	/*void append(WaitlistNode &list) {
-		std::cout << "Parameters::append" << std::endl;
-		list.add(*this);
-	}*/
-
-	// overload cancel e.g. to lock the waitlist against concurrent modification
+	// overload cancel e.g. to lock the task list against concurrent modification
 	void cancel() {
 		std::cout << "Parameters1::cancel" << std::endl;
 		remove();
 	}
-
-	// handle of waiting coroutine
-	//std::coroutine_handle<> handle = nullptr;
 
 	int value;
 };
@@ -201,32 +195,30 @@ public:
 class MyTaskList : public TaskList<Parameters1> {
 public:
 	// overload add e.g. to lock the waitlist against concurrent modification
-	void add(TaskNode &node) {
+	void add(Parameters1 &node) {
 		std::cout << "MyTaskList::add" << std::endl;
 		TaskList<Parameters1>::add(node);
 	}
 };
 MyTaskList myTaskList;
 
-Awaitable<Parameters1> delay2(int value) {
+Awaitable<Parameters1> waitWithParams(int value) {
 	return {myTaskList, value};
 }
 
-Coroutine waitForDelay1() {
-	Object o("waitForDelay1()");
+bool finished1 = false;
+Coroutine waitWithParams1() {
+	Object o("waitWithParams1()");
 
-	{
-		auto awaitable = delay2(50);		
-		// awaitable goes out of scope and therefore cancel() gets called
-	}
-
-	co_await delay2(5);
+	co_await waitWithParams(5);
 	std::cout << "resumed delay(5)" << std::endl;
+	finished1 = true;
 }
 
-Coroutine waitForDelay2() {
-	Object o("waitForDelay2()");
-	switch (co_await select(wait1(), delay2(10))) {
+bool finished2 = false;
+Coroutine waitWithParams2() {
+	Object o("waitWithParams2()");
+	switch (co_await select(wait1(), waitWithParams(10))) {
 	case 1:
 		std::cout << "resumed wait1" << std::endl;
 		break;
@@ -234,14 +226,19 @@ Coroutine waitForDelay2() {
 		std::cout << "resumed delay(10)" << std::endl;
 		break;
 	}
+	finished2 = true;
 }
 
-TEST(cocoTest, CoroutineValue2) {
-	waitForDelay1();
-	waitForDelay2();
+TEST(cocoTest, CoroutineValue) {
+	waitWithParams1();
+	waitWithParams2();
 
-	myTaskList.resumeAll([] (Parameters1 const &p) {return p.value == 5;});
-	myTaskList.resumeAll([] (Parameters1 const &p) {return p.value == 10;});
+	myTaskList.doAll([] (Parameters1 const &p) {return p.value == 5;});
+	EXPECT_TRUE(finished1);
+	EXPECT_FALSE(finished2);
+	myTaskList.doAll([] (Parameters1 const &p) {return p.value == 10;});
+	EXPECT_TRUE(finished1);
+	EXPECT_TRUE(finished2);
 }
 
 
@@ -266,9 +263,10 @@ Coroutine move() {
 TEST(cocoTest, AwaitableMove) {
 	move();
 
-	taskList1.resumeAll();
+	taskList1.doAll();
 	EXPECT_TRUE(taskList1.empty());
 }
+
 
 
 // Barrier
@@ -277,15 +275,14 @@ TEST(cocoTest, AwaitableMove) {
 Barrier barrier;
 
 Coroutine waitForBarrier() {
-	std::cout << "wait on barrier" << std::endl;
+	Object o("waitForBarrier()");
 	co_await barrier.wait();
-	std::cout << "passed barrier" << std::endl;
 }
 
 TEST(cocoTest, Barrier) {
 	waitForBarrier();
 	std::cout << "resume barrier" << std::endl;
-	barrier.resumeAll();
+	barrier.doAll();
 }
 
 struct BarrierParameters {
@@ -295,36 +292,34 @@ struct BarrierParameters {
 Barrier<BarrierParameters> barrierWithParameters;
 
 Coroutine waitForBarrierWithParameters() {
-	std::cout << "wait on barrier" << std::endl;
+	Object o("waitForBarrierWithParameters()");
 	co_await barrierWithParameters.wait(1, 2.0f);
-	std::cout << "passed barrier" << std::endl;
 }
 
 TEST(cocoTest, BarrierWithParameters) {
 	waitForBarrierWithParameters();
 	std::cout << "resume barrier" << std::endl;
-	barrierWithParameters.resumeAll([](BarrierParameters &p) {
+	barrierWithParameters.doFirst([](BarrierParameters &p) {
 		EXPECT_EQ(p.i, 1);
 		return true;
 	});
 }
 
-
 struct Resumer {
 	Resumer(Barrier<> &barrier) : barrier(barrier) {}
 	~Resumer() {
 		std::cout << "Resumer::~Resumer()" << std::endl;
-		this->barrier.resumeFirst();
+		this->barrier.doFirst();
 	}
 	Barrier<> &barrier;
 };
 
 Barrier<> resumeAfterReturnBarrier;
-TaskList<int> resumeAfterReturnList;
+CoroutineTaskList<int> resumeAfterReturnList;
 
 Coroutine resumedAfterReturn() {
 	co_await resumeAfterReturnBarrier.wait();
-	resumeAfterReturnList.resumeFirst([](int i) {
+	resumeAfterReturnList.doFirst([](int i) {
 		std::cout << "resumed after return " << i << std::endl;
 		return true;
 	});
@@ -372,4 +367,28 @@ TEST(cocoTest, Semaphore) {
 	// destroy coroutines so that no coroutine waits on the semaphore when it gets destroyed
 	c1.destroy();
 	c2.destroy();
+}
+
+
+// TimedTask
+// ---------
+
+CoroutineTimedTaskList timedTaskList;
+
+Awaitable<CoroutineTimedTask> timedWait(Time time) {
+	return {timedTaskList, time};
+}
+
+Coroutine timedCoroutine() {
+	Object o("timedCoroutine()");
+
+	std::cout << "timedWait" << std::endl;
+	co_await timedWait(Time() + 1s);
+}
+
+TEST(cocoTest, CoroutineTimedTask) {
+	timedCoroutine();
+	EXPECT_FALSE(timedTaskList.empty());
+	timedTaskList.doUntil(Time() + 1s);
+	EXPECT_TRUE(timedTaskList.empty());
 }

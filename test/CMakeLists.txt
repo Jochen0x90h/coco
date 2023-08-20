@@ -1,6 +1,7 @@
 # unit tests for "normal" operating systems
 add_executable(gTest
 	CoroutineTest.cpp
+	TaskTest.cpp
 	gTest.cpp
 )
 target_include_directories(gTest

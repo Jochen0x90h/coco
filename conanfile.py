@@ -6,7 +6,7 @@ from conan.tools.cmake import CMake
 class Project(ConanFile):
     name = "coco"
     description = "CoCo - microCOntroller COroutines"
-    license = "Apache-2.0, BSD 3-Clause, MIT"
+    license = "Apache-2.0, BSD-3-Clause, MIT"
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "platform": [None, "ANY"]}
@@ -14,7 +14,7 @@ class Project(ConanFile):
         "platform": None}
     generators = "CMakeDeps", "CMakeToolchain"
     exports_sources = "conanfile.py", "CMakeLists.txt", "coco/*", "test/*"
-    tool_requires = "coco-toolchain/0.1.0"
+    tool_requires = "coco-toolchain/0.2.0"
 
 
     # check if we are cross compiling

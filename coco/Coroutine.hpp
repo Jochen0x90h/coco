@@ -1,30 +1,69 @@
 #pragma once
 
+#include "IsSubclass.hpp"
 #include "Task.hpp"
+#include "TimedTask.hpp"
+
+#ifdef __clang__
+#include <experimental/coroutine>
+namespace std {
+	using namespace std::experimental::coroutines_v1;
+}
+#else
+#include <coroutine>
+#endif
+
+
+//#define COROUTINE_DEBUG_PRINT
+#ifdef COROUTINE_DEBUG_PRINT
+#include <iostream>
+#endif
 
 
 namespace coco {
 
-//template <typename T = Task>
-//using Waitlist = TaskList<T>;
+
+using CoroutineTask = Task<std::coroutine_handle<>>;
+using CoroutineTimedTask = TimedTask<std::coroutine_handle<>>;
+
+
+template <typename P, int>
+struct CoroutineTaskSelector {
+	using Task = TaskWithParameters<std::coroutine_handle<>, P>;
+};
+
+// specialization for T being derived from CoroutineTask
+template <typename T>
+struct CoroutineTaskSelector<T, 1> {
+	using Task = T;
+};
+
+template <typename T = CoroutineTask>
+using CoroutineTaskList = TaskList<typename CoroutineTaskSelector<T, IsSubclass<T, CoroutineTask>::value>::Task>;
+using CoroutineTimedTaskList = TimedTaskList<std::coroutine_handle<>>;
+
 
 /**
- * This type is returned from functions/methods that can be awaited on using co_await. It behaves like an unique_ptr
- * to a resource and therefore can only be moved, but not copied.
- */
-template <typename T = Task>
+	This type is returned from functions/methods that can be awaited on using co_await. It behaves like an unique_ptr
+	to a resource and therefore can only be moved, but not copied.
+	@tparam T task type
+*/
+template <typename T = CoroutineTask>
 struct Awaitable {
-	typename TaskList<T>::Task task;
+	using Task = typename CoroutineTaskSelector<T, IsSubclass<T, CoroutineTask>::value>::Task;
+	Task task;
 
-	Awaitable() {
-		this->task.setNotInList();
+	Awaitable() : task(std::noop_coroutine()) {
 	}
 
+	/**
+		Constructor
+		@tparam L task list type
+		@param list task list
+		@param args arguments for task
+	*/
 	template <typename L, typename ...Args>
-	Awaitable(L &list, Args &&...args) noexcept : task(std::forward<Args>(args)...) {
-		// make sure the task list is derived from TaskList<T>
-		static_assert(IsSubclass<L, TaskList<T>>::value);
-
+	Awaitable(L &list, Args &&...args) noexcept : task(std::noop_coroutine(), std::forward<Args>(args)...) {
 		// add task to task list
 		list.add(this->task);
 #ifdef COROUTINE_DEBUG_PRINT
@@ -32,92 +71,57 @@ struct Awaitable {
 #endif
 	}
 
+	// delete copy constructor
 	Awaitable(Awaitable const &) = delete;
 
 	/**
-	 * Move constructor, only supported when the task class implements take()
-	 */
-	Awaitable(Awaitable &&a) noexcept {
+		Move constructor
+	*/
+	Awaitable(Awaitable &&a) noexcept : task(std::move(a.task)) {
 #ifdef COROUTINE_DEBUG_PRINT
 		std::cout << "Awaitable move" << std::endl;
 #endif
-		// take waiting coroutine from other task
-		if (a.task.isInList())
-			this->task.take(a.task);
-	}
-
-	~Awaitable() {
-#ifdef COROUTINE_DEBUG_PRINT
-		std::cout << "Awaitable destructor" << std::endl;
-#endif
-		if (this->task.isInList()) {
-#ifdef COROUTINE_DEBUG_PRINT
-			std::cout << "Awaitable cancel" << std::endl;
-#endif
-			this->task.cancel();
-		}
 	}
 
 	/**
-	 * Move assignment, only supported when the task class implements take()
-	 */
-	Awaitable &operator =(Awaitable &&a) noexcept {
-		// cancel existing job
-		if (this->task.isInList())
-			this->task.cancel();
-
-		// take waiting coroutine from other task
-		if (a.task.isInList())
-			this->task.take(a.task);
+		Move assignment
+	*/
+	Awaitable &operator =(Awaitable &&a) {
+		this->task = std::move(a.task);
 		return *this;
 	}
 
-	bool isAlive() const noexcept {
-		return this->task.isInList();
-	}
-
 	/**
-	 * Determine if the operation or coroutine has finished
-	 * @return true when finished, false when still in progress (coroutine: running or co_awaiting)
-	 */
+		Determine if the operation or coroutine has finished
+		@return true when finished, false when still in progress (coroutine: running or co_awaiting)
+	*/
 	bool hasFinished() const noexcept {
-		return !this->task.isInList();
+		return !this->task.inList();
 	}
 
 	/**
-	 * Cancel the operation or coroutine
-	 */
-	void cancel() {
-#ifdef COROUTINE_DEBUG_PRINT
-		std::cout << "Awaitable cancel" << std::endl;
-#endif
-		if (this->task.isInList())
-			this->task.cancel();
-	}
-
-	/**
-	 * Used by co_await to determine if the operation has finished (ready to continue)
-	 * @return true when finished
-	 */
+		Used by co_await to determine if the operation has finished (ready to continue)
+		@return true when finished
+	*/
 	bool await_ready() const noexcept {
 		// is ready when the task is "not in list"
-		return !this->task.isInList();
+		return !this->task.inList();
 	}
 
 	/**
-	 * Used by co_await to store the handle of the calling coroutine before suspending
-	 */
+		Used by co_await to store the handle of the calling coroutine before suspending
+	*/
 	void await_suspend(std::coroutine_handle<> handle) noexcept {
 #ifdef COROUTINE_DEBUG_PRINT
 		std::cout << "Awaitable await_suspend" << std::endl;
 #endif
 		// set the coroutine handle
-		this->task.handle = handle;
+		this->task.task = handle;
 	}
 
 	/**
-	 * Used by co_await to determine the return value of co_await
-	 */
+		Used by co_await to determine the return value of co_await
+	*/
 	void await_resume() noexcept {
 #ifdef COROUTINE_DEBUG_PRINT
 		std::cout << "Awaitable await_resume" << std::endl;
@@ -125,9 +129,26 @@ struct Awaitable {
 	}
 
 
+	// methods for AwaitableCoroutine
+
+	bool isAlive() const noexcept {
+		return this->task.inList();
+	}
+
 	/**
-	 * An awaitable function or method can also be a coroutine, therefore define a promise_type
-	 */
+		Cancel the operation or coroutine
+	*/
+	void cancel() {
+#ifdef COROUTINE_DEBUG_PRINT
+		std::cout << "Awaitable cancel" << std::endl;
+#endif
+		this->task.cancel();
+	}
+
+
+	/**
+		An awaitable function or method can also be a coroutine, therefore define a promise_type
+	*/
 	struct promise_type {
 		// the task list is part of the coroutine promise
 		TaskList<T> list;
@@ -137,7 +158,7 @@ struct Awaitable {
 			std::cout << "AwaitableCoroutine ~promise_type" << std::endl;
 #endif
 			// the coroutine exits normally or gets destroyed
-			this->list.resumeAll();
+			this->list.doAll();
 		}
 
 		Awaitable get_return_object() {
@@ -166,49 +187,88 @@ struct Awaitable {
 };
 
 
-class AwaitableCoroutineTask : public TaskNode {
+class AwaitableCoroutineTask : public CoroutineTask {
 public:
 
-	AwaitableCoroutineTask() = default;
-	explicit AwaitableCoroutineTask(std::coroutine_handle<> context) : context(context) {}
+	AwaitableCoroutineTask(std::coroutine_handle<> task) : CoroutineTask(task) {}
+	AwaitableCoroutineTask(std::coroutine_handle<> task, std::coroutine_handle<> context)
+		: CoroutineTask(task), context(context) {}
 
-	void take(AwaitableCoroutineTask &element) {
-		element.pass(*this);
-		this->context = element.context;
+
+	~AwaitableCoroutineTask() {
+		if (inList()) {
+			// prevent effect of doAll() in promise_type::~promise_type
+			remove();
+			this->context.destroy();
+		}
+	}
+
+	AwaitableCoroutineTask &operator =(AwaitableCoroutineTask &&task) {
+		bool il = inList();
+		LinkedListNode::operator =(std::move(task)); // is also remove()
+		if (il)
+			this->context.destroy();
+		this->context = task.context;
+		return *this;
 	}
 
 	void cancel() {
-		remove();
-		this->context.destroy();
+		if (inList()) {
+			// prevent effect of doAll() in promise_type::~promise_type
+			remove();
+			this->context.destroy();
+		}
 	}
 
 
-	// handle of waiting coroutine
-	std::coroutine_handle<> handle = nullptr;
-
 	// handle of awaitable coroutine
-	std::coroutine_handle<> context = nullptr;
+	std::coroutine_handle<> context;
 };
 
+/**
+	Awaitable coroutine
+
+	Use like this:
+	AwaitableCoroutine foo() {
+		co_await bar();
+	}
+	Coroutine coro() {
+		// bad: this immediately destroys the coroutine
+		foo();
+
+		// start coroutine and wait until it is finished
+		co_await foo();
+
+		// start coroutine and keep a handle
+		AwaitableCoroutine c = foo();
+
+		// wait until coroutine is finished
+		co_await c;
+	}
+*/
 using AwaitableCoroutine = Awaitable<AwaitableCoroutineTask>;
 
 
 
 /**
- * Simple detached coroutine for asynchronous processing. If the return value is kept, it can be destroyed later unless
- * it already has destroyed itself.
- *
- * Use like this:
- * Coroutine foo() {
- *   co_await bar();
- * }
- * void main() {
- *   Coroutine c = foo();
- *
- *   // we are sure that the coroutine is still alive
- *   c.destroy();
- * }
- */
+	Simple detached coroutine for asynchronous processing. If the return value is kept, it can be destroyed later unless
+	it already has destroyed itself.
+
+	Use like this:
+	Coroutine foo() {
+		co_await bar();
+	}
+	void main() {
+		// start coroutine which is repsonsible to destroy itself
+		foo();
+
+		// start coroutine and keep a handle
+		Coroutine c = foo();
+
+		// only if we are sure that the coroutine is still alive!
+		c.destroy();
+	}
+*/
 struct Coroutine {
 	struct promise_type {
 		Coroutine get_return_object() noexcept {
@@ -227,50 +287,23 @@ struct Coroutine {
 		void unhandled_exception() noexcept {}
 		void return_void() noexcept {}
 	};
-	
+
 	std::coroutine_handle<> handle;
-	
+
 	/**
-	 * Destroy the coroutine if it is still alive and suspended (coroutine has called co_await).
-	 * Call only once and when it is sure that the coroutine is still alive, e.g. when it contains an infinite loop.
-	 */
+		Destroy the coroutine if it is still alive and suspended (coroutine has called co_await).
+		Call only once and when it is sure that the coroutine is still alive, e.g. when it contains an infinite loop.
+	*/
 	void destroy() {
 		this->handle.destroy();
 	}
 };
 
 
-/**
- * Helper class to obtain the handle of a coroutine
- *//*
-struct CoroutineHandle {
-	std::coroutine_handle<> handle;
-
-	bool await_ready() noexcept {
-		return false;
-	}
-
-	void await_suspend(std::coroutine_handle<> handle) noexcept {
-		this->handle = handle;
-		handle.resume();
-	}
-
-	void await_resume() noexcept {
-	}
-	
-	void destroy() {
-		if (this->handle) {
-			this->handle.destroy();
-			this->handle = nullptr;
-		}
-	}
-};*/
-
-
 
 // helper struct
 template <typename A1, typename A2>
-struct Awaitable2 {
+struct Select2 {
 	A1 &a1;
 	A2 &a2;
 
@@ -299,25 +332,25 @@ struct Awaitable2 {
 };
 
 /**
- * Wait on two awaitables and return 1 if the first is ready and 2 if the second is ready, e.g.
- * switch (co_await select(read(data, length), delay(1s))) {
- * case 1:
- *   // read is ready
- *   break;
- * case 2:
- *   // timeout
- *   break;
- * }
- */
+	Wait on two awaitables and return 1 if the first is ready and 2 if the second is ready, e.g.
+	switch (co_await select(read(data, length), delay(1s))) {
+	case 1:
+		// read is ready
+		break;
+	case 2:
+		// timeout
+		break;
+	}
+*/
 template <typename A1, typename A2>
-[[nodiscard]] inline Awaitable2<A1, A2> select(A1 &&a1, A2 &&a2) {
+[[nodiscard]] inline Select2<A1, A2> select(A1 &&a1, A2 &&a2) {
 	return {a1, a2};
 }
 
 
 // helper struct
 template <typename A1, typename A2, typename A3>
-struct Awaitable3 {
+struct Select3 {
 	A1 &a1;
 	A2 &a2;
 	A3 &a3;
@@ -350,17 +383,17 @@ struct Awaitable3 {
 };
 
 /**
- * Wait on three awaitables and return 1 if the first is ready, 2 if the second is ready and 3 if the third is ready
- */
+	Wait on three awaitables and return 1 if the first is ready, 2 if the second is ready and 3 if the third is ready
+*/
 template <typename A1, typename A2, typename A3>
-[[nodiscard]] inline Awaitable3<A1, A2, A3> select(A1 &&a1, A2 &&a2, A3 &&a3) {
+[[nodiscard]] inline Select3<A1, A2, A3> select(A1 &&a1, A2 &&a2, A3 &&a3) {
 	return {a1, a2, a3};
 }
 
 
 // helper struct
 template <typename A1, typename A2, typename A3, typename A4>
-struct Awaitable4 {
+struct Select4 {
 	A1 &a1;
 	A2 &a2;
 	A3 &a3;
@@ -397,54 +430,109 @@ struct Awaitable4 {
 };
 
 /**
- * Wait on four awaitables and return index 1 to 4 of the awaitable that is ready
- */
+	Wait on four awaitables and return index 1 to 4 of the awaitable that is ready
+*/
 template <typename A1, typename A2, typename A3, typename A4>
-[[nodiscard]] inline Awaitable4<A1, A2, A3, A4> select(A1 &&a1, A2 &&a2, A3 &&a3, A4 &&a4) {
+[[nodiscard]] inline Select4<A1, A2, A3, A4> select(A1 &&a1, A2 &&a2, A3 &&a3, A4 &&a4) {
 	return {a1, a2, a3, a4};
+}
+
+
+// helper struct
+template <typename A1, typename A2, typename A3, typename A4, typename A5>
+struct Select5 {
+	A1 &a1;
+	A2 &a2;
+	A3 &a3;
+	A4 &a4;
+	A5 &a5;
+
+	bool await_ready() noexcept {
+		return this->a1.await_ready() || this->a2.await_ready() || this->a3.await_ready() || this->a4.await_ready() || this->a5.await_ready();
+	}
+
+	void await_suspend(std::coroutine_handle<> handle) noexcept {
+		this->a1.await_suspend(handle);
+		this->a2.await_suspend(handle);
+		this->a3.await_suspend(handle);
+		this->a4.await_suspend(handle);
+		this->a5.await_suspend(handle);
+	}
+
+	int await_resume() noexcept {
+		// check which awaitable was resumed (removed from its list)
+		int result = 0;
+		if (this->a5.await_ready())
+			result = 5;
+		if (this->a4.await_ready())
+			result = 4;
+		if (this->a3.await_ready())
+			result = 3;
+		if (this->a2.await_ready())
+			result = 2;
+		if (this->a1.await_ready())
+			result = 1;
+
+		// set handles to zero because only one awaitable (e.g. a1) was resumed
+		// while the others (e.g. a2, a3 and a4) may continue to exist without a coroutine waiting on it
+		await_suspend(nullptr);
+		return result;
+	}
+};
+
+/**
+	Wait on four awaitables and return index 1 to 4 of the awaitable that is ready
+*/
+template <typename A1, typename A2, typename A3, typename A4, typename A5>
+[[nodiscard]] inline Select5<A1, A2, A3, A4, A5> select(A1 &&a1, A2 &&a2, A3 &&a3, A4 &&a4, A5 &&a5) {
+	return {a1, a2, a3, a4, a5};
 }
 
 
 
 /**
- * Simple barrier on which a data consumer coroutine can wait until it gets resumed by a data producer.
- * If a resume method gets called by a data producer while no consumer is waiting, the event/data gets lost.
- * @tparam T
- */
-template <typename T = Task>
-class Barrier : public TaskList<T> {
+	Simple barrier on which a data consumer coroutine can wait until it gets resumed by a data producer.
+	If a resume method gets called by a data producer while no consumer is waiting, the event/data gets lost.
+	@tparam T task type
+*/
+template <typename T = CoroutineTask>
+class Barrier : public CoroutineTaskList<T> {
 public:
 
+	// select task type
+	using Task = typename CoroutineTaskList<T>::Task;
+
 	/**
-	 * Wait until a data producer passes data (using e.g. resumeFirst() or resumeAll()).
-	 * Call this as a data consumer
-	 * @return use co_await on return value to wait for data
-	 */
+		Wait until a data producer passes data (using e.g. resumeFirst() or resumeAll()).
+		Call this as a data consumer
+		@return use co_await on return value to wait for data
+	*/
 	template <typename ...Args>
-	[[nodiscard]] Awaitable<T> wait(Args &&...args) {
+	[[nodiscard]] Awaitable<Task> wait(Args &&...args) {
 		return {*this, std::forward<Args>(args)...};
 	}
 };
 
 
+
 /**
- * Manual reset event
- */
+	Manual reset event
+*/
 class Event {
 public:
 	/**
-	 * Construct an event in cleared state
-	 */
+		Construct an event in cleared state
+	*/
 	Event() = default;
 
 	/**
-	 * Set the event
-	 */
+		Set the event
+	*/
 	void set() {
 		//this->state = this->taskList.isEmpty();
 		//this->taskList.resumeFirst();
 		this->state = true;
-		this->taskList.resumeAll();
+		this->taskList.doAll();
 	}
 
 	void clear() {
@@ -452,8 +540,8 @@ public:
 	}
 
 	/**
-	 * Wait until the event is set
-	 */
+		Wait until the event is set
+	*/
 	[[nodiscard]] Awaitable<> wait() {
 		if (this->state) {
 			//this->state = false;
@@ -464,7 +552,7 @@ public:
 
 
 	// list of waiting coroutines
-	TaskList<> taskList;
+	TaskList<CoroutineTask> taskList;
 	bool state = false;
 };
 
@@ -477,12 +565,12 @@ public:
 	 * @param n number of initial tokens
 	 */
 	explicit Semaphore(int n) : n(n) {}
-	
+
 	/**
 	 * Post a token and resume the next coroutine waiting for a token
 	 */
 	void post() {
-		this->n += 1 - int(this->taskList.resumeFirst());
+		this->n += 1 - int(this->taskList.doFirst());
 	}
 
 	/**
@@ -502,9 +590,9 @@ public:
 
 	// number of tokens
 	int n;
-	
+
 	// list of waiting coroutines
-	TaskList<> taskList;
+	TaskList<CoroutineTask> taskList;
 };
 
 } // namespace coco

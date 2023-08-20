@@ -1,9 +1,9 @@
 #pragma once
 
 /**
- * Simple debug output on up to three LEDs
- * Only header file, the implementation has to come from a board implementation
- */
+	Simple debug output on up to three LEDs.
+	 Only header file, the implementation has to come from a board implementation
+*/
 namespace coco {
 namespace debug {
 

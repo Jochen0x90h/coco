@@ -7,15 +7,15 @@
 namespace coco {
 
 /**
- * Duration, internal unit is one millisecond
- */
+	Duration, internal unit is one millisecond
+*/
 struct Duration {
 	int32_t value;
 
 	/**
-	 * Convert duration to seconds
-	 * @return duration in seconds
-	 */
+		Convert duration to seconds
+		@return duration in seconds
+	*/
 	int toSeconds() const {
 		return value >> 10;
 	}
@@ -24,12 +24,12 @@ struct Duration {
 		this->value += b.value;
 		return *this;
 	}
-	
+
 	constexpr Duration &operator -=(Duration b) {
 		this->value -= b.value;
 		return *this;
 	}
-	
+
 	constexpr Duration &operator *=(int b) {
 		this->value *= b;
 		return *this;
@@ -83,15 +83,15 @@ constexpr Duration operator /(Duration a, int b) {
 struct DurationDiv {
 	Duration a;
 	Duration b;
-	
+
 	operator int () {return a.value / b.value;}
 	operator float () {return float(a.value) / float(b.value);}
 };
 
 /**
- * Divide two durations
- * @return quotient can be assigned to int or float
- */
+	Divide two durations
+	@return quotient can be assigned to int or float
+*/
 constexpr DurationDiv operator /(Duration a, Duration b) {
 	return {a.value, b.value};
 }
@@ -123,18 +123,17 @@ constexpr bool operator >=(Duration a, Duration b) {
 constexpr Duration min(Duration x, Duration y) {return {x.value < y.value ? x.value : y.value};}
 
 
-
 /**
- *  time, internal unit is 1/1024 second
- */
+	Time, internal unit is one millisecond
+*/
 struct Time {
 	uint32_t value;
-		
+
 	constexpr Time &operator +=(Duration b) {
 		this->value += b.value;
 		return *this;
 	}
-	
+
 	constexpr Time &operator -=(Duration b) {
 		this->value -= b.value;
 		return *this;
@@ -175,38 +174,45 @@ constexpr bool operator >=(Time a, Time b) {
 
 constexpr Time min(Time x, Time y) {return {x.value < y.value ? x.value : y.value};}
 
+
+namespace literals {
+
 /**
- * Suffix for milliseconds, e.g. 100ms
- */
-constexpr Duration operator "" ms(unsigned long long ms) {
-	return {int32_t(ms)};
+	Suffix for milliseconds, e.g. 100ms
+*/
+constexpr Duration operator "" ms(unsigned long long d) {
+	return {int32_t(d)};
 }
 
 /**
- * Suffix for seconds, e.g. 5s
- */
-constexpr Duration operator "" s(unsigned long long s) {
-	return {int32_t(s * 1000)};
+	Suffix for seconds, e.g. 5s
+*/
+constexpr Duration operator "" s(unsigned long long d) {
+	return {int32_t(d * 1000)};
 }
 
 /**
- * Suffix for minutes, e.g. 3min
- */
-constexpr Duration operator "" min(unsigned long long s) {
-	return {int32_t(s * 60 * 1000)};
+	Suffix for minutes, e.g. 3min
+*/
+constexpr Duration operator "" min(unsigned long long d) {
+	return {int32_t(d * 60 * 1000)};
 }
 
 /**
- * Suffix for hours, e.g. 8h
- */
-constexpr Duration operator "" h(unsigned long long s) {
-	return {int32_t(s * 60 * 60 * 1000)};
+	Suffix for hours, e.g. 8h
+*/
+constexpr Duration operator "" h(unsigned long long d) {
+	return {int32_t(d * 60 * 60 * 1000)};
 }
+
+}
+
+using namespace literals;
 
 /*
 struct Duration16 {
 	uint16_t value;
-	
+
 	constexpr Duration16 &operator =(Duration d) {
 		this->value = uint16_t(d.value);
 		return *this;
@@ -224,7 +230,7 @@ struct Time16 {
 		this->value = uint16_t(t.value);
 		return *this;
 	}
-	
+
 	Time expand(Time t) {
 		int carry = int(uint16_t(t.value) < this->value);
 		return {(t.value & 0xffff0000) + this->value - (carry << 16)};
