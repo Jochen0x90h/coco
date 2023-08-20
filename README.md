@@ -19,7 +19,7 @@ Add coco/\<version> to your conanfile where version corresponds to the git tags
 ## Supported Platforms
 * Native
   * Windows
-  * Todo: Macos
+  * Todo: macOS
   * Todo: Linux
 * nRF52
   * nrf52805
@@ -45,6 +45,16 @@ Add coco/\<version> to your conanfile where version corresponds to the git tags
   * stm32f051x8
   * stm32f071xb
   * stm32f098xx
+* STM32G4
+  * stm32g431xx
+  * stm32g471xx
+  * stm32g474xx
+  * stm32g484xx
+  * stm32g4a1xx
+  * stm32g441xx
+  * stm32g473xx
+  * stm32g483xx
+  * stm32g491xx
 
 Pass -o platform=\<platform> to conan to set the platform. When no platform is given, the platform dependent code is omitted in the resulting conan package.
 

@@ -23,30 +23,3 @@ constexpr int TRIGGER = 1;
 
 // indicator that an event was generated
 constexpr int GENERATED = 1;
-
-
-
-// NVIC (nested vectored interrupt controller)
-inline void enableInterrupt(int n) {
-	NVIC->ISER[n >> 5] = 1 << (n & 31);
-}
-
-inline void disableInterrupt(int n) {
-	NVIC->ICER[n >> 5] = 1 << (n & 31);
-}
-
-inline bool isInterruptPending(int n) {
-	return (NVIC->ISPR[n >> 5] & (1 << (n & 31))) != 0;
-}
-
-inline void clearInterrupt(int n) {
-	NVIC->ICPR[n >> 5] = 1 << (n & 31);
-}
-
-inline uint8_t getInterruptPriority(int n) {
-	return NVIC->IP[n];
-}
-
-inline void setInterruptPriority(int n, uint8_t priority) {
-	NVIC->IP[n] = priority;
-}

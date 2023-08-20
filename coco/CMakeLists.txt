@@ -1,17 +1,21 @@
 add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME}
 	PUBLIC FILE_SET headers TYPE HEADERS FILES
+		align.hpp
 		Array.hpp
 		ArrayBuffer.hpp
 		ArrayConcept.hpp
 		assert.hpp
+		Callback.hpp
 		convert.hpp
 		Coroutine.hpp
 		CStringConcept.hpp
 		debug.hpp
 		enum.hpp
+		Frequency.hpp
 		IsSubclass.hpp
 		LinkedList.hpp
+		Queue.hpp
 		PointerConcept.hpp
 		PseudoRandom.hpp
 		StreamOperators.hpp
@@ -20,6 +24,7 @@ target_sources(${PROJECT_NAME}
 		StringConcept.hpp
 		Task.hpp
 		Time.hpp
+		TimedTask.hpp
 	PRIVATE
 		convert.cpp
 )
@@ -34,14 +39,15 @@ if(${PLATFORM} STREQUAL "native" OR ${PLATFORM} STREQUAL "emu")
 elseif(${PLATFORM} MATCHES "^nrf52")
 	file(GENERATE OUTPUT nrf52.h CONTENT "#include <coco/platform/system/${PLATFORM}.h>\n#include <coco/platform/system/${PLATFORM}_bitfields.h>\n#include <coco/platform/system/${PLATFORM}_peripherals.h>")
 	target_sources(${PROJECT_NAME}
-		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/nrf52 FILES
+		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cortex ${CMAKE_CURRENT_SOURCE_DIR}/nrf52 FILES
+			cortex/coco/platform/nvic.hpp
+			cortex/coco/platform/system/cmsis_compiler.h
+			cortex/coco/platform/system/cmsis_gcc.h
+			cortex/coco/platform/system/cmsis_version.h
+			cortex/coco/platform/system/core_cm4.h
+			cortex/coco/platform/system/mpu_armv7.h
 			nrf52/coco/platform/gpio.hpp
 			nrf52/coco/platform/platform.hpp
-			nrf52/coco/platform/system/cmsis_compiler.h
-			nrf52/coco/platform/system/cmsis_gcc.h
-			nrf52/coco/platform/system/cmsis_version.h
-			nrf52/coco/platform/system/core_cm4.h
-			nrf52/coco/platform/system/mpu_armv7.h
 			nrf52/coco/platform/system/${PLATFORM}_bitfields.h
 			nrf52/coco/platform/system/${PLATFORM}_peripherals.h
 			nrf52/coco/platform/system/${PLATFORM}.h
@@ -54,13 +60,14 @@ elseif(${PLATFORM} MATCHES "^nrf52")
 elseif(${PLATFORM} MATCHES "^stm32f0")
 	file(GENERATE OUTPUT stm32f0.h CONTENT "#include <coco/platform/system/${PLATFORM}.h>")
 	target_sources(${PROJECT_NAME}
-		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/stm32f0 FILES
+		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cortex ${CMAKE_CURRENT_SOURCE_DIR}/stm32f0 FILES
+			cortex/coco/platform/nvic.hpp
+			cortex/coco/platform/system/cmsis_compiler.h
+			cortex/coco/platform/system/cmsis_gcc.h
+			cortex/coco/platform/system/cmsis_version.h
+			cortex/coco/platform/system/core_cm0.h
 			stm32f0/coco/platform/gpio.hpp
 			stm32f0/coco/platform/platform.hpp
-			stm32f0/coco/platform/system/cmsis_compiler.h
-			stm32f0/coco/platform/system/cmsis_gcc.h
-			stm32f0/coco/platform/system/cmsis_version.h
-			stm32f0/coco/platform/system/core_cm0.h
 			stm32f0/coco/platform/system/${PLATFORM}.h
 			stm32f0/coco/platform/system/system_stm32f0xx.h
 		PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
@@ -68,11 +75,31 @@ elseif(${PLATFORM} MATCHES "^stm32f0")
 		PRIVATE
 			stm32f0/coco/platform/system/startup_${PLATFORM}.S
 	)
+elseif(${PLATFORM} MATCHES "^stm32g4")
+	file(GENERATE OUTPUT stm32g4.h CONTENT "#include <coco/platform/system/${PLATFORM}.h>")
+	target_sources(${PROJECT_NAME}
+		PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cortex ${CMAKE_CURRENT_SOURCE_DIR}/stm32f0 ${CMAKE_CURRENT_SOURCE_DIR}/stm32g4 FILES
+			cortex/coco/platform/nvic.hpp
+			cortex/coco/platform/system/cmsis_compiler.h
+			cortex/coco/platform/system/cmsis_gcc.h
+			cortex/coco/platform/system/cmsis_version.h
+			cortex/coco/platform/system/core_cm4.h
+			cortex/coco/platform/system/mpu_armv7.h
+			stm32f0/coco/platform/gpio.hpp
+			stm32g4/coco/platform/platform.hpp
+			stm32g4/coco/platform/system/${PLATFORM}.h
+			stm32g4/coco/platform/system/system_stm32g4xx.h
+		PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
+			${CMAKE_CURRENT_BINARY_DIR}/stm32g4.h
+		PRIVATE
+			stm32g4/coco/platform/system/startup_${PLATFORM}.S
+	)
 endif()
 
 target_include_directories(${PROJECT_NAME}
 	PUBLIC
 		..
+		cortex/coco/platform/system
 )
 
 # install the library

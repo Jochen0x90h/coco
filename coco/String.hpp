@@ -56,29 +56,58 @@ public:
 	/**
 		Get a substring
 		@param startIndex start of substring
-		@return substring that references the data of this string
+		@return string that references the a part of this string
 	*/
 	String substring(int startIndex) const {
-		return String(this->buffer + startIndex, std::max(this->length - startIndex, 0));
+		return {this->buffer + startIndex, std::max(this->length - startIndex, 0)};
 	}
 
 	/**
 		Get a substring
 		@param startIndex start of substring
 		@param endIndex end of substring (not included)
-		@return substring that references the data of this string
+		@return string that references a part of this string
 	*/
 	String substring(int startIndex, int endIndex) const {
 		return {this->buffer + startIndex, std::max(std::min(endIndex, this->length) - startIndex, 0)};
+	}
+
+	bool startsWith(String prefix) const {
+		if (prefix.length > this->length)
+			return false;
+		auto it = prefix.buffer;
+		auto end = it + prefix.length;
+		auto it2 = this->buffer;
+		for (; it != end; ++it, ++it2) {
+			if (*it != *it2)
+				return false;
+		}
+		return true;
+	}
+
+	bool endsWith(String suffix) const {
+		if (suffix.length > this->length)
+			return false;
+		auto it = suffix.buffer;
+		auto end = it + suffix.length;
+		auto it2 = this->buffer + this->length - suffix.length;
+		for (; it != end; ++it, ++it2) {
+			if (*it != *it2)
+				return false;
+		}
+		return true;
 	}
 
 	/**
 		Remove whitespaces at the beginning and end of the string
 	*/
 	String trim() const {
+		// trim at beginning
 		int s = 0;
 		while (s < this->length && isWhiteSpace(buffer[s]))
 			++s;
+
+		// trim at end
 		int e = this->length;
 		while (e > s && isWhiteSpace(buffer[e - 1]))
 			--e;
@@ -156,10 +185,17 @@ protected:
 inline bool operator ==(String a, String b) {
 	if (a.length != b.length)
 		return false;
-	for (int i = 0; i < a.length; ++i) {
-		if (a.buffer[i] != b.buffer[i])
+	auto it = a.buffer;
+	auto end = it + a.length;
+	auto it2 = b.buffer;
+	for (; it != end; ++it, ++it2) {
+		if (*it != *it2)
 			return false;
 	}
+	/*for (int i = 0; i < a.length; ++i) {
+		if (a.buffer[i] != b.buffer[i])
+			return false;
+	}*/
 	return true;
 }
 

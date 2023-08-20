@@ -61,6 +61,28 @@
             "createUser": "",
             "createChannel": "",
             "createArg": ""
+        },
+        {
+            "name": "stm32g431xx",
+            "conanFile": "${workspaceFolder}/conanfile.py",
+            "profileBuild": "default",
+            "profileHost": "armv7",
+            "installArg": "-b missing -o platform=stm32g431xx",
+            "buildArg": "",
+            "createUser": "",
+            "createChannel": "",
+            "createArg": ""
+        },
+        {
+            "name": "stm32g474xx",
+            "conanFile": "${workspaceFolder}/conanfile.py",
+            "profileBuild": "default",
+            "profileHost": "armv7",
+            "installArg": "-b missing -o platform=stm32g474xx",
+            "buildArg": "",
+            "createUser": "",
+            "createChannel": "",
+            "createArg": ""
         }
     ]
 }

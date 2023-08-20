@@ -22,13 +22,13 @@ std::optional<int> parseInt(String str);
 std::optional<float> parseFloat(String str);
 
 /**
- * Convert a 32 bit unsigned integer to string
+ * Convert a 64 bit integer to string
  * @param buffer buffer in which conversion takes place
  * @param value value to convert
- * @param digitCount minimum number of digits to convert, pad smaller numbers with leading zeros
+ * @param digitCount minimum number of digits to convert, pad smaller numbers with leading zeros, maximum is 15
  * @return string containing the number, references the input buffer
  */
-String toString(Array<char, 11> buffer, int32_t value, int digitCount = 1);
+String toString(Array<char, 16> buffer, int64_t value, int digitCount = 1);
 
 /**
  * Convert a 64 bit unsigned integer to hex string
