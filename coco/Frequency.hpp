@@ -1,68 +1,54 @@
 #pragma once
 
-#include <cstdint>
+#include "Unit.hpp"
 
 
-// Duration and Time
 namespace coco {
 
-struct Frequency {
-	uint32_t value;
-
-	/**
-		Comparison
-	*/
-	constexpr bool operator ==(Frequency b) const {
-		return this->value == b.value;
-	}
-
-	/**
-		Multiply
-	*/
-	constexpr Frequency operator *(uint32_t factor) const {
-		return {this->value * factor};
-	}
-
-	/**
-		Divide by integer divisor with rounding
-	*/
-	constexpr Frequency operator /(uint32_t divisor) const {
-		return {(this->value + (divisor >> 1)) / divisor};
-	}
-
-	/**
-		Divide by frequency divisor with rounding
-	*/
-	constexpr uint32_t operator /(Frequency divisor) const {
-		return (this->value + (divisor.value >> 1)) / divisor.value;
-	}
-};
+// frequency
+template <typename T, int P>
+using Frequency = Unit<T, P, -1>;
+template <typename T = int>
+using Hertz = Frequency<T, 0>;
+template <typename T = int>
+using Kilohertz = Frequency<T, 3>;
+template <typename T = int>
+using Megahertz = Frequency<T, 6>;
+template <typename T = int>
+using Gigahertz = Frequency<T, 9>;
 
 
 namespace literals {
 
 /**
-   Suffix for megahertz, e.g. 100MHz
+	Suffix for hertz, e.g. 3Hz
 */
-constexpr Frequency operator "" MHz(unsigned long long f) {
-	return {uint32_t(f * 1000000)};
+constexpr Hertz<> operator "" Hz(unsigned long long f) {
+	return Hertz(int(f));
 }
 
 /**
 	Suffix for kilohertz, e.g. 5kHz
 */
-constexpr Frequency operator "" kHz(unsigned long long f) {
-	return {uint32_t(f * 1000)};
+constexpr Kilohertz<> operator "" kHz(unsigned long long f) {
+	return Kilohertz(int(f));
 }
 
 /**
-	Suffix for hertz, e.g. 3Hz
+   Suffix for megahertz, e.g. 100MHz
 */
-constexpr Frequency operator "" Hz(unsigned long long f) {
-	return {uint32_t(f)};
+constexpr Megahertz<> operator "" MHz(unsigned long long f) {
+	return Megahertz(int(f));
 }
 
+/**
+   Suffix for gigiahertz, e.g. 5GHz
+*/
+constexpr Gigahertz<> operator "" GHz(unsigned long long f) {
+	return Gigahertz(int(f));
 }
+
+} // namespace literals
 
 using namespace literals;
 

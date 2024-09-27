@@ -9,16 +9,18 @@ namespace coco {
 
 /**
 	Timed task
-	@tparam T task function, e.g. Callback, std::coroutine_handle<> or std::function
+	@tparam F task function, e.g. Callback, std::coroutine_handle<> or std::function
 */
-template <typename T>
-class TimedTask : public Task<T> {
+template <typename F, typename T = TimeMilliseconds<>>
+class TimedTask : public Task<F> {
 public:
-	TimedTask(const T &task) : Task<T>(task) {}
-	TimedTask(const T &task, Time time) : Task<T>(task), time(time) {}
+	using Time = T;
+
+	TimedTask(const F &task) : Task<F>(task) {}
+	TimedTask(const F &task, Time time) : Task<F>(task), time(time) {}
 
 	void cancelAndSet(Time time) {
-		Task<T>::remove();
+		Task<F>::remove();
 		this->time = time;
 	}
 
@@ -31,10 +33,11 @@ public:
 	List of timed events
 	@tparam T task function, e.g. Callback, std::coroutine_handle<> or std::function
 */
-template <typename T>
-class TimedTaskList : public LinkedListNode {
+template <typename F, typename T = TimeMilliseconds<>>
+class TimedTaskList : public IntrusiveListNode {
 public:
-	using Task = TimedTask<T>;
+	using Task = TimedTask<F>;
+	using Time = T;
 
 	/**
 		Check if the list is empty
@@ -114,7 +117,7 @@ public:
 			return;
 
 		// temporary head for tasks to execute
-		LinkedListNode head(this->next, current->prev);
+		IntrusiveListNode head(this->next, current->prev);
 
 		// link nodes to temporary head
 		this->next->prev = &head;

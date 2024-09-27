@@ -1,31 +1,41 @@
 #pragma once
 
+#include "String.hpp"
+#include "StringConcept.hpp"
+#include "Time.hpp"
+#include <cstdint>
+
+
 /**
-	Simple debug output on up to three LEDs.
-	 Only header file, the implementation has to come from a board implementation
+	Simple debug output on up to three LEDs and blocking sleep function.
+	Only header file, the implementation has to come from a board implementation
 */
 namespace coco {
 namespace debug {
 
+/**
+ * Initialize debug outputs. Call this from the system init function
+ */
 void init();
 
-void setRed(bool value = true);
-inline void clearRed() {setRed(false);}
-void toggleRed();
+/**
+ * Set or toggle the debug outputs
+ * @param bits pins bit mask for the outputs
+ * @param function function for each output: 0: keep/toogle, 1: reset/set
+ */
+void set(uint32_t bits, uint32_t function = 0xffffffff);
 
-void setGreen(bool value = true);
-inline void clearGreen() {setGreen(false);}
-void toggleGreen();
+inline void setRed(bool value = true) {set(uint32_t(value), 1);}
+inline void clearRed() {set(0, 1);}
+inline void toggleRed() {set(1, 0);}
 
-void setBlue(bool value = true);
-inline void clearBlue() {setBlue(false);}
-void toggleBlue();
+inline void setGreen(bool value = true) {set(uint32_t(value) << 1, 2);}
+inline void clearGreen() {set(0, 2);}
+inline void toggleGreen() {set(2, 0);}
 
-inline void set(int state) {
-	setRed(state & 1);
-	setGreen(state & 2);
-	setBlue(state & 4);
-}
+inline void setBlue(bool value = true) {set(uint32_t(value) << 2, 4);}
+inline void clearBlue() {set(0, 4);}
+inline void toggleBlue() {set(4, 0);}
 
 enum Color {
 	BLACK = 0,
@@ -42,10 +52,7 @@ enum Color {
 };
 
 inline void set(Color color) {
-	int c = int(color);
-	setRed(c & 1);
-	setGreen(c & 2);
-	setBlue(c & 4);
+	set(uint32_t(color));
 }
 
 class Counter {
@@ -63,8 +70,40 @@ public:
 		return *this;
 	}
 
-	int c = 0;
+	uint32_t c = 0;
 };
+
+/**
+ * Sleep for the given amount of time in a blocking loop
+ */
+void sleep(Microseconds<> time);
+
+/**
+ * Write a message to the debug console (e.g. UART or USB virtual com port of development board)
+ */
+void write(const char *message, int length);
+inline void write(String message) {write(message.data(), message.size());}
+
+struct Out {
+	/**
+	 * Stream a single character into the output
+	 */
+	Out &operator <<(char ch) {
+		write(&ch, 1);
+		return *this;
+	}
+
+	/**
+	 * Stream a string (e.g. C-string, coco::String, coco::StringBuffer, std::string) into the writer
+	 */
+	template <typename T> requires (StringConcept<T>)
+	Out &operator <<(const T &str) {
+		write(str);
+		return *this;
+	}
+};
+
+extern Out out;
 
 } // namespace debug
 } // namespace coco

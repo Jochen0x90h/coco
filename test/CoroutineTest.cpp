@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <coco/Coroutine.hpp>
+#include <coco/Semaphore.hpp>
 #include <coco/String.hpp>
 
 
@@ -276,7 +277,7 @@ Barrier barrier;
 
 Coroutine waitForBarrier() {
 	Object o("waitForBarrier()");
-	co_await barrier.wait();
+	co_await barrier.untilResumed();
 }
 
 TEST(cocoTest, Barrier) {
@@ -293,7 +294,7 @@ Barrier<BarrierParameters> barrierWithParameters;
 
 Coroutine waitForBarrierWithParameters() {
 	Object o("waitForBarrierWithParameters()");
-	co_await barrierWithParameters.wait(1, 2.0f);
+	co_await barrierWithParameters.untilResumed(1, 2.0f);
 }
 
 TEST(cocoTest, BarrierWithParameters) {
@@ -318,7 +319,7 @@ Barrier<> resumeAfterReturnBarrier;
 CoroutineTaskList<int> resumeAfterReturnList;
 
 Coroutine resumedAfterReturn() {
-	co_await resumeAfterReturnBarrier.wait();
+	co_await resumeAfterReturnBarrier.untilResumed();
 	resumeAfterReturnList.doFirst([](int i) {
 		std::cout << "resumed after return " << i << std::endl;
 		return true;
@@ -345,14 +346,14 @@ Semaphore semaphore(3);
 
 Coroutine worker1() {
 	while (true) {
-		co_await semaphore.wait();
+		co_await semaphore.untilAcquired();
 		std::cout << "worker 1" << std::endl;
 	}
 }
 
 Coroutine worker2() {
 	while (true) {
-		co_await semaphore.wait();
+		co_await semaphore.untilAcquired();
 		std::cout << "worker 2" << std::endl;
 	}
 }
@@ -361,7 +362,7 @@ TEST(cocoTest, Semaphore) {
 	auto c1 = worker1();
 	auto c2 = worker2();
 	for (int i = 0; i < 10; ++i) {
-		semaphore.post();
+		semaphore.release();
 	}
 
 	// destroy coroutines so that no coroutine waits on the semaphore when it gets destroyed
@@ -375,7 +376,7 @@ TEST(cocoTest, Semaphore) {
 
 CoroutineTimedTaskList timedTaskList;
 
-Awaitable<CoroutineTimedTask> timedWait(Time time) {
+Awaitable<CoroutineTimedTask> timedWait(TimeMilliseconds<> time) {
 	return {timedTaskList, time};
 }
 
@@ -383,12 +384,12 @@ Coroutine timedCoroutine() {
 	Object o("timedCoroutine()");
 
 	std::cout << "timedWait" << std::endl;
-	co_await timedWait(Time() + 1s);
+	co_await timedWait(*1s);
 }
 
 TEST(cocoTest, CoroutineTimedTask) {
 	timedCoroutine();
 	EXPECT_FALSE(timedTaskList.empty());
-	timedTaskList.doUntil(Time() + 1s);
+	timedTaskList.doUntil(*1s);
 	EXPECT_TRUE(timedTaskList.empty());
 }

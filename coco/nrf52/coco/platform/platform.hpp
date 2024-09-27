@@ -23,3 +23,18 @@ constexpr int TRIGGER = 1;
 
 // indicator that an event was generated
 constexpr int GENERATED = 1;
+
+
+/**
+ * Get device id
+ */
+inline uint32_t getDeviceId() {
+    return NRF_FICR->INFO.PART;
+}
+
+/**
+ * Get variant id
+ */
+inline uint32_t getVariantId() {
+    return NRF_FICR->INFO.VARIANT;
+}

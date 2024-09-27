@@ -1,0 +1,13 @@
+# profile platform config generator
+debug native Debug "Visual Studio 17 2022"
+default native Release "Visual Studio 17 2022"
+debug emu Debug "Visual Studio 17 2022"
+default emu Release "Visual Studio 17 2022"
+armv7 nrf52840 Release Ninja
+armv6 stm32f042x6 Release Ninja
+armv6 stm32f051x8 Release Ninja
+armv7 stm32f334x8 Release Ninja
+armv7 stm32f479xx Release Ninja
+armv6 stm32c031xx Release Ninja
+armv7 stm32g431xx Release Ninja
+armv7 stm32g474xx Release Ninja

@@ -1,0 +1,86 @@
+# Configure the project using conan
+#
+# usage: python configure.py [install]
+#
+# install option builds and installs the project to ~/.local/bin
+
+import os
+import sys
+import json
+from pathlib import Path
+
+# configuration
+home = Path.home()
+nativeGenerator = 'Visual Studio 17 2022'
+presets = [
+    ['native', 'Debug', 'debug', nativeGenerator],
+    ['native', 'Release', 'default', nativeGenerator],
+    ['emu', 'Debug', 'debug', nativeGenerator],
+    ['emu', 'Release', 'default', nativeGenerator],
+    ['nrf52840', 'Release', 'armv7', 'Ninja'],
+    ['stm32f042x6', 'Release', 'armv6', 'Ninja'],
+    ['stm32f051x8', 'Release', 'armv6', 'Ninja'],
+    ['stm32f334x8', 'Release', 'armv7', 'Ninja'],
+    ['stm32g431xx', 'Release', 'armv7', 'Ninja'],
+    ['stm32g474xx', 'Release', 'armv7', 'Ninja'],
+]
+
+# template for cmake presets
+cmakePresets = {
+    "version": 3,
+    "configurePresets": [],
+    "buildPresets": [],
+    "testPresets": []
+}
+def addPreset(type, name):
+    cmakePresets[type].append(
+        {
+            "name": name,
+            "configurePreset": name
+        }
+    )
+
+for p in presets:
+    platform = p[0]
+    config = p[1]
+    profile = p[2]
+    generator = p[3]
+    if config == 'Release':
+        name = platform
+    else:
+        name = f"{platform}-{config}"
+
+    # install dependencies using conan
+    os.system(f"conan install -pr:b default -pr:h {profile} -b missing -o:a platform={platform} -of build/{name} .")
+
+    # create cmake presets
+    cmakePresets["configurePresets"].append(
+        {
+            "name": name,
+            "description": f"({generator})",
+            "generator": generator,
+            "cacheVariables": {
+                "CMAKE_POLICY_DEFAULT_CMP0077": "NEW",
+                "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
+                "CMAKE_BUILD_TYPE": config,
+                "CMAKE_INSTALL_PREFIX": str(home / ".local")
+            },
+            #"toolchainFile": str(os.getcwd() / f"build/{name}/conan_toolchain.cmake"),
+            "toolchainFile": f"build/{name}/conan_toolchain.cmake",
+            "binaryDir": f"build/{name}"
+        }
+    )
+    addPreset("buildPresets", name)
+    addPreset("testPresets", name)
+
+# save cmake presets to CMakeUserPresets.json
+file = open("CMakeUserPresets.json", "w")
+file.write(json.dumps(cmakePresets, indent=4))
+file.close()
+
+if 'install' in sys.argv:
+    # configure
+    os.system(f"cmake --preset native-Release")
+
+    # build and install to ~/.local/bin
+    os.system(f"cmake --build build/native-Release --config Release --target install")

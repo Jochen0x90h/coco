@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assert.hpp"
 #include <cstdint>
 
 
@@ -15,7 +16,7 @@ struct XorShiftRandom {
 	 * Constructor
 	 * @param seed seed must not be zero
 	 */
-	explicit XorShiftRandom(uint32_t seed = 362436000) {
+	explicit XorShiftRandom(int seed = 362436000) {
 		assert(seed != 0);
 		a = seed;
 	}
@@ -24,12 +25,12 @@ struct XorShiftRandom {
 	 * Reset the random number generator
 	 * @param seed seed must not be zero
 	 */
-	void reset(uint32_t seed = 362436000) {
+	void reset(int seed = 362436000) {
 		assert(seed != 0);
 		a = seed;
 	}
 
-	uint32_t draw() {
+	unsigned draw() {
 		// Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs"
 		uint32_t x = this->a;
 		x ^= x << 13;
@@ -57,7 +58,8 @@ struct KissRandom {
 	 * @param seed2 second seed, must not be zero
 	 * @param seed3 third seed
 	 */
-	explicit KissRandom(uint32_t seed1 = 123456789, uint32_t seed2 = 362436000, uint32_t seed3 = 521288629) {
+	explicit KissRandom(int seed1 = 123456789, int seed2 = 362436000, int seed3 = 521288629) {
+		assert(seed2 != 0);
 		x = seed1;
 		y = seed2;
 		z = seed3;
@@ -70,14 +72,15 @@ struct KissRandom {
 	 * @param seed2 second seed, must not be zero
 	 * @param seed3 third seed
 	 */
-	void reset(uint32_t seed1 = 123456789, uint32_t seed2 = 362436000, uint32_t seed3 = 521288629) {
+	void reset(int seed1 = 123456789, int seed2 = 362436000, int seed3 = 521288629) {
+		assert(seed2 != 0);
 		x = seed1;
 		y = seed2;
 		z = seed3;
 		c = 7654321;
 	}
 
-	uint32_t draw() {
+	unsigned draw() {
 		// Linear congruence generator
 		x = 69069 * x + 12345;
 
