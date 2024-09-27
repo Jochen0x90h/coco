@@ -52,7 +52,7 @@ S &operator <<(S &s, Dec<T> dec) {
  * Decimal number for stream operators
  * Use like s << dec(50) << "foo"
  * @param value decimal value
- * @param digitCount number of digits for the decimal value
+ * @param digitCount minimum number of digits for the decimal value, adds leading zeros if necessary
  */
 template <typename T>
 Dec<T> dec(T value, int digitCount = 1) {
