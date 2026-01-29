@@ -21,31 +21,31 @@ using Gigahertz = Frequency<T, 9>;
 namespace literals {
 
 /**
-	Suffix for hertz, e.g. 3Hz
+    Suffix for hertz, e.g. 3Hz
 */
 constexpr Hertz<> operator "" Hz(unsigned long long f) {
-	return Hertz(int(f));
+    return Hertz(int(f));
 }
 
 /**
-	Suffix for kilohertz, e.g. 5kHz
+    Suffix for kilohertz, e.g. 5kHz
 */
 constexpr Kilohertz<> operator "" kHz(unsigned long long f) {
-	return Kilohertz(int(f));
+    return Kilohertz(int(f));
 }
 
 /**
    Suffix for megahertz, e.g. 100MHz
 */
 constexpr Megahertz<> operator "" MHz(unsigned long long f) {
-	return Megahertz(int(f));
+    return Megahertz(int(f));
 }
 
 /**
    Suffix for gigiahertz, e.g. 5GHz
 */
 constexpr Gigahertz<> operator "" GHz(unsigned long long f) {
-	return Gigahertz(int(f));
+    return Gigahertz(int(f));
 }
 
 } // namespace literals

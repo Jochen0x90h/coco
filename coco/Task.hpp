@@ -1,7 +1,7 @@
 #pragma once
 
-#include "assert.hpp"
 #include "IntrusiveList.hpp"
+#include <cassert>
 #include <utility>
 
 

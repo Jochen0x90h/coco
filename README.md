@@ -12,6 +12,7 @@ Add coco/\<version> to your conanfile where version corresponds to the git tags
 
 ## Features
 * Coroutines for asynchronous operation
+* select() method to wait for multiple events
 * Unified programming interface for desktop OS (Windows/MacOS/Linux) and microcontrollers
 * Separate coco libraries for "drivers" such as coco-spi, coco-i2c, coco-usb etc.
 * Helper classes for time, frequency, queues, strings and vectors of 2-4 components
@@ -32,7 +33,14 @@ coco-device    | Device abstractions
 
 Library        | Purpose
 ---------------|-----------
-coco-io        | Virtual GPIO port library (only MCU)
+coco-io        | Virtual GPIO port library (MCU)
+
+### Memory
+
+Library        | Purpose
+---------------|-----------
+coco-flash     | Support for MCU flash and flash emulation
+coco-storage   | Flash storage with wear leveling
 
 ### Connectivity
 
@@ -41,16 +49,9 @@ Library        | Purpose
 coco-i2c       | I2C/two wire interface library (MCU)
 coco-spi       | SPI library (MCU)
 coco-uart      | UART library (Windows and MCU)
-coco-udp       | UDP/IP library (Windows)
+coco-ip        | IP networking library (Windows)
 coco-tcp       | TCP/IP library (Windows)
-coco-usb       | USB library for host (Windows and MCU) and device (MCU)
-
-### Memory
-
-Library        | Purpose
----------------|-----------
-coco-flash     | Support for MCU flash and flash emulation
-coco-storage   | Flash storage with wear leveling
+coco-usb       | USB library for host (Windows) and device (MCU)
 
 ### File
 
@@ -85,20 +86,30 @@ Pass -o platform=\<platform> to conan to set the platform. When no platform is g
 
 ## Development
 
-### General
+### Installation
 
-Install conan 2.x and the arm gcc toolchain
-
-Use coco projects for the first time: Follow instructions in [support/conan/README.md](support/conan/README.md)
-
-Install coco projects to local conan repository
-- Go into coco-toolchain and run python create.py
-- Go into coco and run python create.py
-- Go into coco-devboards run python create.py
-- Go into coco-font run python create.py
-- Go into coco-loop run python create.py
-- Repeat for all other coco projects
-
+- Install Python (Windows: From [python.org](https://www.python.org/downloads/))
+- Install conan (\$ pip install conan, OSX: $ brew install conan)
+- Install [Arm GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
+  - Windows:
+    - Add C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\XXX\bin\ to PATH environment variable
+- Install CMake
+  - Windows:
+    - Install [Chocolatey](https://chocolatey.org/install#individual)
+    - $ choco install make
+    - $ choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System’
+    - $ choco install ninja
+    - $ choco install pkgconfiglite
+- Create a workspace directory and checkout at least coco-toolchain, coco, coco-devboards, coco-font, coco-loop
+- Use coco projects for the first time: Follow instructions in [support/conan/README.md](support/conan/README.md)
+- Install coco projects to local conan repository:
+    - In coco-toolchain run $ python create.py
+    - In coco run $ python create.py
+    - In coco-devboards run $ python create.py
+    - In coco-font $ python create.py
+    - In coco-loop $ python create.py
+    - Repeat for all other coco projects
+- Check installed packages: $ conan list
 
 ### Visual Studio Code
 
@@ -121,5 +132,6 @@ Use in Visual Studio Code
 - Select CMake Configure preset and Build preset (e.g. stm32c031xx)
 - Select CMake Build target (e.g. LoopTest-stm32c031nucleo)
 - Build (gear icon in the status bar)
-- Now debug (icon: bug) or run (icon: play) the application
+- Native: Debug (icon: bug) or run (icon: play) the application
+- Embedded: Flash hex file onto target (e.g. workspace/coco-loop/build/stm32c031xx/test/LoopTest-stm32c031nucleo.hex)
 - If a dependency or the conanfile.py has changed (e.g. new version), run configure.py again

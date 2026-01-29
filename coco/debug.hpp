@@ -7,22 +7,19 @@
 
 
 /**
-	Simple debug output on up to three LEDs and blocking sleep function.
-	Only header file, the implementation has to come from a board implementation
+    Simple debug output on up to three LEDs and blocking sleep function.
+    Only header file, the implementation has to come from a board implementation
 */
 namespace coco {
 namespace debug {
 
-/**
- * Initialize debug outputs. Call this from the system init function
- */
+/// @brief Initialize debug outputs. Call this from the system init function
+///
 void init();
 
-/**
- * Set or toggle the debug outputs
- * @param bits pins bit mask for the outputs
- * @param function function for each output: 0: keep/toogle, 1: reset/set
- */
+/// @brief Set or toggle the debug outputs
+/// @param bits pins bit mask for the outputs
+/// @param function function for each output: 0: keep/toogle, 1: reset/set
 void set(uint32_t bits, uint32_t function = 0xffffffff);
 
 inline void setRed(bool value = true) {set(uint32_t(value), 1);}
@@ -38,69 +35,72 @@ inline void clearBlue() {set(0, 4);}
 inline void toggleBlue() {set(4, 0);}
 
 enum Color {
-	BLACK = 0,
+    BLACK = 0,
 
-	RED = 1,
-	GREEN = 2,
-	BLUE = 4,
+    RED = 1,
+    GREEN = 2,
+    BLUE = 4,
 
-	YELLOW = 3,
-	MAGENTA = 5,
-	CYAN = 6,
+    YELLOW = 3,
+    MAGENTA = 5,
+    CYAN = 6,
 
-	WHITE = 7,
+    WHITE = 7,
 };
 
 inline void set(Color color) {
-	set(uint32_t(color));
+    set(uint32_t(color));
 }
 
 class Counter {
 public:
 
-	Counter &operator ++() {
-		++this->c;
-		set(this->c);
-		return *this;
-	}
+    Counter &operator ++() {
+        ++this->c;
+        set(this->c);
+        return *this;
+    }
 
-	Counter &operator --() {
-		--this->c;
-		set(this->c);
-		return *this;
-	}
+    Counter &operator --() {
+        --this->c;
+        set(this->c);
+        return *this;
+    }
 
-	uint32_t c = 0;
+    uint32_t c = 0;
 };
 
-/**
- * Sleep for the given amount of time in a blocking loop
- */
+/// @brief Sleep for the given amount of time in a blocking loop
+///
 void sleep(Microseconds<> time);
 
-/**
- * Write a message to the debug console (e.g. UART or USB virtual com port of development board)
- */
+/// @brief Write a message to the debug console (e.g. UART or USB virtual com port of development board)
+///
 void write(const char *message, int length);
-inline void write(String message) {write(message.data(), message.size());}
+inline void write(const String &message) {write(message.data(), message.size());}
 
 struct Out {
-	/**
-	 * Stream a single character into the output
-	 */
-	Out &operator <<(char ch) {
-		write(&ch, 1);
-		return *this;
-	}
+    /// @brief Stream a single character into the debug output.
+    ///
+    Out &operator <<(char ch) {
+        write(&ch, 1);
+        return *this;
+    }
 
-	/**
-	 * Stream a string (e.g. C-string, coco::String, coco::StringBuffer, std::string) into the writer
-	 */
-	template <typename T> requires (StringConcept<T>)
-	Out &operator <<(const T &str) {
-		write(str);
-		return *this;
-	}
+    /// @brief Stream a string into the debug output.
+    ///
+    Out &operator <<(const String &str) {
+        write(str.data(), str.size());
+        return *this;
+    }
+
+    /// @brief Stream a string concept into the debug output (C-string, coco::StringBuffer, std::string).
+    ///
+    template <typename T> requires (StringConcept<T>)
+    Out &operator <<(const T &str) {
+        write(str);
+        return *this;
+    }
 };
 
 extern Out out;

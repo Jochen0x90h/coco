@@ -32,46 +32,40 @@ using TimeSeconds = Time<T, 0>;
 
 namespace literals {
 
-/**
-	Suffix for nanoseconds, e.g. 10ns
-*/
+/// @brief Suffix for nanoseconds, e.g. 10ns.
+///
 constexpr Nanoseconds<> operator "" ns(unsigned long long d) {
-	return Nanoseconds(int(d));
+    return Nanoseconds(int(d));
 }
 
-/**
-	Suffix for microseconds, e.g. 50us
-*/
+/// @brief Suffix for microseconds, e.g. 50us.
+///
 constexpr Microseconds<> operator "" us(unsigned long long d) {
-	return Microseconds(int(d));
+    return Microseconds(int(d));
 }
 
-/**
-	Suffix for milliseconds, e.g. 100ms
-*/
+/// @brief Suffix for milliseconds, e.g. 100ms.
+///
 constexpr Milliseconds<> operator "" ms(unsigned long long d) {
-	return Milliseconds(int(d));
+    return Milliseconds(int(d));
 }
 
-/**
-	Suffix for seconds, e.g. 5s
-*/
+/// @brief Suffix for seconds, e.g. 5s.
+///
 constexpr Seconds<> operator "" s(unsigned long long d) {
-	return Seconds(int(d));
+    return Seconds(int(d));
 }
 
-/**
-	Suffix for minutes, e.g. 3min
-*/
+/// @brief Suffix for minutes, e.g. 3min.
+///
 constexpr Seconds<> operator "" min(unsigned long long d) {
-	return Seconds(int(d * 60));
+    return Seconds(int(d * 60));
 }
 
-/**
-	Suffix for hours, e.g. 8h
-*/
+/// @brief Suffix for hours, e.g. 8h.
+///
 constexpr Seconds<> operator "" h(unsigned long long d) {
-	return Seconds(int(d * 60 * 60));
+    return Seconds(int(d * 60 * 60));
 }
 
 } // namespace literals

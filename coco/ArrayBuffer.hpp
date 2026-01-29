@@ -7,183 +7,207 @@
 
 namespace coco {
 
-/**
- * Buffer with fixed maximum size
- * @tparam T element type
- * @tparam N maximum size
- */
+/// @brief Array with fixed maximum size (similar to std::inplace_vector of C++26)
+/// @tparam T element type
+/// @tparam N maximum size
 template <typename T, int N>
 class ArrayBuffer {
 public:
     static constexpr int MAX_SIZE = N;
 
-    /**
-     * Default constructor
-     */
+    /// @brief Default constructor
+    ///
     ArrayBuffer() : length() {}
 
-    /**
-     * Construct from any container supporting std::begin() and std::end()
-     * @tparam T2 container type
-     * @param container container used to initialize the buffer
-     */
+    /// @brief Destructor
+    ///
+    ~ArrayBuffer() {
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        for (auto it = buffer; it < buffer + this->length; ++it) {
+            it->~T();
+        }
+    }
+
+    /// @brief Construct from any container supporting std::begin() and std::end()
+    /// @tparam T2 container type
+    /// @param container container used to initialize the buffer
     template <typename T2>
     ArrayBuffer(const T2 &container) {
-        auto it1 = this->buffer;
-        auto end1 = this->buffer + N;
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        auto it1 = buffer;
+        auto end1 = buffer + N;
         auto it2 = std::begin(container);
         auto end2 = std::end(container);
         int l = 0;
         for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
-            *it1 = *it2;
+            new (it1) T(*it2);
         this->length = l;
     }
 
-    /**
-     * Assign from any container supporting std::begin() and std::end()
-     * @tparam T2 container type
-     * @param container container used to initialize the buffer
-     */
+    /// @brief Assign from any container supporting std::begin() and std::end()
+    /// @tparam T2 container type
+    /// @param container container that is assigned to the buffer
+    /// @return *this
     template <typename T2>
     ArrayBuffer &operator =(const T2 &container) {
-        auto it1 = this->buffer;
-        auto end1 = this->buffer + N;
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        for (auto it = buffer; it < buffer + this->length; ++it) {
+            it->~T();
+        }
+        auto it1 = buffer;
+        auto end1 = buffer + N;
         auto it2 = std::begin(container);
         auto end2 = std::end(container);
         int l = 0;
         for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
-            *it1 = *it2;
+            new (it1) T(*it2);
         this->length = l;
         return *this;
     }
 
-    /**
-     * Check if the buffer is empty
-     * @return true when empty
-     */
+    /// @brief Check if the array is empty
+    /// @return true when empty
     bool empty() const {return this->length == 0;}
 
-    /**
-     * Number of elements in the buffer which is O(1)
-     * @return number of elements
-     */
+    /// @brief Get the number of elements in the array which is O(1)
+    /// @return number of elements
     int size() const {return this->length;}
 
-    /**
-     * Capacity of the buffer, number of pre-allocated elements
-     * @return capacity
-     */
-    int capacity() const {return N;}
+    /// @brief Get the capacity of the array, number of pre-allocated elements
+    /// @return capacity
+    static int capacity() {return N;}
 
-    /**
-     * Clear the buffer
-     */
+    /// @brief Clear the array
+    ///
     void clear() {
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        for (auto it = buffer; it < buffer + this->length; ++it) {
+            it->~T();
+        }
         this->length = 0;
     }
 
-    /**
-     * Resize the buffer
-     * @param size new size, gets clamped to the maximum size of the buffer
-     */
+    /// @brief Resize the array
+    /// @param size new size, gets clamped to the maximum size of the array
     void resize(int size) {
-        this->length = std::clamp(size, 0, N);
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        int newLength = std::clamp(size, 0, N);
+
+        auto a = buffer + newLength;
+        auto b = buffer + this->length;
+
+        // destruct excess elements
+        for (auto it = a; it < b; ++it) {
+            it->~T();
+        }
+
+        // construct new elements
+        for (auto it = b; it < a; ++it) {
+            new (it) T();
+        }
+
+        this->length = newLength;
     }
 
-    /**
-     * Fill whole buffer with a value
-     * @param value fill value
-     */
+    /// @brief Fill array with a value while keeping the size
+    /// @param value fill value
     void fill(const T &value) {
         for (auto &element : *this) {
             element = value;
         }
     }
 
-    /**
-     * Index operator
-     */
+    /// @brief Index operator
+    /// @param index index of the element
+    /// @return element at the index
     const T &operator [](int index) const {
         assert(uint32_t(index) < this->length);
-        return this->buffer[index];
+        auto buffer = reinterpret_cast<const T *>(this->buffer);
+        return buffer[index];
     }
     T &operator [](int index) {
         assert(uint32_t(index) < this->length);
-        return this->buffer[index];
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        return buffer[index];
     }
 
-    /**
-     * Append an element to the container
-     * @param element element to append
-     */
-    void append(const T &element) {
+    /// @brief Append an element to the array
+    /// @param element element to append
+    void push_back(const T &element) {
+        auto buffer = reinterpret_cast<T *>(this->buffer);
         if (this->length < N) {
-            T &e = this->buffer[this->length];
-            e = element;
+            new (buffer + this->length) T(element);
             ++this->length;
         }
     }
 
-    /**
-     * Append any container supporting std::begin() and std::end() to the buffer
-     * @tparam T2 container type
-     * @param container container whose contents are appended
-     */
+    /// @brief Construct an element at the end of the array in-place
+    /// @tparam Args argument types
+    template<typename... Args>
+    T &emplace_back(Args &&... args) {
+        assert(this->length < N);
+        auto ptr = reinterpret_cast<T *>(this->buffer) + this->length;
+        new (ptr) T(std::forward<Args>(args)...);
+        ++this->length;
+        return *ptr;
+    }
+
+    /// Append any range or container supporting std::begin() and std::end() to the array
+    /// @tparam T2 container type
+    /// @param container container whose contents are appended
     template <typename T2>
-    void append(const T2 &container) {
-        auto it1 = this->buffer + this->length;
-        auto end1 = this->buffer + N;
+    void append_range(const T2 &container) {
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        auto it1 = buffer + this->length;
+        auto end1 = buffer + N;
         auto it2 = std::begin(container);
         auto end2 = std::end(container);
         int l = this->length;
         for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
-            *it1 = *it2;
+            new (it1) T(*it2);
         this->length = l;
     }
 
-    /**
-     * Get pointer to data
-     */
-    T *data() {return this->buffer;}
-    const T *data() const {return this->buffer;}
+    ///  @briefGet pointer to data
+    ///
+    T *data() {return reinterpret_cast<T *>(this->buffer);}
+    const T *data() const {return reinterpret_cast<const T *>(this->buffer);}
 
-    /**
-     * Iterators
-     */
-    T *begin() {return this->buffer;}
-    T *end() {return this->buffer + this->length;}
-    const T *begin() const {return this->buffer;}
-    const T *end() const {return this->buffer + this->length;}
+    ///  @brief Iterators
+    ///
+    T *begin() {return reinterpret_cast<T* >(this->buffer);}
+    T *end() {return reinterpret_cast<T *>(this->buffer) + this->length;}
+    const T *begin() const {return reinterpret_cast<const T *>(this->buffer);}
+    const T *end() const {return reinterpret_cast<const T *>(this->buffer) + this->length;}
 
 
+    // buffer elements as byte array to avoid default construction of T
+    alignas(T) uint8_t buffer[N * sizeof(T)];
+
+    // length after buffer so that alignas(A) ArrayBuffer<T, N> works correctly
     int length;
-    T buffer[N];
 };
 
 
-/**
- * Partial specialization for char to be used as StringBuffer<N>
- * @tparam N maximum size
- */
+/// @brief Partial specialization of ArrayBuffer for char to be used as StringBuffer<N>.
+/// @tparam N maximum size
 template <int N>
 class ArrayBuffer<char, N> {
 public:
-    static constexpr int MAX_SIZE = N;
+    static constexpr int CAPACITY = N;
 
-    /**
-     * Default constructor
-     */
+    /// @brief Default constructor
+    ///
     ArrayBuffer() : length() {}
 
-    /**
-     * Construct from any container supporting std::begin() and std::end()
-     * @tparam T2 container type
-     * @param container container used to initialize the buffer
-     */
+    /// @brief Construct from any container supporting std::begin() and std::end()
+    /// @tparam T2 container type
+    /// @param container container used to initialize the buffer
     template <typename T2>
     ArrayBuffer(const T2 &container) {
-        auto it1 = this->buffer;
-        auto end1 = this->buffer + N;
+        auto buffer = this->buffer;
+        auto it1 = buffer;
+        auto end1 = buffer + N;
         auto it2 = std::begin(container);
         auto end2 = std::end(container);
         int l = 0;
@@ -192,45 +216,59 @@ public:
         this->length = l;
     }
 
-    /**
-     * Assign from any container supporting std::begin() and std::end()
-     * @tparam T2 container type
-     * @param container container used to initialize the buffer
-     */
-    template <typename T2>
+    /// @brief Assign from any container supporting std::begin() and std::end()
+    /// @tparam T2 container type
+    /// @param container container that is assigned to the buffer
+    /// @return *this
+    template <typename T2> requires (!StringConcept<T2>)
     ArrayBuffer &operator =(const T2 &container) {
-        auto it1 = this->buffer;
-        auto end1 = this->buffer + N;
+        auto buffer = this->buffer;
+        auto it1 = buffer;
+        auto end1 = buffer + N;
         auto it2 = std::begin(container);
         auto end2 = std::end(container);
-        int l = 0;
-        for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
+        for (; it1 != end1 && it2 != end2; ++it1, ++it2)
             *it1 = *it2;
-        this->length = l;
+        this->length = it1 - buffer;
+#ifdef DEBUG
+        this->buffer[this->length] = 0;
+#endif
         return *this;
     }
 
-    /**
-     * Check if the buffer is empty
-     * @return true when empty
-     */
+    /// @brief Assign a string
+    /// @tparam T2 string type
+    /// @param string string that is assigned to the buffer
+    /// @return *this
+    template <typename T2> requires (StringConcept<T2>)
+    ArrayBuffer &operator =(const T2 &string) {
+        auto buffer = this->buffer;
+        auto capacity = N;
+
+        String s(string);
+        int l = std::min(capacity, s.size());
+        std::copy(s.begin(), s.begin() + l, buffer);
+        this->length = l;
+#ifdef DEBUG
+        buffer[this->length] = 0;
+#endif
+        return *this;
+    }
+
+    /// @brief Check if the array is empty
+    /// @return true when empty
     bool empty() const {return this->length == 0;}
 
-    /**
-     * Number of elements in the buffer which is O(1)
-     * @return number of elements
-     */
+    /// @brief Get the number of elements in the array which is O(1)
+    /// @return number of elements
     int size() const {return this->length;}
 
-    /**
-     * Capacity of the buffer, number of pre-allocated elements
-     * @return capacity
-     */
-    int capacity() const {return N;}
+    /// @brief Get the capacity of the array, number of pre-allocated elements
+    /// @return capacity
+    static int capacity() {return N;}
 
-    /**
-     * Clear the buffer
-     */
+    /// @brief Clear the buffer
+    ///
     void clear() {
         this->length = 0;
 #ifdef DEBUG
@@ -238,30 +276,37 @@ public:
 #endif
     }
 
-    /**
-     * Resize the buffer
-     * @param size new size, gets clamped to the maximum size of the buffer
-     */
+    /// Resize the array
+    /// @param size new size, gets clamped to the maximum size of the array
     void resize(int size) {
-        this->length = std::clamp(size, 0, N);
+        auto buffer = this->buffer;
+        int newLength = std::clamp(size, 0, N);
+
+        auto a = buffer + newLength;
+        auto b = buffer + this->length;
+
+        // clear new elements
+        for (auto it = b; it < a; ++it) {
+            *it = 0;
+        }
+
+        this->length = newLength;
 #ifdef DEBUG
-        this->buffer[this->length] = 0;
+        this->buffer[newLength] = 0;
 #endif
     }
 
-    /**
-     * Fill whole buffer with a value
-     * @param value fill value
-     */
+    /// @brief Fill array with a value while keeping the size
+    /// @param value fill value
     void fill(const char value) {
         for (auto &element : *this) {
             element = value;
         }
     }
 
-    /**
-     * Index operator
-     */
+    /// @brief Index operator
+    /// @param index index of the element
+    /// @return element at the index
     const char &operator [](int index) const {
         assert(uint32_t(index) < this->length);
         return this->buffer[index];
@@ -271,11 +316,9 @@ public:
         return this->buffer[index];
     }
 
-    /**
-     * Append a single character to the buffer
-     * @param ch char to append
-     */
-    void append(char ch) {
+    /// @brief Append a single character to the array
+    /// @param ch char to append
+    void push_back(char ch) {
         auto buffer = this->buffer;
         auto capacity = N;
 
@@ -286,13 +329,20 @@ public:
 #endif
     }
 
-    /**
-     * Append any container supporting std::begin() and std::end() to the buffer
-     * @tparam T2 container type
-     * @param container container to append
-     */
+    /// @brief Construct an element at the end of the array in-place
+    char &emplace_back(char ch = 0) {
+        assert(this->length < N);
+        auto ptr = this->buffer + this->length;
+        *ptr = ch;
+        ++this->length;
+        return *ptr;
+    }
+
+    /// Append any range or container supporting std::begin() and std::end() to the array
+    /// @tparam T2 container type
+    /// @param container container to append
     template <typename T2> requires (!StringConcept<T2>)
-    void append(const T2 &container) {
+    void append_range(const T2 &container) {
         auto buffer = this->buffer;
         auto capacity = N;
 
@@ -309,8 +359,11 @@ public:
 #endif
     }
 
+    /// Append any string to the array
+    /// @tparam T2 container type
+    /// @param container container to append
     template <typename T2> requires (StringConcept<T2>)
-    void append(const T2 &string) {
+    void append_range(const T2 &string) {
         auto buffer = this->buffer;
         auto capacity = N;
 
@@ -323,32 +376,35 @@ public:
 #endif
     }
 
-    /**
-     * Stream a single character
-     */
+    /// @brief Append a single character.
+    ///
     ArrayBuffer &operator <<(char ch) {
-        append(ch);
+        push_back(ch);
         return *this;
     }
 
-    /**
-     * Stream a string, either C-string or coco::String
-     */
-    template <typename T> requires (StringConcept<T>)
+    /// @brief Append a string.
+    ///
+    ArrayBuffer &operator <<(const String &string) {
+        append_range(string);
+        return *this;
+    }
+
+    /// @brief Stream a string concept (C-string, std::string)
+    ///
+    /*template <typename T> requires (StringConcept<T>)
     ArrayBuffer &operator <<(T const &string) {
-        append(String(string));
+        append_range(String(string));
         return *this;
-    }
+    }*/
 
-    /**
-     * Get as string
-     * @return string that references this buffer
-     */
+    /// @brief Get as coco::String
+    /// @return string that references this buffer
     String string() const {
         return {this->buffer, this->length};
     }
 
-    /// @brief Convert to String
+    /// @brief Convert operator to coco::String
     /// @return String that references this buffer
     operator String() const {
         return {this->buffer, this->length};
@@ -360,46 +416,45 @@ public:
         return {this->buffer, size_t(this->length)};
     }
 
-    /**
-     * Get a substring
-     * @param startIndex start of substring
-     * @return string that references the a part of this buffer
-     */
+    /// @brief Get a substring
+    /// @param startIndex start of substring
+    /// @return string that references the a part of this buffer
     String substring(int startIndex) const {
         return {this->buffer + startIndex, std::max(this->length - startIndex, 0)};
     }
 
-    /**
-     * Get a substring
-     * @param startIndex start of substring
-     * @param endIndex end of substring (not included)
-     * @return string that references a part of this buffer
-     */
+    /// @brief Get a substring
+    /// @param startIndex start of substring
+    /// @param endIndex end of substring (not included)
+    /// @return string that references a part of this buffer
     String substring(int startIndex, int endIndex) const {
         return {this->buffer + startIndex, std::max(std::min(endIndex, this->length) - startIndex, 0)};
     }
 
-    /**
-     * Get pointer to data
-     */
+    /// @brief Get pointer to data
+    ///
     char *data() {return this->buffer;}
     const char *data() const {return this->buffer;}
+
+    /// @brief Get as C-string
+    /// @return C-string
     const char *c_str() {
         this->buffer[this->length] = 0;
         return this->buffer;
     }
 
-    /**
-     * Iterators
-     */
+    /// @brief Iterators
+    ///
     char *begin() {return this->buffer;}
     char *end() {return this->buffer + this->length;}
     const char *begin() const {return this->buffer;}
     const char *end() const {return this->buffer + this->length;}
 
 
-    int length;
     char buffer[N + 1];
+
+    // length after buffer so that alignas(A) StringBuffer<N> works correctly
+    int length;
 };
 
 } // namespace coco

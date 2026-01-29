@@ -7,7 +7,7 @@
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
   *                - Set the vector table entries with the exceptions ISR address,
-  *                - Configure the clock system  
+  *                - Configure the clock system
   *                - Branches to main in the C library (which eventually
   *                  calls main()).
   *            After Reset the Cortex-M4 processor is in Thread mode,
@@ -60,7 +60,7 @@ defined in linker script */
 	.type	Reset_Handler, %function
 Reset_Handler:
   ldr   sp, =_estack    /* Atollic update: set stack pointer */
-  
+
 /* Call the clock system initialization function.*/
     bl  SystemInit
 
@@ -80,7 +80,24 @@ LoopCopyDataInit:
   adds r4, r0, r3
   cmp r4, r1
   bcc CopyDataInit
-  
+
+/* Copy ccmram segment from flash to CCMRAM */
+  ldr r0, =_sccmram
+  ldr r1, =_eccmram
+  ldr r2, =_siccmram
+  movs r3, #0
+  b LoopCopyCcmInit
+
+CopyCcmInit:
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
+
+LoopCopyCcmInit:
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopyCcmInit
+
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss
@@ -102,7 +119,7 @@ LoopFillZerobss:
 
 LoopForever:
     b LoopForever
-    
+
 .size	Reset_Handler, .-Reset_Handler
 
 /**
@@ -384,34 +401,34 @@ g_pfnVectors:
 
 	.weak	TIM7_DAC2_IRQHandler
 	.thumb_set TIM7_DAC2_IRQHandler,Default_Handler
-	
+
 	.weak	COMP2_IRQHandler
 	.thumb_set COMP2_IRQHandler,Default_Handler
-	
+
 	.weak	COMP4_6_IRQHandler
 	.thumb_set COMP4_6_IRQHandler,Default_Handler
-	
+
 	.weak	HRTIM1_Master_IRQHandler
 	.thumb_set HRTIM1_Master_IRQHandler,Default_Handler
-	
+
 	.weak	HRTIM1_TIMA_IRQHandler
 	.thumb_set HRTIM1_TIMA_IRQHandler,Default_Handler
-	
+
 	.weak	HRTIM1_TIMB_IRQHandler
-	.thumb_set HRTIM1_TIMB_IRQHandler,Default_Handler  
-  
+	.thumb_set HRTIM1_TIMB_IRQHandler,Default_Handler
+
 	.weak	HRTIM1_TIMC_IRQHandler
-	.thumb_set HRTIM1_TIMC_IRQHandler,Default_Handler	
-	
+	.thumb_set HRTIM1_TIMC_IRQHandler,Default_Handler
+
 	.weak	HRTIM1_TIMD_IRQHandler
 	.thumb_set HRTIM1_TIMD_IRQHandler,Default_Handler
-	
+
 	.weak	HRTIM1_TIME_IRQHandler
 	.thumb_set HRTIM1_TIME_IRQHandler,Default_Handler
-	
+
 	.weak	HRTIM1_FLT_IRQHandler
 	.thumb_set HRTIM1_FLT_IRQHandler,Default_Handler
-	
+
 	.weak	FPU_IRQHandler
 	.thumb_set FPU_IRQHandler,Default_Handler
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

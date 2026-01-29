@@ -1,51 +1,26 @@
 #pragma once
 
-#include "platform.hpp"
-#include "dma.hpp"
+#include "i2cF0C0G0F3L4G4H5U3U5.hpp"
 
 
 namespace coco {
 namespace i2c {
 
-/**
- * I2C info
- */
-struct Info {
-    // registers
-    I2C_TypeDef *i2c;
+template <dma::Feature F2>
+void Info::mapRx(const dma::Info<F2> &dmaInfo) const {
+    dmaInfo.setRequest(drq + 0);
+}
 
-    // reset and clock control
-    rcc::Info rcc;
+template <dma::Feature F2>
+void Info::mapTx(const dma::Info<F2> &dmaInfo) const {
+    dmaInfo.setRequest(drq + 1);
+}
 
-    // interrupt index
-    uint8_t irq;
-
-    // DMA mux index
-    uint8_t mux;
-
-
-    /**
-     * Map a DMA channel to the RX channel of the I2C
-     */
-    void mapRx(const dma::Info &dmaInfo) const {
-        dmaInfo.setMux(this->mux + 0);
-    }
-
-    /**
-     * Map a DMA channel to the TX channel of the I2C
-     */
-    void mapTx(const dma::Info &dmaInfo) const {
-        dmaInfo.setMux(this->mux + 1);
-    }
-
-    /**
-     * Map DMA channels to the RX and TX channels of the I2C
-     */
-    void map(const dma::Info2 &dmaInfo) const {
-        dmaInfo.setMux1(this->mux + 0); // rx
-        dmaInfo.setMux2(this->mux + 1); // tx
-    }
-};
+template <dma::Feature F2>
+void Info::map(const dma::DualInfo<F2> &dmaInfo) const {
+    dmaInfo.setRequest1(drq + 0); // rx
+    dmaInfo.setRequest2(drq + 1); // tx
+}
 
 
 static const Info I2C1_INFO{I2C1, {&RCC->APB1ENR1, RCC_APB1ENR1_I2C1EN}, I2C1_EV_IRQn, 16};

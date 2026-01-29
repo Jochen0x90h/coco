@@ -6,14 +6,12 @@
 
 namespace coco {
 
-/**
- * OPAMP helpers
- * Refernece manual: https://www.st.com/resource/en/reference_manual/rm0440-stm32g4-series-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
- * DAC: Section 25
- */
+/// @brief OPAMP helpers
+/// Refernece manual: https://www.st.com/resource/en/reference_manual/rm0440-stm32g4-series-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+///   Section 25
 namespace opamp {
 
-enum class Config {
+enum class Config : uint32_t {
     // output
     OUT_PIN = 0,
     OUT_ADC = OPAMP_CSR_OPAMPINTEN,
@@ -33,24 +31,24 @@ enum class Config {
     INM_PIN0 = 0,
     INM_PIN1 = 1 << OPAMP_CSR_VMSEL_Pos,
     INM_PGA = 2 << OPAMP_CSR_VMSEL_Pos, // programmabel gain amplifier
-    INM_FOLLOWER = 3 << OPAMP_CSR_VMSEL_Pos // follower mode, connected to output
+    INM_FOLLOWER = 3 << OPAMP_CSR_VMSEL_Pos, // follower mode, connected to output
+
+    // lock configuration register (can only be set, reset by system reset)
+    LOCK = OPAMP_CSR_LOCK
 };
 COCO_ENUM(Config)
 
-/**
- * Configure an op-amp.
- * Make sure SYSCFG clock enable bit is set (RCC->APB2ENR = RCC->APB2ENR | RCC_APB2ENR_SYSCFGEN)
- */
-void configure(OPAMP_TypeDef *opamp, Config config) {
+/// @param Configure an operational amplifier.
+/// Make sure SYSCFG clock enable bit is set (RCC->APB2ENR = RCC->APB2ENR | RCC_APB2ENR_SYSCFGEN)
+inline void enable(OPAMP_TypeDef *opamp, Config config) {
     opamp->CSR = OPAMP_CSR_OPAMPxEN | int(config);
 }
 
-/**
- * Disable an op-amp
- */
-void disable(OPAMP_TypeDef *opamp) {
+/// @param Disable an op-amp
+///
+inline void disable(OPAMP_TypeDef *opamp) {
     opamp->CSR = 0;
 }
 
-} // namespace dac
+} // namespace comp
 } // namespace coco

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "assert.hpp"
+#include <cassert>
 
 
 namespace coco {

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <coco/platform/compiler.hpp>
 #include <coco/align.hpp>
 #include <coco/Array.hpp>
 #include <coco/ArrayBuffer.hpp>
@@ -20,10 +21,12 @@
 #include <coco/StringBuffer.hpp>
 #include <coco/StringConcept.hpp>
 #include <coco/Time.hpp>
+#include <coco/Vector2.hpp>
 //#include <coco/platform/File.hpp>
 #include <vector>
 #include <string>
 #include <list>
+#include <iomanip>
 
 
 using namespace coco;
@@ -31,9 +34,9 @@ using namespace coco;
 // test data
 constexpr String strings[] = {"a", "bar", "bar2", "foo", "foo2", "foobar", "foobar2", "z"};
 
-// util
+// util (also test __FORCE_INLINE from coco/platform/compiler.hpp)
 template <typename T>
-int byteSize(const T &array) {
+COCO_FORCE_INLINE int byteSize(const T &array) {
     return std::size(array) * sizeof(*std::data(array));
 }
 
@@ -270,7 +273,7 @@ TEST(cocoTest, ArrayBuffer) {
     EXPECT_EQ(b.MAX_SIZE, 7);
 
     // append element
-    b.append(50);
+    b.push_back(50);
     EXPECT_FALSE(b.empty());
     EXPECT_EQ(b.size(), 1);
     EXPECT_EQ(std::size(b), 1);
@@ -280,7 +283,7 @@ TEST(cocoTest, ArrayBuffer) {
 
     // test overflow
     for (int i = 0; i < 10; ++i) {
-        b.append(10);
+        b.push_back(10);
     }
     EXPECT_FALSE(b.empty());
     EXPECT_EQ(b.size(), 7);
@@ -292,17 +295,17 @@ TEST(cocoTest, ArrayBuffer) {
 
     // append array
     int a1[] = {10, 11, 12};
-    b.append(a1);
+    b.append_range(a1);
     EXPECT_EQ(b.size(), 3);
     Array<int> b1(a1);
-    b.append(b1);
+    b.append_range(b1);
     EXPECT_EQ(b.size(), 6);
 
     // append buffer
     ArrayBuffer<int, 10> b2;
-    b2.append(1337);
-    b2.append(0);
-    b.append(b2);
+    b2.push_back(1337);
+    b2.push_back(0);
+    b.append_range(b2);
     EXPECT_EQ(b.size(), 7);
     EXPECT_EQ(b[6], 1337);
 
@@ -469,6 +472,60 @@ TEST(cocoTest, bits) {
     EXPECT_EQ(extract(int(0x50000000), int(0xf0000000)), 5);
 
     EXPECT_EQ(extract(ExtractEnum::FOO_1, ExtractEnum::FOO_MASK), 1);
+
+    EXPECT_EQ(parity(uint8_t(4)), 1);
+    EXPECT_EQ(parity(uint16_t(4)), 1);
+    EXPECT_EQ(parity(uint32_t(4)), 1);
+    EXPECT_EQ(parity(uint8_t(0xff)), 0);
+    EXPECT_EQ(parity(uint16_t(0xffff)), 0);
+    EXPECT_EQ(parity(uint32_t(0xffffffff)), 0);
+    EXPECT_EQ(parity(UINT64_C(0xffffffff00000001)), 1);
+    EXPECT_EQ(parity(ExtractEnum::FOO_1), 1);
+
+
+    EXPECT_EQ(popcount(ExtractEnum::FOO_MASK), 4);
+    EXPECT_EQ(popcountBefore(0x0a, 0x08), 1);
+}
+
+enum class PopcountBeforeEnum {
+    NONE = 0,
+    COMBINED = 1,
+    A = 2,
+    B = 4,
+    C = 8,
+    D = 16
+};
+COCO_ENUM(PopcountBeforeEnum)
+
+template <PopcountBeforeEnum I>
+struct PopcountBeforeStruct {
+    int i[std::max(popcount(I), 1)];
+
+    template <PopcountBeforeEnum I2> requires ((I2 & I) == I2 || (I & PopcountBeforeEnum::COMBINED) != 0)
+    operator PopcountBeforeStruct<I2> () const {
+        PopcountBeforeStruct<I2> s;
+        for (int bits = int(I2); bits != 0; bits &= bits - 1) {
+            int bit = bits & ~(bits - 1);
+            s.i[popcountBefore(I2, bit)] = (int(I) & bit) != 0 ? this->i[popcountBefore(I, bit)] : this->i[0];
+        }
+        return s;
+    }
+};
+
+TEST(cocoTest, popcountBefore) {
+    {
+        PopcountBeforeStruct<PopcountBeforeEnum::B | PopcountBeforeEnum::C | PopcountBeforeEnum::D> s{10, 50, 1337};
+        PopcountBeforeStruct<PopcountBeforeEnum::D> s2 = s;
+        EXPECT_EQ(s2.i[0], 1337);
+    }
+    {
+        PopcountBeforeStruct<PopcountBeforeEnum::COMBINED> s{1337};
+        PopcountBeforeStruct<PopcountBeforeEnum::D> s2 = s;
+        EXPECT_EQ(s2.i[0], 1337);
+    }
+    {
+        PopcountBeforeStruct<PopcountBeforeEnum::NONE> s;
+    }
 }
 
 
@@ -551,7 +608,7 @@ TEST(cocoTest, convert) {
     char buffer16[16];
 
     // int to string
-    EXPECT_EQ(toString(buffer16, INT64_C(12345678900)), "12345678900");
+    /*EXPECT_EQ(toString(buffer16, INT64_C(12345678900)), "12345678900");
     EXPECT_EQ(toString(buffer16, INT64_C(-12345678900)), "-12345678900");
 
     // hex to string
@@ -559,7 +616,73 @@ TEST(cocoTest, convert) {
 
     char buffer21[21];
     EXPECT_EQ(toString(buffer21, 5.5f, 1, 2), "5.5");
-    EXPECT_EQ(toString(buffer21, 5.5f, 2, -2), "05.50");
+    EXPECT_EQ(toString(buffer21, 5.5f, 2, -2), "05.50");*/
+}
+
+TEST(cocoTest, convert_dec) {
+    // integer to string
+    EXPECT_EQ(dec(10), "10");
+    EXPECT_EQ(dec(UINT64_C(12345678901234567890)), "12345678901234567890");
+
+    // enum to string
+    EXPECT_EQ(dec(ExtractEnum::FOO_1, 3), "016");
+
+    // floating point number to string
+    EXPECT_EQ(dec(50.0f, 3), "50");
+    EXPECT_EQ(dec(50.0f, -3), "50.000");
+    EXPECT_EQ(dec(-50.1234f, 3), "-50.123");
+    EXPECT_EQ(dec(1337e6, 3), "1337000000");
+    EXPECT_EQ(dec(50.0f, 3, 3), "050");
+    EXPECT_EQ(dec(50.0f, 3, -3), "050.000");
+    EXPECT_EQ(dec(-50.1234f, 3, 3), "-050.123");
+    EXPECT_EQ(dec(1337e6, 3, 3), "1337000000");
+
+    // std::atomic to string
+    std::atomic<int> a = 50;
+    EXPECT_EQ(dec(a), "50");
+    std::atomic<ExtractEnum> e = ExtractEnum::FOO_1;
+    EXPECT_EQ(dec(e), "16");
+    std::atomic<float> f = -50.1234f;
+    EXPECT_EQ(dec(f), "-50.123");
+    std::atomic<double> d = 1337e6;
+    EXPECT_EQ(dec(d), "1337000000");
+
+    // string to int
+    EXPECT_EQ(dec<int>("1337"), ConvertedValue<int>(1337, 4));
+    EXPECT_EQ(dec<int>("+1337"), ConvertedValue<int>(1337, 5));
+    EXPECT_EQ(dec<int>("-1337"), ConvertedValue<int>(1337, 5));
+    EXPECT_EQ(dec<unsigned int>("1337"), ConvertedValue<unsigned int>(1337, 4));
+}
+
+TEST(cocoTest, convert_hex) {
+    EXPECT_EQ(hex(0x10), "00000010");
+    EXPECT_EQ(hex(UINT64_C(0x1234567812345678)), "1234567812345678");
+
+    ExtractEnum e = ExtractEnum::FOO_1;
+    EXPECT_EQ(hex(e), "00000010");
+    EXPECT_EQ(hex(e, 3), "010");
+
+    std::atomic<int> a = 0x50;
+    EXPECT_EQ(hex(a), "00000050");
+    EXPECT_EQ(hex(a, 1, 3), " 50");
+
+}
+
+TEST(cocoTest, convert_utf8) {
+    EXPECT_EQ(*utf8("a"), 'a');
+    EXPECT_EQ(utf8("a").length, 1);
+    EXPECT_EQ(*utf8("ä"), 0x00e4);
+    EXPECT_EQ(utf8("ä").length, 2);
+    EXPECT_EQ(*utf8("😊"), 0x1F60A);
+    EXPECT_EQ(utf8("😊").length, 4);
+
+    StringBuffer<32> b;
+    b << utf8(65) << ' ' << utf8(0x00e4);
+    EXPECT_EQ(b.string(), "A ä");
+
+    auto converted = utf8(-1);
+    EXPECT_EQ(converted.begin, converted.data);
+    EXPECT_EQ(converted.length, 7);
 }
 
 
@@ -586,77 +709,13 @@ TEST(cocoTest, CStringConcept) {
     EXPECT_TRUE(testCStringConcept(s3));
     EXPECT_TRUE(testCStringConcept(s4));
     EXPECT_TRUE(testCStringConcept(s5));
-    EXPECT_FALSE(testCStringConcept(i1));
+    EXPECT_FALSE(testCStringConcept(i1)); // int does not fulfill the C-string concept
 
     EXPECT_EQ(length(s1), 3);
     EXPECT_EQ(length(s2), 3);
     EXPECT_EQ(length(s3), 3);
     EXPECT_EQ(length(s4), 3);
     EXPECT_EQ(length(s5), 3);
-}
-
-
-// Duration
-// --------
-
-TEST(cocoTest, Duration) {
-    // cast
-    {
-        auto a = 3s;
-        EXPECT_FLOAT_EQ(int(a), 3);
-        EXPECT_FLOAT_EQ(float(a), 3.0f);
-    }
-
-    // comparison
-    {
-        EXPECT_TRUE(5us == 5000ns);
-        EXPECT_TRUE(5ms == 5000us);
-        EXPECT_TRUE(5s == 5000ms);
-        EXPECT_TRUE(5min == 300s);
-        EXPECT_TRUE(5h == 300min);
-        EXPECT_TRUE(5s > 5ms);
-    }
-
-    // addition/subtraction
-    {
-        auto a = 4s;
-        auto b = 1s;
-        auto c = 100ms;
-        EXPECT_EQ(a + b, 5s);
-        EXPECT_EQ(a - b, 3s);
-        EXPECT_EQ(b + c, 1100ms);
-        EXPECT_EQ(a - c, 3900ms);
-        a += b;
-        EXPECT_EQ(a, 5s);
-        a -= b;
-        EXPECT_EQ(a, 4s);
-    }
-
-    // multiplication
-    {
-        auto a = 4s;
-        EXPECT_EQ(a * 2, 8s);
-        EXPECT_EQ(2 * a, 8s);
-        a *= 3;
-        EXPECT_EQ(a, 12s);
-    }
-
-    // division
-    {
-        auto a = 5s;
-        EXPECT_EQ(a / 2, 2s);
-        EXPECT_EQ(int(a / 1s), 5);
-        EXPECT_EQ(int(a / 2us), 2500000);
-
-    }
-
-    // modulus
-    {
-        auto a = 1100ms;
-        EXPECT_EQ(a % 1000ms, 100ms);
-    }
-
-    //EXPECT_EQ(Seconds::max(), Seconds(0x7fffffff));
 }
 
 
@@ -676,86 +735,6 @@ TEST(cocoTest, cocoEnum) {
 
     a &= ~Flags::FOO;
     EXPECT_EQ(a, Flags::BAR);
-}
-
-
-// Frequency
-// ---------
-
-TEST(cocoTest, Frequency) {
-    Hertz<> defaultIinitialized;
-    //EXPECT_EQ(defaultIinitialized, 0Hz); // is not zero-initialized
-
-    // cast
-    {
-        auto a = 3kHz;
-        EXPECT_FLOAT_EQ(int(a), 3000);
-        EXPECT_FLOAT_EQ(float(a), 3000.0f);
-    }
-
-    // comparison
-    {
-        EXPECT_TRUE(5kHz == 5000Hz);
-        EXPECT_TRUE(5MHz == 5000kHz);
-        EXPECT_TRUE(5GHz == 5000MHz);
-        EXPECT_TRUE(5kHz > 5Hz);
-        EXPECT_TRUE(5MHz < 5GHz);
-    }
-
-    // addition/subtraction
-    {
-        auto a = 4MHz;
-        auto b = 1MHz;
-        auto c = 100kHz;
-        EXPECT_EQ(a + b, 5MHz);
-        EXPECT_EQ(a - b, 3MHz);
-        EXPECT_EQ(b + c, 1100kHz);
-        EXPECT_EQ(a - c, 3900kHz);
-        a += b;
-        EXPECT_EQ(a, 5MHz);
-        a -= b;
-        EXPECT_EQ(a, 4MHz);
-    }
-
-    // multiplication
-    {
-        auto a = 4MHz;
-        EXPECT_EQ(a * 2, 8MHz);
-        EXPECT_EQ(2 * a, 8MHz);
-        a *= 3;
-        EXPECT_EQ(a, 12MHz);
-    }
-
-    // division
-    {
-        auto a = 5MHz;
-        EXPECT_EQ(a / 2, 2MHz);
-        EXPECT_EQ(int(a / 1MHz), 5);
-        EXPECT_EQ(int(a / 1000kHz), 5);
-        EXPECT_EQ(int(5000MHz / 2GHz), 2);
-        a /= 2;
-        EXPECT_EQ(a, 2MHz);
-    }
-
-    // modulus
-    {
-        auto a = 15MHz;
-        EXPECT_EQ(a % 10MHz, 5MHz);
-        EXPECT_EQ(a % 10000kHz, 5MHz);
-    }
-
-    // test construction from other base type
-    Milliseconds<uint8_t> x(1ms);
-    EXPECT_EQ(x.value, 1);
-
-    // test bitrate calculation
-    Kilohertz<> clock = 160MHz;
-    Nanoseconds<> bitTime = 1040ns;
-    Nanoseconds<> resetTime = 50us;
-    int bitRate = int32_t(clock * bitTime);
-    EXPECT_FLOAT_EQ(bitRate, 166);
-    int resetCount = int(resetTime / bitTime);
-    EXPECT_FLOAT_EQ(resetCount, 48);
 }
 
 
@@ -1044,6 +1023,8 @@ TEST(cocoTest, Queue) {
 // String
 // ------
 
+String stringParameter(const String &str) {return str;}
+
 TEST(cocoTest, String) {
     // construct String from c-string
     {
@@ -1053,6 +1034,13 @@ TEST(cocoTest, String) {
         EXPECT_FALSE(foo != "foo");
         EXPECT_EQ(foo, "foo");
         EXPECT_EQ(foo.size(), 3);
+
+        // from c-string array containing a zero
+        String f0o("f\0o");
+        EXPECT_TRUE(f0o == "f");
+        EXPECT_FALSE(f0o != "f");
+        EXPECT_EQ(f0o, "f");
+        EXPECT_EQ(f0o.size(), 1);
 
         // from c-string pointer
         const char *cstr = "bar";
@@ -1067,16 +1055,24 @@ TEST(cocoTest, String) {
         EXPECT_EQ(bar2, "bar");
         EXPECT_EQ(bar2.size(), 3);
 
+        // implicit conversion
+        EXPECT_EQ(stringParameter("foo"), "foo");
+        EXPECT_EQ(stringParameter(cstr), "bar");
+        EXPECT_EQ(stringParameter(reinterpret_cast<const char *>(cstr)), "bar");
+
         // todo String utf8(u8"äöü");
     }
 
     // construct String from c-array
     {
-        char ar[] = {'f', 'o', 'o'};
+        char array[] = {'f', 'o', 'o'};
         char dummy = 'x';
-        String foo(ar);
+        String foo(array);
         EXPECT_EQ(foo, "foo");
         EXPECT_EQ(foo.size(), 3);
+
+        // implicit conversion
+        EXPECT_EQ(stringParameter(array), "foo");
     }
 
     // construct String from std::string
@@ -1085,6 +1081,9 @@ TEST(cocoTest, String) {
         String foo(str);
         EXPECT_EQ(foo, "foo");
         EXPECT_EQ(foo.size(), 3);
+
+        // implicit conversion
+        EXPECT_EQ(stringParameter(str), "foo");
     }
 
     // construct std::string from String
@@ -1101,7 +1100,11 @@ TEST(cocoTest, String) {
         String bar(str);
         EXPECT_EQ(bar, "bar");
         EXPECT_EQ(bar.size(), 3);
+
+        // implicit conversion
+        EXPECT_EQ(stringParameter(str), "bar");
     }
+
 
     // construct std::string_view from String
     {
@@ -1193,70 +1196,99 @@ TEST(cocoTest, String) {
     }
 }
 
-// StringBuffer
-// ------------
+// StringBuffer, StreamOperators
+// -----------------------------
 
 TEST(cocoTest, StringBuffer) {
     const char *space = " ";
 
+    // create a buffer and check size/capacity
     StringBuffer<100> b;
     EXPECT_TRUE(b.empty());
     EXPECT_EQ(b.size(), 0);
     EXPECT_EQ(std::size(b), 0);
-    EXPECT_EQ(b.MAX_SIZE, 100);
+    EXPECT_EQ(b.CAPACITY, 100);
     EXPECT_EQ(b.capacity(), 100);
 
-    // check if append omits the zero termination
-    b.append("foo");
+    // check if assignment of string omits the zero termination
+    b = "foo";
+    EXPECT_EQ(b.size(), 3);
+    b = std::string("bar");
     EXPECT_EQ(b.size(), 3);
     b.clear();
 
+    // check if append omits the zero termination
+    b.append_range("foo");
+    EXPECT_EQ(b.size(), 3);
+    b.append_range(std::string("bar"));
+    EXPECT_EQ(b.size(), 6);
+    b.clear();
+
+    // check if resize clears the elements
+    b.resize(3);
+    EXPECT_EQ(b[2], 0);
+    b.resize(0);
+
+    // check if stream operators are compatible with different string types
     b << String();
+    b << std::string();
+    b << std::string_view();
 
-    b << dec(123456);
-    b << ' ';
-    b << dec(-99, 3) << ' ';
-    b << hex(0x5, 1) << " ";
-    b << hex(0xabcdef12) << space;
-    b << flt(0.0f) << " ";
-    b << flt(0.0f, 0, 2) << " ";
-    b << flt(0.001234567f, 9) << " ";
-    b << flt(0.5f) << ' ';
-    b << flt(0.5f, 0, 2) << " ";
-    b << flt(1.0f, 1) << ' ';
-    b << flt(1.0f, -1) << " ";
-    b << flt(-5.9f) << " ";
-    b << flt(100.9999f) << " ";
-    b << flt(2000000000);
-    EXPECT_EQ(b, "123456 -099 5 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
-    EXPECT_STREQ(b.c_str(), "123456 -099 5 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
+    // check stream operators
+    b << dec(int16_t(-99), 3) << ' ';
+    b << dec(-123456, 7) << ' ';
+    b << dec(UINT64_C(1234567890123)) << ' ';
+    b << hex(0x5, 2) << " ";
+    b << hex(uint16_t(0x1337)) << ' ';
+    b << hex(UINT64_C(0xabcdef12), 1) << space;
+    b << dec(0.0f) << " ";
+    b << dec(0.0f, 0, 2) << " ";
+    b << dec(0.001234567f, 9) << " ";
+    b << dec(0.5f) << ' ';
+    b << dec(0.5f, 0, 2) << " ";
+    b << dec(1.0f, 1) << ' ';
+    b << dec(1.0f, -1) << " ";
+    b << dec(-5.9f) << " ";
+    b << dec(100.9999f) << " ";
+    b << dec(2000000000);
+    EXPECT_EQ(b, "-099 -0123456 1234567890123 05 1337 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
+    EXPECT_STREQ(b.c_str(), "-099 -0123456 1234567890123 05 1337 abcdef12 0 0 0.001234567 0.5 .5 1 1.0 -5.9 101 2000000000");
+    EXPECT_EQ(byteSize(b), 93);
 
+    // create another buffer
     StringBuffer<5> c;
-    c << flt(0.000000001f, 9);
+
+    // assign a float and check content
+    c << dec(0.000000001f, 9);
     EXPECT_EQ(c, "0.000");
     EXPECT_FALSE(c.empty());
     EXPECT_EQ(c.size(), 5);
     EXPECT_EQ(std::size(c), 5);
-    EXPECT_EQ(c.MAX_SIZE, 5);
+    EXPECT_EQ(c.CAPACITY, 5);
     EXPECT_EQ(c.capacity(), 5);
     for (int i = 0; i < 5; ++i) {
         EXPECT_EQ(c[i], "0.000"[i]);
         EXPECT_EQ(c.data()[i], "0.000"[i]);
         EXPECT_EQ(std::data(c)[i], "0.000"[i]);
     }
-
-    // not equal is implemented automatically
-    EXPECT_NE(b, c);
-
-    // byte size
-    EXPECT_EQ(byteSize(b), 71);
     EXPECT_EQ(byteSize(c), 5);
+
+    // check if buffers are not equal (not equal is implemented automatically)
+    EXPECT_NE(b, c);
 
     // convert to string_view
     b.clear();
     b << "foo";
     std::string_view view = b;
     EXPECT_EQ(view, "foo");
+
+
+    // Vector2
+    /*b.clear();
+    int2 i2 = {10, 100};
+    float2 f2 = {1.1f, -5.5f};
+    b << dec(i2) << ' ' << hex(i2, 2) << ' ' << flt(f2);
+    EXPECT_EQ(b, "10 100 0a 64 1.1 -5.5");*/
 }
 
 
@@ -1313,25 +1345,6 @@ TEST(cocoTest, StringConcept) {
     EXPECT_FALSE(testStringConcept(v1));
     EXPECT_TRUE(testStringConcept(s2));
     EXPECT_FALSE(testStringConcept(l1));
-}
-
-
-// Time
-// ----
-
-TEST(cocoTest, Time) {
-    auto t1 = TimeMilliseconds<>(0);
-    auto t2 = TimeMilliseconds<>(0x70000000);
-    auto t3 = TimeMilliseconds<>(0x90000000);
-
-    // test comparison on number circle
-    EXPECT_TRUE(t1 < t2);
-    EXPECT_TRUE(t2 < t3);
-    EXPECT_TRUE(t3 < t1);
-
-    EXPECT_EQ(t2 - t1, Milliseconds<>(0x70000000));
-    EXPECT_EQ(t2 - t1, Milliseconds<>(t2.value));
-    EXPECT_EQ(*(t2 - t1), t2);
 }
 
 
@@ -1394,6 +1407,416 @@ TEST(cocoTest, Unit) {
 
     EXPECT_EQ(c % a, (Value<0>(0)));
 }
+
+TEST(cocoTest, Duration) {
+    // cast
+    {
+        auto a = 3s;
+        EXPECT_FLOAT_EQ(int(a), 3);
+        EXPECT_FLOAT_EQ(float(a), 3.0f);
+    }
+
+    // comparison
+    {
+        EXPECT_TRUE(5us == 5000ns);
+        EXPECT_TRUE(5ms == 5000us);
+        EXPECT_TRUE(5s == 5000ms);
+        EXPECT_TRUE(5min == 300s);
+        EXPECT_TRUE(5h == 300min);
+        EXPECT_TRUE(5s > 5ms);
+    }
+
+    // addition/subtraction
+    {
+        auto a = 4s;
+        auto b = 1s;
+        auto c = 100ms;
+        EXPECT_EQ(a + b, 5s);
+        EXPECT_EQ(a - b, 3s);
+        EXPECT_EQ(b + c, 1100ms);
+        EXPECT_EQ(a - c, 3900ms);
+        a += b;
+        EXPECT_EQ(a, 5s);
+        a -= b;
+        EXPECT_EQ(a, 4s);
+    }
+
+    // multiplication
+    {
+        auto a = 4s;
+        EXPECT_EQ(a * 2, 8s);
+        EXPECT_EQ(2 * a, 8s);
+        a *= 3;
+        EXPECT_EQ(a, 12s);
+    }
+
+    // division
+    {
+        auto a = 5s;
+        EXPECT_EQ(a / 2, 2s);
+        EXPECT_EQ(int(a / 1s), 5);
+        EXPECT_EQ(int(a / 2us), 2500000);
+
+    }
+
+    // modulus
+    {
+        auto a = 1100ms;
+        EXPECT_EQ(a % 1000ms, 100ms);
+    }
+
+    //EXPECT_EQ(Seconds::max(), Seconds(0x7fffffff));
+}
+
+TEST(cocoTest, Time) {
+    auto t1 = TimeMilliseconds<>(0);
+    auto t2 = TimeMilliseconds<>(0x70000000);
+    auto t3 = TimeMilliseconds<>(0x90000000);
+
+    // test comparison on number circle
+    EXPECT_TRUE(t1 < t2);
+    EXPECT_TRUE(t2 < t3);
+    EXPECT_TRUE(t3 < t1);
+
+    EXPECT_EQ(t2 - t1, Milliseconds<>(0x70000000));
+    EXPECT_EQ(t2 - t1, Milliseconds<>(t2.value));
+    EXPECT_EQ(*(t2 - t1), t2);
+}
+
+TEST(cocoTest, Frequency) {
+    Hertz<> defaultIinitialized;
+    //EXPECT_EQ(defaultIinitialized, 0Hz); // is not zero-initialized
+
+    // cast
+    {
+        auto a = 3kHz;
+        EXPECT_FLOAT_EQ(int(a), 3000);
+        EXPECT_FLOAT_EQ(float(a), 3000.0f);
+    }
+
+    // comparison
+    {
+        EXPECT_TRUE(5kHz == 5000Hz);
+        EXPECT_TRUE(5MHz == 5000kHz);
+        EXPECT_TRUE(5GHz == 5000MHz);
+        EXPECT_TRUE(5kHz > 5Hz);
+        EXPECT_TRUE(5MHz < 5GHz);
+    }
+
+    // addition/subtraction
+    {
+        auto a = 4MHz;
+        auto b = 1MHz;
+        auto c = 100kHz;
+        EXPECT_EQ(a + b, 5MHz);
+        EXPECT_EQ(a - b, 3MHz);
+        EXPECT_EQ(b + c, 1100kHz);
+        EXPECT_EQ(a - c, 3900kHz);
+        a += b;
+        EXPECT_EQ(a, 5MHz);
+        a -= b;
+        EXPECT_EQ(a, 4MHz);
+    }
+
+    // multiplication
+    {
+        auto a = 4MHz;
+        EXPECT_EQ(a * 2, 8MHz);
+        EXPECT_EQ(2 * a, 8MHz);
+        a *= 3;
+        EXPECT_EQ(a, 12MHz);
+    }
+
+    // division
+    {
+        auto a = 5MHz;
+        EXPECT_EQ(a / 2, 2MHz);
+        EXPECT_EQ(int(a / 1MHz), 5);
+        EXPECT_EQ(int(a / 1000kHz), 5);
+        EXPECT_EQ(int(5000MHz / 2GHz), 2);
+        a /= 2;
+        EXPECT_EQ(a, 2MHz);
+    }
+
+    // modulus
+    {
+        auto a = 15MHz;
+        EXPECT_EQ(a % 10MHz, 5MHz);
+        EXPECT_EQ(a % 10000kHz, 5MHz);
+    }
+
+    // test construction from other base type
+    Milliseconds<uint8_t> x(1ms);
+    EXPECT_EQ(x.value, 1);
+
+    // test bitrate calculation
+    Kilohertz<> clock = 160MHz;
+    Nanoseconds<> bitTime = 1040ns;
+    Nanoseconds<> resetTime = 50us;
+    int bitRate = int32_t(clock * bitTime);
+    EXPECT_FLOAT_EQ(bitRate, 166);
+    int resetCount = int(resetTime / bitTime);
+    EXPECT_FLOAT_EQ(resetCount, 48);
+
+    // test implicit int cast when units cancel out
+    int i = 10Hz * 10s;
+    EXPECT_EQ(i, 100);
+}
+
+namespace nordic {
+    // https://devzone.nordicsemi.com/f/nordic-q-a/391/uart-baudrate-register-values
+    // https://docs.nordicsemi.com/bundle/ps_nrf52840/page/uart.html#ariaid-title34
+    uint32_t calcBaudRateRegister(Hertz<> baudRate) {
+        // baud rate in Hz (register value = baudRate * 2^32 / 16000000)
+        int brr = (int64_t(baudRate.value) << 32) / 16000000;
+        return (brr + 0x800) & 0xFFFFF000;
+    }
+    uint32_t calcBaudRateRegister(Nanoseconds<> bitDuration) {
+        // bit duration in nanoseconds (register value = (1e9/bitDuration) * 2^32 / 16000000)
+        int brr = INT64_C(268435456000) / int(bitDuration.value);
+        return (brr + 0x800) & 0xFFFFF000;
+    }
+}
+
+namespace st {
+    uint32_t calcBaudRateRegister(Hertz<> clock, Hertz<> baudRate, bool over8) {
+        // baud rate in Hz (register value = clock / baudRate)
+        uint32_t brr = (int(clock) + (baudRate.value >> 1)) / baudRate.value;
+        if (over8)
+            brr = ((brr & ~7) << 1) | (brr & 7);
+        return brr;
+    }
+    uint32_t calcBaudRateRegister(Hertz<> clock, Nanoseconds<> bitDuration, bool over8) {
+        // bit duration in nanoseconds (register value = clock / (1e9/bitDuration) = clock * bitDuration / 1e9)
+        uint32_t brr = (int64_t(clock) * bitDuration.value + 500000000) / 1000000000;
+        if (over8)
+            brr = ((brr & ~7) << 1) | (brr & 7);
+        return brr;
+    }
+
+    uint32_t calcBaudRateRegisterLp(Hertz<> clock, Hertz<> baudRate) {
+        // baud rate in Hz (register value = 256 * clock / baudRate)
+        uint32_t brr = (int64_t(clock) * 256 + (baudRate.value >> 1)) / baudRate.value;
+        return brr;
+    }
+    uint32_t calcBaudRateRegisterLp(Hertz<> clock, Nanoseconds<> bitDuration) {
+        // baud duration in nanoseconds (register value = 256 * clock / (1e9/bitDuration) = 256 * clock * bitDuration / 1e9)
+        uint32_t brr = (int64_t(clock) * 256 * bitDuration.value + 500000000) / 1000000000;
+        return brr;
+    }
+}
+
+TEST(cocoTest, BaudRate) {
+    // baud rate calculation for Nordic
+    {
+        auto br1 = nordic::calcBaudRateRegister(38400Hz);
+        //std::cout << "0x" << std::hex << br1 << std::endl;
+        EXPECT_EQ(br1, 0x009D5000);
+        EXPECT_EQ(nordic::calcBaudRateRegister(115200Hz), 0x01D7E000);
+        EXPECT_EQ(nordic::calcBaudRateRegister(1MHz), 0x10000000);
+
+        // use duration
+        EXPECT_EQ(nordic::calcBaudRateRegister(1000ns), 0x10000000);
+        EXPECT_EQ(nordic::calcBaudRateRegister(1us), 0x10000000);
+    }
+
+    // baud rate calculation for ST (STM32G4 reference manual 40.5.7)
+    {
+        auto br1 = st::calcBaudRateRegister(8MHz, 9600Hz, false);
+        //std::cout << "0x" << std::hex << br1 << std::endl;
+        EXPECT_EQ(br1, 0x341);
+        EXPECT_EQ(st::calcBaudRateRegister(8MHz, 9600Hz, true), 0x681);
+        EXPECT_EQ(st::calcBaudRateRegister(48MHz, 921600Hz, false), 0x34);
+        EXPECT_EQ(st::calcBaudRateRegister(48MHz, 921600Hz, true), 0x64);
+
+        // use duration
+        EXPECT_EQ(st::calcBaudRateRegister(48MHz, 1085ns, false), 0x34);
+        EXPECT_EQ(st::calcBaudRateRegister(48MHz, 1085ns, true), 0x64);
+    }
+
+    // baud rate calculation for ST low power (STM32G4 reference manual 41.4.7)
+    {
+        auto br1 = st::calcBaudRateRegisterLp(32768Hz, 300Hz);
+        //std::cout << "0x" << std::hex << br1 << std::endl;
+        EXPECT_EQ(br1, 0x6D3A);
+        EXPECT_EQ(st::calcBaudRateRegisterLp(32768Hz, 9600Hz), 0x36A); // is closer than 0x369
+
+        // use duration
+        EXPECT_EQ(st::calcBaudRateRegisterLp(32768Hz, 3333333ns), 0x6D3A);
+        EXPECT_EQ(st::calcBaudRateRegisterLp(32768Hz, 104167ns), 0x36A);
+    }
+}
+
+
+// Vector2, Vector3, Vector4
+// -------------------------
+
+TEST(cocoTest, Vector2) {
+    {
+        int2 a = {1, 2};
+        int2 b = {2, 1};
+        int s = 1;
+
+        +a;
+        -a;
+
+        s + b;
+        a + s;
+        a + b;
+
+        s - b;
+        a - s;
+        a - b;
+
+        s * b;
+        a * s;
+        a * b;
+
+        a / s;
+        a / b;
+
+        StringBuffer<100> buffer;
+        buffer << hex(a.x, 2) << ' ';
+        buffer << vector(a, [] (auto &s, int c) {s << "0x" << hex(c, 2);}, ", ");
+        EXPECT_EQ(buffer.string(), "01 0x01, 0x02");
+    }
+    {
+        float2 a = {1.0f, 2.0f};
+        float2 b = {2.0f, 1.0f};
+        float s = 1.0f;
+
+        +a;
+        -a;
+
+        s + b;
+        a + s;
+        a + b;
+
+        s - b;
+        a - s;
+        a - b;
+
+        s * b;
+        a * s;
+        a * b;
+
+        a / s;
+        a / b;
+    }
+}
+
+TEST(cocoTest, Vector3) {
+    {
+        int3 a = {1, 2, 3};
+        int3 b = {3, 2, 1};
+        int s = 1;
+
+        +a;
+        -a;
+
+        s + b;
+        a + s;
+        a + b;
+
+        s - b;
+        a - s;
+        a - b;
+
+        s * b;
+        a * s;
+        a * b;
+
+        a / s;
+        a / b;
+
+        StringBuffer<100> buffer;
+        buffer << hex(a.x, 2) << ' ';
+        buffer << vector(a, [] (auto &s, int c) {s << "0x" << hex(c, 2);}, ", ");
+        EXPECT_EQ(buffer.string(), "01 0x01, 0x02, 0x03");
+
+        // also works with std::ostream
+        //std::cout << vector(a, [] (auto &s, int c) {s << "0x" << hex(c, 2);}, ", ");
+    }
+    {
+        float3 a = {1.0f, 2.0f, 3.0f};
+        float3 b = {3.0f, 2.0f, 1.0f};
+        float s = 1.0f;
+
+        +a;
+        -a;
+
+        s + b;
+        a + s;
+        a + b;
+
+        s - b;
+        a - s;
+        a - b;
+
+        s * b;
+        a * s;
+        a * b;
+
+        a / s;
+        a / b;
+    }
+}
+
+TEST(cocoTest, Vector4) {
+    {
+        int4 a = {1, 2, 3, 4};
+        int4 b = {4, 3, 2, 1};
+        int s = 1.0f;
+
+        +a;
+        -a;
+
+        s + b;
+        a + s;
+        a + b;
+
+        s - b;
+        a - s;
+        a - b;
+
+        s * b;
+        a * s;
+        a * b;
+
+        a / s;
+        a / b;
+
+        StringBuffer<100> buffer;
+        buffer << hex(a.x, 2) << ' ';
+        buffer << vector(a, [] (auto &s, int c) {s << "0x" << hex(c, 2);}, ", ");
+        EXPECT_EQ(buffer.string(), "01 0x01, 0x02, 0x03, 0x04");
+    }
+    {
+        float4 a = {1.0f, 2.0f, 3.0f, 4.0f};
+        float4 b = {4.0f, 3.0f, 2.0f, 1.0f};
+        float s = 1.0f;
+
+        +a;
+        -a;
+
+        s + b;
+        a + s;
+        a + b;
+
+        s - b;
+        a - s;
+        a - b;
+
+        s * b;
+        a * s;
+        a * b;
+
+        a / s;
+        a / b;
+    }
+}
+
+
 
 
 // File

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "assert.hpp"
 #include "Task.hpp"
 #include "Time.hpp"
+#include <cassert>
 
 
 namespace coco {

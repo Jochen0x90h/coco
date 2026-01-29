@@ -1,29 +1,24 @@
 #pragma once
 
-#ifdef NATIVE
-#include <iostream>
-#endif
+#include "String.hpp"
 
 
 namespace coco {
 
-/**
- * Vector with two dimensions
- * @tparam T base type
- */
+/// @brief Vector with two dimensions.
+/// @tparam T base type
 template <typename T>
 struct Vector2 {
     T x;
     T y;
 
-    Vector2() : x(), y() {}
-    Vector2(T x, T y) : x(x), y(y) {}
+    constexpr Vector2() : x(), y() {}
+    constexpr Vector2(T x, T y) : x(x), y(y) {}
 
     Vector2(const Vector2 &v) = default;
 
-    /**
-     * Cast from vector with different base type
-     */
+    /// @brief Cast from vector with different base type
+    ///
     template <typename T2>
     explicit Vector2(const Vector2<T2> &v) : x(v.x), y(v.y) {}
 
@@ -75,20 +70,26 @@ struct Vector2 {
         return *this;
     }
 
-    /**
-     * Swap x and y
-     */
+    /// @brief Swap x and y
+    ///
     Vector2 yx() {return {this->y, this->x};}
 
-    /**
-     * Boradcast x
-     */
+    /// @brief Boradcast x
+    ///
     Vector2 xx() {return {this->x, this->x};}
 
-    /**
-     * Boradcast y
-     */
+    /// @brief Boradcast y
+    ///
     Vector2 yy() {return {this->y, this->y};}
+
+    int size() {return 2;}
+    T *data() {return &this->x;}
+    const T *data() const {return &this->x;}
+
+    T *begin() {return &this->x;}
+    const T *begin() const {return &this->x;}
+    T *end() {return &this->x + 2;}
+    const T *end() const {return &this->x + 2;}
 };
 
 template <typename T>
@@ -160,7 +161,7 @@ template <typename T1, typename T2>
 inline auto operator /(const Vector2<T1> &a, const Vector2<T2> &b) {
     return Vector2<decltype(a.x / b.x)>(a.x / b.x, a.y / b.y);
 }
-
+/*
 #ifdef NATIVE
 template <typename T>
 std::ostream &operator <<(std::ostream &s, const Vector2<T> &value) {
@@ -168,6 +169,32 @@ std::ostream &operator <<(std::ostream &s, const Vector2<T> &value) {
     return s;
 }
 #endif
+*/
+
+template <typename T, typename F>
+struct Vector2Serializer {
+    // vector to serialize
+    const Vector2<T> &v;
+
+    // function that does the serialization
+    const F &f;
+
+    // delimiter between vector elements
+    String d;
+};
+
+template <typename S, typename T, typename F>
+S &operator <<(S &stream, Vector2Serializer<T, F> s) {
+    s.f(stream, s.v.x);
+    stream << s.d;
+    s.f(stream, s.v.y);
+    return stream;
+}
+
+template <typename T, typename F>
+Vector2Serializer<T, F> vector(const Vector2<T> &vector, const F &function, String delimiter) {
+    return {vector, function, delimiter};
+}
 
 
 using int2 = Vector2<int>;

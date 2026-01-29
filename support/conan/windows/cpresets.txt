@@ -1,0 +1,30 @@
+# profile platform config generator
+debug native Debug "Visual Studio 17 2022"
+default native Release "Visual Studio 17 2022"
+debug emu Debug "Visual Studio 17 2022"
+default emu Release "Visual Studio 17 2022"
+armv7 nrf52840 Release Ninja
+armv6 stm32f042x6 Release Ninja
+armv6 stm32f051x8 Release Ninja
+armv6 stm32f070x6 Release Ninja
+armv6 stm32f072xb Release Ninja
+armv6 stm32f091xc Release Ninja
+armv6 stm32f098xx Release Ninja
+armv6 stm32c031xx Release Ninja
+armv6 stm32g081xx Release Ninja
+armv6 stm32g0b1xx Release Ninja
+armv7 stm32f334x8 Release Ninja
+armv7 stm32f373xc Release Ninja
+armv7 stm32f398xx Release Ninja
+armv7 stm32f401xe Release Ninja
+armv7 stm32f411xe Release Ninja
+armv7 stm32f479xx Release Ninja
+armv7 stm32l433xx Release Ninja
+armv7 stm32l476xx Release Ninja
+armv7 stm32l496xx Release Ninja
+armv7 stm32g431xx Release Ninja
+armv7 stm32g474xx Release Ninja
+armv7 stm32g491xx Release Ninja
+armv8 stm32h503xx Release Ninja
+armv8 stm32h563xx Release Ninja
+armv8 stm32u385xx Release Ninja
