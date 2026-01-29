@@ -32,11 +32,9 @@ template <typename T>
 concept CStringArrayConcept = IsCStringArray<T>;
 
 
-/**
-	C-string concept, is either (const) char * or C array of (const) char
-	Usage:
-	template <typename T> requires (CStringConcept<T>) void foo(const T &str) {...}
-*/
+/// @brief C-string concept, is either (const) char * or C array of (const) char
+/// Usage:
+/// template <typename T> requires (CStringConcept<T>) void foo(const T &str) {...}
 template <typename T>
 concept CStringConcept = IsCStringPointer<T> || IsCStringArray<T>;
 

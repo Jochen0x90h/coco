@@ -62,6 +62,9 @@ Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
+/* Call the clock system initialization function.*/
+  bl  SystemInit
+
 /* Copy the data segment initializers from flash to SRAM */
   ldr r0, =_sdata
   ldr r1, =_edata
@@ -78,7 +81,24 @@ LoopCopyDataInit:
   adds r4, r0, r3
   cmp r4, r1
   bcc CopyDataInit
-  
+
+/* Copy ccmram segment from flash to CCMRAM */
+  ldr r0, =_sccmram
+  ldr r1, =_eccmram
+  ldr r2, =_siccmram
+  movs r3, #0
+  b LoopCopyCcmInit
+
+CopyCcmInit:
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
+
+LoopCopyCcmInit:
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopyCcmInit
+
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss
@@ -93,8 +113,6 @@ LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
 
-/* Call the clock system intitialization function.*/
-    bl  SystemInit
 /* Call static constructors */
     bl __libc_init_array
 /* Call the application's entry point.*/
@@ -127,7 +145,6 @@ Infinite_Loop:
 ******************************************************************************/
  	.section	.isr_vector,"a",%progbits
 	.type	g_pfnVectors, %object
-	.size	g_pfnVectors, .-g_pfnVectors
 
 
 g_pfnVectors:
@@ -249,6 +266,8 @@ g_pfnVectors:
 	.word	DMA2_Channel8_IRQHandler
 	.word	CORDIC_IRQHandler
 	.word	FMAC_IRQHandler
+
+	.size	g_pfnVectors, .-g_pfnVectors
 
 /*******************************************************************************
 *

@@ -3,11 +3,9 @@
 
 namespace coco {
 
-/**
- * Check if a type is a subclass of a given class, e.g. IsSubclass<Foo, Bar>::value
- * @tparam T type to check if it derives from base class B
- * @tparam B base class
- */
+/// @brief Check if a type is a subclass of a given class, e.g. IsSubclass<Foo, Bar>::value.
+/// @tparam T type to check if it derives from base class B
+/// @tparam B base class
 template <typename T, class B>
 class IsSubclass {
 	class No {};

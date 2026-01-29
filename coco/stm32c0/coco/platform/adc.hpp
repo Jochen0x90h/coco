@@ -1,55 +1,47 @@
 #pragma once
 
-#include "platform.hpp"
-#include "dma.hpp"
-#include <coco/Array.hpp>
+#include "adcF0C0G0F3L4G4H5U3U5.hpp"
 #include <coco/bits.hpp>
-#include <coco/debug.hpp>
 
 
 namespace coco {
 
-/**
- * ADC helpers
- * Refernece manual: https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
- * ADC: Section 14
- */
+/// @brief ADC helpers
+/// Refernece manual: https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+///   ADC: Section 14
 namespace adc {
 
-/**
- * ADC clock configuration
- * Contains fiels from CCR and CFGR2 registers which do not overlap
- */
-enum class ClockConfig {
+/// @brief ADC clock configuration
+/// Contains fields from CCR and CFGR2 registers which do not overlap
+enum class ClockConfig : uint32_t {
     // ADC clock source is AHB clock
-    AHB_DIV1 = 1 << ADC_CFGR2_CKMODE_Pos, // AHB / 1
-    AHB_DIV2 = 2 << ADC_CFGR2_CKMODE_Pos, // AHB / 2
-    AHB_DIV4 = 3 << ADC_CFGR2_CKMODE_Pos, // AHB / 4 (e.g. 160Mhz / 4 = 40MHz)
+    AHB_DIV_1 = 1u << ADC_CFGR2_CKMODE_Pos, // AHB / 1
+    AHB_DIV_2 = 2u << ADC_CFGR2_CKMODE_Pos, // AHB / 2
+    AHB_DIV_4 = 3u << ADC_CFGR2_CKMODE_Pos, // AHB / 4 (e.g. 160Mhz / 4 = 40MHz)
 
     // ADC clock source is SYSCLK or PLLP (configured in RCC e.g. during SystemInit())
-    RCC_DIV1 = 0,
-    RCC_DIV2 = 1 << ADC_CCR_PRESC_Pos,
-    RCC_DIV4 = 2 << ADC_CCR_PRESC_Pos,
-    RCC_DIV6 = 3 << ADC_CCR_PRESC_Pos,
-    RCC_DIV8 = 4 << ADC_CCR_PRESC_Pos,
-    RCC_DIV10 = 5 << ADC_CCR_PRESC_Pos,
-    RCC_DIV12 = 6 << ADC_CCR_PRESC_Pos,
-    RCC_DIV16 = 7 << ADC_CCR_PRESC_Pos,
-    RCC_DIV32 = 8 << ADC_CCR_PRESC_Pos,
-    RCC_DIV64 = 9 << ADC_CCR_PRESC_Pos,
-    RCC_DIV128 = 10 << ADC_CCR_PRESC_Pos,
-    RCC_DIV256 = 11 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_1 = 0,
+    RCC_DIV_2 = 1 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_4 = 2 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_6 = 3 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_8 = 4 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_10 = 5 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_12 = 6 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_16 = 7 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_32 = 8 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_64 = 9 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_128 = 10 << ADC_CCR_PRESC_Pos,
+    RCC_DIV_256 = 11 << ADC_CCR_PRESC_Pos,
 };
 
-/**
- * ADC configuration
- */
-enum class Config {
+/// @brief ADC configuration
+///
+enum class Config : uint32_t {
     // ADC resolution
-    RES12 = 0 << ADC_CFGR1_RES_Pos,
-    RES10 = 1 << ADC_CFGR1_RES_Pos,
-    RES8 = 2 << ADC_CFGR1_RES_Pos,
-    RES6 = 3 << ADC_CFGR1_RES_Pos,
+    RES_12 = 0 << ADC_CFGR1_RES_Pos,
+    RES_10 = 1 << ADC_CFGR1_RES_Pos,
+    RES_8 = 2 << ADC_CFGR1_RES_Pos,
+    RES_6 = 3 << ADC_CFGR1_RES_Pos,
     RES_MASK = ADC_CFGR1_RES_Msk,
 
     // alignment
@@ -62,11 +54,17 @@ enum class Config {
     OVERRUN_REPLACE = ADC_CFGR1_OVRMOD
 };
 
-/**
- * ADC trigger
- * Reference manual section 21.4.18
- */
-enum class Trigger {
+/// @brief DMA mode
+///
+enum class DmaMode : uint32_t {
+    DISABLED = 0,
+    ONE_SHOT = ADC_CFGR1_DMAEN,
+    CIRCULAR = ADC_CFGR1_DMAEN | ADC_CFGR1_DMACFG,
+};
+
+/// @brief ADC trigger
+/// Reference manual section 14.4.1, Table 53
+enum class Trigger : uint32_t {
     // ADC triggered by software (set ADSTART bit or call start())
     SOFTWARE = 0,
 
@@ -77,44 +75,42 @@ enum class Trigger {
     ADC1_EXTI11 = ADC_CFGR1_EXTEN_0 | (7 << ADC_CFGR1_EXTSEL_Pos),
 };
 
-/**
- * ADC input, combination of channel index and sampling cycles
- * Note: Order of channels in a sequence is ignored. The sampling cycles of the first channel are used for all channels
- */
+/// @brief ADC input, combination of channel index and sampling cycles.
+/// Note: See setSequence() for hardware limitations
 enum class Input : uint16_t {
-    CHANNEL0 = 0,
-    CHANNEL1 = 1,
-    CHANNEL2 = 2,
-    CHANNEL3 = 3,
-    CHANNEL4 = 4,
-    CHANNEL5 = 5,
-    CHANNEL6 = 6,
-    CHANNEL7 = 7,
-    CHANNEL8 = 8,
+    CHANNEL_0 = 0,
+    CHANNEL_1 = 1,
+    CHANNEL_2 = 2,
+    CHANNEL_3 = 3,
+    CHANNEL_4 = 4,
+    CHANNEL_5 = 5,
+    CHANNEL_6 = 6,
+    CHANNEL_7 = 7,
+    CHANNEL_8 = 8,
 
     // Vsense
-    CHANNEL9 = 9,
+    CHANNEL_9 = 9,
 
     // Vrefint
-    CHANNEL10 = 10,
+    CHANNEL_10 = 10,
 
-    CHANNEL11 = 11,
-    CHANNEL12 = 12,
-    CHANNEL13 = 13,
-    CHANNEL14 = 14,
+    CHANNEL_11 = 11,
+    CHANNEL_12 = 12,
+    CHANNEL_13 = 13,
+    CHANNEL_14 = 14,
 
     // Vdda
-    CHANNEL15 = 15,
+    CHANNEL_15 = 15,
 
     // Vssa
-    CHANNEL16 = 16,
+    CHANNEL_16 = 16,
 
-    CHANNEL17 = 17,
-    CHANNEL18 = 18,
-    CHANNEL19 = 19,
-    CHANNEL20 = 20,
-    CHANNEL21 = 21,
-    CHANNEL22 = 22,
+    CHANNEL_17 = 17,
+    CHANNEL_18 = 18,
+    CHANNEL_19 = 19,
+    CHANNEL_20 = 20,
+    CHANNEL_21 = 21,
+    CHANNEL_22 = 22,
     CHANNEL_MASK = 0x1f,
 
     // convenience for single ended channels
@@ -155,41 +151,10 @@ enum class Input : uint16_t {
 };
 COCO_ENUM(Input);
 
-/// @brief DMA mode
-///
-enum class DmaMode : uint32_t {
-    DISABLED = 0,
-    ONE_SHOT = ADC_CFGR1_DMAEN,
-    CIRCULAR = ADC_CFGR1_DMAEN | ADC_CFGR1_DMACFG,
-};
-COCO_ENUM(DmaMode);
 
-
-// enable voltage regulator
-inline void enableVoltageRegulator(ADC_TypeDef *adc) {
-    adc->CR = ADC_CR_ADVREGEN;
-
-    // wait tADCVREG_STUP
-    debug::sleep(20us);
-}
-
-// calibrate single ended
-inline void calibrate(ADC_TypeDef *adc)  {
-    adc->CR = ADC_CR_ADVREGEN | ADC_CR_ADCAL;
-    while ((adc->CR & ADC_CR_ADCAL) != 0) {}
-    for (int i = 0; i < 8; ++i)
-        __NOP();
-}
-
-// enable ADC
-inline void enable(ADC_TypeDef *adc) {
-    adc->CR = ADC_CR_ADVREGEN | ADC_CR_ADEN;
-    while ((adc->ISR & ADC_ISR_ADRDY) == 0);
-}
-
-/// Set ADC input
+/// @brief Set ADC input
 /// @param adc ADC registers
-/// @param input input and sampling cycles
+/// @param input Input and sampling cycles
 inline void setInput(ADC_TypeDef *adc, Input input) {
     // select channel
     adc->CHSELR = int(input & Input::CHANNEL_MASK) | 0xf0;
@@ -198,16 +163,17 @@ inline void setInput(ADC_TypeDef *adc, Input input) {
     adc->SMPR = extract(int(input), int(Input::CYCLES_MASK)) << ADC_SMPR_SMP1_Pos;
 }
 
-/// @brief Set ADC input sequence list
+/// @brief Set ADC input sequence list.
+/// Note: Only two different sampling cycles are supportd.
 /// @param adc ADC registers
-/// @param sequence input sequence of up to 8 inputs and up to two different sampling cycles
+/// @param sequence Input sequence of up to 8 inputs and up to two different sampling cycles
 inline void setSequence(ADC_TypeDef *adc, const Array<const Input> &sequence) {
     int count = sequence.size();
 
     // initialize CHSELR with end-of-sequence marker
     uint32_t chselr = 0xf0 << (count - 1) * 4;
 
-    // initialize SMPR with first sampling cycles
+    // initialize SMPR with sampling cycles from first channel
     int smp1 = extract(int(sequence[0]), int(Input::CYCLES_MASK));
     int smp2 = 0;
     uint32_t smpr = smp1 << ADC_SMPR_SMP1_Pos;
@@ -244,134 +210,37 @@ inline void setSequence(ADC_TypeDef *adc, const Array<const Input> &sequence) {
 */
 }
 
-/**
- * Start conversion or wait for trigger if a trigger is enabled
- */
-inline void start(ADC_TypeDef *adc) {
-    adc->CR = ADC_CR_ADVREGEN | ADC_CR_ADEN | ADC_CR_ADSTART;
+inline Instance &Instance::configure(Config config, Trigger trigger, DmaMode dmaMode) {
+    // set configuration, trigger and DMA mode
+    uint32_t cfgr = int(config) | int(trigger) | int(dmaMode);
+    cfgr |= ADC_CFGR1_CHSELRMOD; // use CHSELR as sequence
+    adc->CFGR1 = cfgr;
+    return *this;
 }
 
-/**
- * Stop conversion
- */
-inline void stop(ADC_TypeDef *adc) {
-    adc->CR = ADC_CR_ADVREGEN | ADC_CR_ADEN | ADC_CR_ADSTP;
+inline Instance Info::enableClock(ClockConfig clockConfig) const {
+    // enable clock
+    rcc.enableClock();
+
+    // enable voltage regulator
+    adc::enableVoltageRegulator(adc);
+
+    // set clock config
+    common->CCR = int(clockConfig) & ADC_CCR_PRESC;
+    adc->CFGR2 = int(clockConfig) & ADC_CFGR2_CKMODE;
+
+    // return Instance
+    return {adc};
 }
 
-/**
- * Wait for end of conversion
- */
-inline void wait(ADC_TypeDef *adc) {
-    while ((adc->ISR & ADC_ISR_EOC) == 0);
+template <dma::Feature F2>
+void Info::map(const dma::Info<F2> &dmaInfo) const {
+    dmaInfo.setRequest(5);
 }
-
-
-/// @brief Wrapper for ADC registers
-///
-struct Registers {
-    ADC_TypeDef *adc;
-
-
-    //Registers(ADC_TypeDef *adc) : adc(adc) {}
-    //Registers &operator =(ADC_TypeDef *adc) {this->adc = adc; return *this;}
-    ADC_TypeDef *operator ->() {return this->adc;}
-
-    /// @brief Set input of ADC
-    /// @param input to sample from
-    /// @return this
-    auto &setInput(Input input) {
-        adc::setInput(this->adc, input);
-        return *this;
-    }
-
-    /// @brief Set input sequence list
-    /// @param sequence input sequence to sample from
-    /// @return this
-    auto &setSequence(const Array<const Input> &sequence) {
-        adc::setSequence(this->adc, sequence);
-        return *this;
-    }
-
-    /// @brief Start conversion or wait for trigger if a trigger is enabled.
-    /// @return this
-    auto &start() {
-        adc::start(this->adc);
-        return *this;
-    }
-
-    /// @brief Stop conversion.
-    /// @return this
-    auto &stop() {
-        adc::stop(this->adc);
-        return *this;
-    }
-
-    /// @brief Wait for end of conversion.
-    /// @return this
-    auto &wait() {
-        adc::wait(this->adc);
-        return *this;
-    }
-
-    /// @brief Get conversion result
-    /// @return
-    uint32_t data() {return this->adc->DR;}
-};
-
-
-/// @brief Info for an ADC in independent mode
-///
-struct Info {
-    // registers
-    ADC_Common_TypeDef *common;
-    ADC_TypeDef *adc;
-
-    // reset and clock control
-    rcc::Info2<offsetof(RCC_TypeDef, APBENR2)> rcc;
-
-    // interrupt
-    uint8_t irq;
-
-
-    /// @brief Configure ADC for use (enable clock, enable voltage regulator, calibrate, configure and enable ADC).
-    /// Only need to set the input or sequence (.setInput() or .setSequence())
-    Registers configure(ClockConfig clockConfig, Config config, Trigger trigger,
-        DmaMode dmaMode = DmaMode::DISABLED) const
-    {
-        // enable clock
-        this->rcc.enableClock();
-
-        auto common = this->common;
-        auto adc = this->adc;
-
-        adc::enableVoltageRegulator(adc);
-        adc::calibrate(adc);
-
-        // set clock config and common mode
-        common->CCR = int(clockConfig) & ADC_CCR_PRESC;
-
-        // set config (resolution, alignment, trigger)
-        adc->CFGR1 = int(config) | int(trigger) | int(dmaMode)
-            | ADC_CFGR1_CHSELRMOD; // use CHSELR as sequence
-        adc->CFGR2 = int(clockConfig) & ADC_CFGR2_CKMODE;
-
-        // enable ADC
-        adc::enable(adc);
-
-        return {adc};
-    }
-
-    /**
-     * Map a DMA channel to the the ADC
-     */
-    void map(const dma::Info &dmaInfo) const {
-        dmaInfo.setMux(5);
-    }
-};
 
 
 // single channel ADC infos
-static const Info ADC1_INFO{ADC1_COMMON, ADC1, RCC_APBENR2_ADCEN, ADC1_IRQn};
+static const Info ADC1_INFO{ADC1_COMMON, ADC1, RCC_APBENR2_ADCEN, ADC1_IRQn, 5};
 
 } // namespace adc
 } // namespace coco

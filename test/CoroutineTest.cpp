@@ -273,7 +273,7 @@ TEST(cocoTest, AwaitableMove) {
 // Barrier
 // -------
 
-Barrier barrier;
+Barrier<> barrier;
 
 Coroutine waitForBarrier() {
 	Object o("waitForBarrier()");

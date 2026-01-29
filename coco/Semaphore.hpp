@@ -5,32 +5,26 @@
 
 namespace coco {
 
-
-/**
- * Semaphore
- * See https://en.wikipedia.org/wiki/Semaphore_(programming)
- */
+/// @brief Semaphore.
+/// See https://en.wikipedia.org/wiki/Semaphore_(programming)
 class Semaphore {
 public:
-
-    /**
-     * Guard that can be used to ensure posting to the semaphore at function exit
-     *
-     * Coroutine foo() {
-     *   // wait until wie acquired a token from the semaphore
-     *   co_await semaphore.untilAcquired();
-     *
-     *   // we passed the semaphore and acquired a token, now make sure that we release the token again
-     *   Semaphore::Guard guard(semaphore);
-     *
-     *   if (bar) {
-     *     // semaphore.release() gets called here (before exiting the function)
-     *     co_return;
-     *   }
-     *
-     *   // semaphore.release() gets called here (before exiting the function)
-     * }
-     */
+    /// @brief Guard that can be used to ensure posting to the semaphore at function exit.
+    ///
+    /// Coroutine foo() {
+    ///   // wait until wie acquired a token from the semaphore
+    ///   co_await semaphore.untilAcquired();
+    ///
+    ///   // we passed the semaphore and acquired a token, now make sure that we release the token again
+    ///   Semaphore::Guard guard(semaphore);
+    ///
+    ///   if (bar) {
+    ///     // semaphore.release() gets called here (before exiting the function)
+    ///     co_return;
+    ///   }
+    ///
+    ///   // semaphore.release() gets called here (before exiting the function)
+    /// }
     class Guard {
     public:
         [[nodiscard]] Guard(Semaphore &semaphore) : semaphore(semaphore) {}
@@ -44,15 +38,12 @@ public:
     };
 
 
-    /**
-     * Construct a semaphore with a given number of initial tokens that can be handed out
-     * @param n number of initial tokens
-     */
+    /// Construct a semaphore with a given number of initial tokens that can be handed out.
+    /// @param n number of initial tokens
     explicit Semaphore(int n) : n(n) {}
 
-    /**
-     * Wait until a token is acquired
-     */
+    /// @brief Wait until a token is acquired.
+    ///
     [[nodiscard]] Awaitable<> untilAcquired() {
         // check if tokens are available
         if (this->n > 0) {
@@ -64,9 +55,8 @@ public:
         return {this->taskList};
     }
 
-    /**
-     * Release a token and resume the next coroutine waiting for a token
-     */
+    /// @brief Release a token and resume the next coroutine waiting for a token.
+    ///
     void release() {
         this->n += 1 - int(this->taskList.doFirst());
     }

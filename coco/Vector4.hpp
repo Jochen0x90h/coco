@@ -1,16 +1,12 @@
 #pragma once
 
-#ifdef NATIVE
-#include <iostream>
-#endif
+#include "String.hpp"
 
 
 namespace coco {
 
-/**
- * Vector with four dimensions
- * @tparam T base type
- */
+/// @brief Vector with four dimensions.
+/// @tparam T base type
 template <typename T>
 struct Vector4 {
     T x;
@@ -18,14 +14,13 @@ struct Vector4 {
     T z;
     T w;
 
-    Vector4() : x(), y(), z(), w() {}
-    Vector4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
+    constexpr Vector4() : x(), y(), z(), w() {}
+    constexpr Vector4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
 
     Vector4(const Vector4 &v) = default;
 
-    /**
-     * Cast from vector with different base type
-     */
+    /// @brief Cast from vector with different base type
+    ///
     template <typename T2>
     explicit Vector4(const Vector4<T2> &v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
 
@@ -93,20 +88,30 @@ struct Vector4 {
         return *this;
     }
 
-    /**
-     * Boradcast x
-     */
+    /// @brief Boradcast x
+    ///
     Vector4 xxxx() {return {this->x, this->x, this->x, this->x};}
 
-    /**
-     * Boradcast y
-     */
+    /// @brief Boradcast y
+    ///
     Vector4 yyyy() {return {this->y, this->y, this->y, this->y};}
 
-    /**
-     * Boradcast z
-     */
+    /// @brief Boradcast z
+    ///
     Vector4 zzzz() {return {this->z, this->z, this->z, this->z};}
+
+    /// @brief Boradcast w
+    ///
+    Vector4 wwww() {return {this->w, this->w, this->w, this->w};}
+
+    int size() {return 4;}
+    T *data() {return &this->x;}
+    const T *data() const {return &this->x;}
+
+    T *begin() {return &this->x;}
+    const T *begin() const {return &this->x;}
+    T *end() {return &this->x + 4;}
+    const T *end() const {return &this->x + 4;}
 };
 
 template <typename T>
@@ -126,59 +131,59 @@ inline auto operator -(const Vector4<T> &a) {
 
 template <typename T1, typename T2>
 inline auto operator +(const Vector4<T1> &a, T2 b) {
-    return Vector4<decltype(a.x + b)>(a.x + b, a.y + b, a.z + b);
+    return Vector4<decltype(a.x + b)>(a.x + b, a.y + b, a.z + b, a.w + b);
 }
 
 template <typename T1, typename T2>
 inline auto operator +(T1 a, const Vector4<T2> &b) {
-    return Vector4<decltype(a + b.x)>(a + b.x, a + b.y, a + b.z);
+    return Vector4<decltype(a + b.x)>(a + b.x, a + b.y, a + b.z, a + b.w);
 }
 
 template <typename T1, typename T2>
 inline auto operator +(const Vector4<T1> &a, const Vector4<T2> &b) {
-    return Vector4<decltype(a.x + b.x)>(a.x + b.x, a.y + b.y, a.z + b.z);
+    return Vector4<decltype(a.x + b.x)>(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
 
 template <typename T1, typename T2>
 inline auto operator -(const Vector4<T1> &a, T2 b) {
-    return Vector4<decltype(a.x - b)>(a.x - b, a.y - b, a.z - b);
+    return Vector4<decltype(a.x - b)>(a.x - b, a.y - b, a.z - b, a.w - b);
 }
 
 template <typename T1, typename T2>
 inline auto operator -(T1 a, const Vector4<T2> &b) {
-    return Vector4<decltype(a - b.x)>(a - b.x, a - b.y, a - b.z);
+    return Vector4<decltype(a - b.x)>(a - b.x, a - b.y, a - b.z, a - b.w);
 }
 
 template <typename T1, typename T2>
 inline auto operator -(const Vector4<T1> &a, const Vector4<T2> &b) {
-    return Vector4<decltype(a.x - b.x)>(a.x - b.x, a.y - b.y, a.z - b.z);
+    return Vector4<decltype(a.x - b.x)>(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
 }
 
 template <typename T1, typename T2>
 inline auto operator *(const Vector4<T1> &a, T2 b) {
-    return Vector4<decltype(a.x * b)>(a.x * b, a.y * b, a.z * b);
+    return Vector4<decltype(a.x * b)>(a.x * b, a.y * b, a.z * b, a.w * b);
 }
 
 template <typename T1, typename T2>
 inline auto operator *(T1 a, const Vector4<T2> & b) {
-    return Vector4<decltype(a * b.x)>(a * b.x, a * b.y, a * b.z);
+    return Vector4<decltype(a * b.x)>(a * b.x, a * b.y, a * b.z, a * b.w);
 }
 
 template <typename T1, typename T2>
 inline auto operator *(const Vector4<T1> &a, const Vector4<T2> &b) {
-    return Vector4<decltype(a.x * b.x)>(a.x * b.x, a.y * b.y, a.z * b.z);
+    return Vector4<decltype(a.x * b.x)>(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }
 
 template <typename T1, typename T2>
 inline auto operator /(const Vector4<T1> &a, T2 b) {
-    return Vector4<decltype(a.x / b)>(a.x / b, a.y / b, a.z / b);
+    return Vector4<decltype(a.x / b)>(a.x / b, a.y / b, a.z / b, a.w / b);
 }
 
 template <typename T1, typename T2>
 inline auto operator /(const Vector4<T1> &a, const Vector4<T2> &b) {
-    return Vector4<decltype(a.x / b.x)>(a.x / b.x, a.y / b.y, a.z / b.z);
+    return Vector4<decltype(a.x / b.x)>(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
-
+/*
 #ifdef NATIVE
 template <typename T>
 std::ostream &operator <<(std::ostream &s, const Vector4<T> &value) {
@@ -186,6 +191,36 @@ std::ostream &operator <<(std::ostream &s, const Vector4<T> &value) {
     return s;
 }
 #endif
+*/
+
+template <typename T, typename F>
+struct Vector4Serializer {
+    // vector to serialize
+    const Vector4<T> &v;
+
+    // function that does the serialization
+    const F &f;
+
+    // delimiter between vector elements
+    String d;
+};
+
+template <typename S, typename T, typename F>
+S &operator <<(S &stream, Vector4Serializer<T, F> s) {
+    s.f(stream, s.v.x);
+    stream << s.d;
+    s.f(stream, s.v.y);
+    stream << s.d;
+    s.f(stream, s.v.z);
+    stream << s.d;
+    s.f(stream, s.v.w);
+    return stream;
+}
+
+template <typename T, typename F>
+Vector4Serializer<T, F> vector(const Vector4<T> &vector, const F &function, String delimiter) {
+    return {vector, function, delimiter};
+}
 
 
 using int4 = Vector4<int>;

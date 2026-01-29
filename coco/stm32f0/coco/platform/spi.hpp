@@ -1,88 +1,37 @@
 #pragma once
 
-#include "platform.hpp"
-#include "dma.hpp"
-#include "spiConfig.hpp"
+#include "spiF0C0G0F3L4G4.hpp"
 
 
 namespace coco {
 
-/**
- * SPI helpers
- */
+/// @brief SPI helpers
+///
 namespace spi {
 
-/**
- * SPI info
- */
-struct Info {
-    // registers
-    SPI_TypeDef *spi;
-
-    // reset and clock control
-    rcc::Info rcc;
-
-    // interrupt index
-    uint8_t irq;
-
-
-    /**
-     * Map a DMA channel to the RX channel of the SPI
-     * Check reference manual which mappings are possible
-     */
-    void mapRx(const dma::Info &dmaInfo) const {
-        switch (uintptr_t(this->spi)) {
-        default: // SPI1
-            break;
-#ifdef SPI2
-        case SPI2_BASE:
+template <dma::Feature F2>
+void Info::mapRx(const dma::Info<F2> &dmaInfo) const {
 #ifdef SYSCFG_CFGR1_SPI2_DMA_RMP
-            if (dmaInfo.channelIndex == 5)
-                SYSCFG->CFGR1 = SYSCFG->CFGR1 | SYSCFG_CFGR1_SPI2_DMA_RMP;
+    if (uintptr_t(spi) == SPI2_BASE && dmaInfo.channelIndex == 5)
+        SYSCFG->CFGR1 = SYSCFG->CFGR1 | SYSCFG_CFGR1_SPI2_DMA_RMP;
 #endif
-            break;
-#endif
-        }
-    }
+}
 
-    /**
-     * Map a DMA channel to the TX channel of the SPI
-     * Check reference manual which mappings are possible
-     */
-    void mapTx(const dma::Info &dmaInfo) const {
-        switch (uintptr_t(this->spi)) {
-        default: // SPI1
-            break;
-#ifdef SPI2
-        case SPI2_BASE:
+template <dma::Feature F2>
+void Info::mapTx(const dma::Info<F2> &dmaInfo) const {
 #ifdef SYSCFG_CFGR1_SPI2_DMA_RMP
-            if (dmaInfo.channelIndex == 6)
-                SYSCFG->CFGR1 = SYSCFG->CFGR1 | SYSCFG_CFGR1_SPI2_DMA_RMP;
+    if (uintptr_t(spi) == SPI2_BASE && dmaInfo.channelIndex == 6)
+        SYSCFG->CFGR1 = SYSCFG->CFGR1 | SYSCFG_CFGR1_SPI2_DMA_RMP;
 #endif
-            break;
-#endif
-        }
-    }
+}
 
-    /**
-     * Map DMA channels to the RX and TX channels of the SPI
-     * Check reference manual which mappings are possible
-     */
-    void map(const dma::Info2 &dmaInfo) const {
-        switch (uintptr_t(this->spi)) {
-        default: // SPI1
-            break;
-#ifdef SPI2
-        case SPI2_BASE:
+template <dma::Feature F2>
+void Info::map(const dma::DualInfo<F2> &dmaInfo) const {
 #ifdef SYSCFG_CFGR1_SPI2_DMA_RMP
-            if (dmaInfo.channelIndex1 == 5)
-                SYSCFG->CFGR1 = SYSCFG->CFGR1 | SYSCFG_CFGR1_SPI2_DMA_RMP;
+    if (uintptr_t(spi) == SPI2_BASE && dmaInfo.channelIndex1 == 5)
+        SYSCFG->CFGR1 = SYSCFG->CFGR1 | SYSCFG_CFGR1_SPI2_DMA_RMP;
 #endif
-            break;
-#endif
-        }
-    }
-};
+}
 
 
 static const Info SPI1_INFO{SPI1, {&RCC->APB2ENR, RCC_APB2ENR_SPI1EN}, SPI1_IRQn};

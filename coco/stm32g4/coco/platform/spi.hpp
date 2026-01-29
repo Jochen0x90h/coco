@@ -1,56 +1,26 @@
 #pragma once
 
-#include "platform.hpp"
-#include "dma.hpp"
-#include "spiConfig.hpp"
+#include "spiF0C0G0F3L4G4.hpp"
 
 
 namespace coco {
-
-/**
- * SPI helpers
- */
 namespace spi {
 
-/**
- * SPI info
- */
-struct Info {
-    // registers
-    SPI_TypeDef *spi;
+template <dma::Feature F2>
+void Info::mapRx(const dma::Info<F2> &dmaInfo) const {
+    dmaInfo.setRequest(drq + 0);
+}
 
-    // reset and clock control
-    rcc::Info rcc;
+template <dma::Feature F2>
+void Info::mapTx(const dma::Info<F2> &dmaInfo) const {
+    dmaInfo.setRequest(drq + 1);
+}
 
-    // interrupt index
-    uint8_t irq;
-
-    // DMA mux index
-    uint8_t mux;
-
-
-    /**
-     * Map a DMA channel to the RX channel of the SPI
-     */
-    void mapRx(const dma::Info &dmaInfo) const {
-        dmaInfo.setMux(this->mux + 0);
-    }
-
-    /**
-     * Map a DMA channel to the TX channel of the SPI
-     */
-    void mapTx(const dma::Info &dmaInfo) const {
-        dmaInfo.setMux(this->mux + 1);
-    }
-
-    /**
-     * Map DMA channels to the RX and TX channels of the SPI
-     */
-    void map(const dma::Info2 &dmaInfo) const {
-        dmaInfo.setMux1(this->mux + 0); // rx
-        dmaInfo.setMux2(this->mux + 1); // tx
-    }
-};
+template <dma::Feature F2>
+void Info::map(const dma::DualInfo<F2> &dmaInfo) const {
+    dmaInfo.setRequest1(drq + 0); // rx
+    dmaInfo.setRequest2(drq + 1); // tx
+}
 
 
 static const Info SPI1_INFO{SPI1, {&RCC->APB2ENR, RCC_APB2ENR_SPI1EN}, SPI1_IRQn, 10};

@@ -1,0 +1,154 @@
+#pragma once
+
+// do not include directly, use #include <coco/platform/rcc.hpp>
+
+#include "platform.hpp"
+#include <stddef.h>
+
+
+namespace coco {
+
+/// @brief RCC (reset and clock control) helpers.
+/// Registers for reset, clock in run mode, clock in sleep mode.
+///
+/// G0X0 https://www.st.com/en/microcontrollers-microprocessors/stm32g0-series/documentation.html Section 5
+/// G0X1 https://www.st.com/en/microcontrollers-microprocessors/stm32g0-series/documentation.html Section 5
+namespace rcc {
+
+/// Info structure for reset and clock control (RCC).
+///
+struct Info {
+    // clock enable register
+    __IO uint32_t *enableReg;
+
+    // flag for a peripheral
+    uint32_t flag;
+
+
+    /// @brief Set reset signal of a core.
+    ///
+    void setReset() const {
+        auto reg = (__IO uint32_t *)(intptr_t(this->enableReg) + resetOffset);
+        *reg  = *reg | this->flag;
+    }
+
+    /// @brief Clear reset signal of a core.
+    ///
+    void clearReset() const {
+        auto reg = (__IO uint32_t *)(intptr_t(this->enableReg) + resetOffset);
+        *reg  = *reg & ~this->flag;
+    }
+
+    /// @brief Reset a core by temporarily setting the reset flag.
+    /// Note that this method clears all reset flags in the register
+    void reset() const {
+        auto reg = (__IO uint32_t *)(intptr_t(this->enableReg) + resetOffset);
+        *reg = this->flag;
+        *reg = 0;
+    }
+
+    /// @brief Enable clock of a core.
+    ///
+    void enableClock() const {
+        auto reg = this->enableReg;
+        *reg  = *reg | this->flag;
+
+        // Two cycles wait time until peripherals can be accessed, see STM32G4 reference manual section 7.2.17
+        __NOP();
+        __NOP();
+    }
+
+    /// @brief Disable system clock of a core.
+    ///
+    void disableClock() const {
+        auto reg = this->enableReg;
+        *reg  = *reg & ~this->flag;
+    }
+
+    /// @brief Enable clock of a core in sleep mode.
+    ///
+    void enableClockSleep() const {
+        auto reg = (__IO uint32_t *)(intptr_t(this->enableReg) + clockSleepOffset);
+        *reg  = *reg | this->flag;
+    }
+
+    /// @brief Disable clock of a core in sleep mode.
+    ///
+    void disableClockSleep() const {
+        auto reg = (__IO uint32_t *)(intptr_t(this->enableReg) + clockSleepOffset);
+        *reg  = *reg & ~this->flag;
+    }
+
+    static constexpr int resetOffset = (offsetof(RCC_TypeDef, AHBRSTR) - offsetof(RCC_TypeDef, AHBENR));
+    static constexpr int clockSleepOffset = (offsetof(RCC_TypeDef, AHBSMENR) - offsetof(RCC_TypeDef, AHBENR));
+};
+
+/// @brief Info structure for reset and clock control (RCC) where the RCC register offset is known at compile time.
+/// @tparam R offset of RCC register (e.g offsetof(RCC_TypeDef, AHB2ENR))
+template <int R>
+struct Info2 {
+    // flag for a peripheral
+	uint32_t flag;
+
+
+    /// @brief Set reset signal of a core.
+    ///
+    void setReset() const {
+        auto reg = (__IO uint32_t *)(RCC_BASE + R + resetOffset);
+        *reg = *reg | this->flag;
+    }
+
+    /// @brief Clear reset signal of a core.
+    ///
+    void clearReset() const {
+        auto reg = (__IO uint32_t *)(RCC_BASE + R + resetOffset);
+        *reg = *reg & ~this->flag;
+    }
+
+    /// @brief Reset a core by temporarily setting the reset flag.
+    /// Note that this method clears all reset flags in the register
+    ///
+    void reset() const {
+        auto reg = (__IO uint32_t *)(RCC_BASE + R + resetOffset);
+        *reg = this->flag;
+        *reg = 0;
+    }
+
+    /// @brief Enable clock of a core.
+    ///
+	void enableClock() const {
+		auto reg = (__IO uint32_t *)(RCC_BASE + R);
+		*reg = *reg | this->flag;
+
+        // Two cycles wait time until peripherals can be accessed, see STM32G4 reference manual section 7.2.17
+        __NOP();
+        __NOP();
+    }
+
+    /// @brief Disable system clock of a core.
+    ///
+    void disableClock() const {
+		auto reg = (__IO uint32_t *)(RCC_BASE + R);
+        *reg = *reg & ~this->flag;
+    }
+
+    /// @brief Enable clock of a core in sleep mode.
+    ///
+    void enableClockSleepStop() const {
+        auto reg = (__IO uint32_t *)(RCC_BASE + R + clockSleepOffset);
+        *reg = *reg | this->flag;
+    }
+
+    /// @brief Disable clock of a core in sleep mode.
+    ///
+    void disableClockSleepStop() const {
+        auto reg = (__IO uint32_t *)(RCC_BASE + R + clockSleepOffset);
+        *reg = *reg & ~this->flag;
+    }
+
+    static constexpr int resetOffset = (offsetof(RCC_TypeDef, AHBRSTR) - offsetof(RCC_TypeDef, AHBENR));
+    static constexpr int clockSleepOffset = (offsetof(RCC_TypeDef, AHBSMENR) - offsetof(RCC_TypeDef, AHBENR));
+};
+
+} // namespace rcc
+} // namespace coco

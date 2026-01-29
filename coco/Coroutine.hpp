@@ -43,11 +43,10 @@ using CoroutineTaskList = TaskList<typename CoroutineTaskSelector<T, IsSubclass<
 using CoroutineTimedTaskList = TimedTaskList<std::coroutine_handle<>>;
 
 
-/**
-    This type is returned from functions/methods that can be awaited on using co_await. It behaves like an unique_ptr
-    to a resource and therefore can only be moved, but not copied.
-    @tparam T task type
-*/
+
+/// @brief This type is returned from functions/methods that can be awaited on using co_await.
+/// It behaves like an unique_ptr to a resource and therefore can only be moved, but not copied.
+/// @tparam T task type
 template <typename T = CoroutineTask>
 struct Awaitable {
     using Task = typename CoroutineTaskSelector<T, IsSubclass<T, CoroutineTask>::value>::Task;
@@ -74,27 +73,23 @@ struct Awaitable {
     // delete copy constructor
     Awaitable(Awaitable const &) = delete;
 
-    /**
-        Move constructor
-    */
+    /// @brief Move constructor
+    ///
     Awaitable(Awaitable &&a) noexcept : task(std::move(a.task)) {
 #ifdef COROUTINE_DEBUG_PRINT
         std::cout << "Awaitable move" << std::endl;
 #endif
     }
 
-    /**
-        Move assignment
-    */
+    /// @brief Move assignment
+    ///
     Awaitable &operator =(Awaitable &&a) {
         this->task = std::move(a.task);
         return *this;
     }
 
-    /**
-        Determine if the operation or coroutine has finished
-        @return true when finished, false when still in progress (coroutine: running or co_awaiting)
-    */
+    /// @breif Determine if the operation or coroutine has finished
+    /// @return true when finished, false when still in progress (coroutine: running or co_awaiting)
     bool hasFinished() const noexcept {
         return !this->task.inList();
     }
@@ -250,25 +245,24 @@ using AwaitableCoroutine = Awaitable<AwaitableCoroutineTask>;
 
 
 
-/**
-    Simple detached coroutine for asynchronous processing. If the return value is kept, it can be destroyed later unless
-    it already has destroyed itself.
-
-    Use like this:
-    Coroutine foo() {
-        co_await bar();
-    }
-    void main() {
-        // start coroutine which is repsonsible to destroy itself
-        foo();
-
-        // start coroutine and keep a handle
-        Coroutine c = foo();
-
-        // only if we are sure that the coroutine is still alive!
-        c.destroy();
-    }
-*/
+/// @brief Simple detached coroutine handle for asynchronous processing.
+/// The handle can be used to destroy the coroutine later unless it already has destroyed itself.
+/// The default constructor initializes the coroutine handle with nullptr.
+///
+/// Use like this:
+/// Coroutine foo() {
+///     co_await bar();
+/// }
+/// void main() {
+///     // start coroutine which is repsonsible to destroy itself
+///     foo();
+///
+///     // start coroutine and keep a handle
+///     Coroutine c = foo();
+///
+///     // only if we are sure that the coroutine is still alive!
+///     c.destroy();
+/// }
 struct Coroutine {
     struct promise_type {
         Coroutine get_return_object() noexcept {
@@ -290,15 +284,25 @@ struct Coroutine {
 
     std::coroutine_handle<> handle;
 
-    /**
-        Destroy the coroutine if it is still alive and suspended (coroutine has called co_await).
-        Call only once and when it is sure that the coroutine is still alive, e.g. when it contains an infinite loop.
-    */
+    /// @brief Destroy the coroutine if it is still alive and suspended (coroutine has called co_await).
+    /// Important: Call only when it is sure that the coroutine is still alive, e.g. when it contains an infinite loop.
     void destroy() {
         if (this->handle) {
             this->handle.destroy();
             this->handle = nullptr;
         }
+    }
+
+    /// @brief Clear the reference to the coroutine
+    ///
+    void clear() {
+        this->handle = nullptr;
+    }
+
+    /// @brief Cast to bool to check if the coroutine handle is empty
+    ///
+    operator bool() const {
+        return this->handle != nullptr;
     }
 };
 
@@ -493,11 +497,9 @@ template <typename A1, typename A2, typename A3, typename A4, typename A5>
 
 
 
-/**
- * Simple barrier on which a data consumer coroutine can wait until it gets resumed by a data producer.
- * If a resume method gets called by a data producer while no consumer is waiting, the event/data gets lost.
- * @tparam T task type
- */
+/// @brief Simple barrier on which a data consumer coroutine can wait until it gets resumed by a data producer.
+/// If a resume method gets called by a data producer while no consumer is waiting, the event/data gets lost.
+/// @tparam T task type
 template <typename T = CoroutineTask>
 class Barrier : public CoroutineTaskList<T> {
 public:
@@ -505,74 +507,16 @@ public:
     // select task type
     using Task = typename CoroutineTaskList<T>::Task;
 
-    /**
-        Wait until resumed by doFirst() or doAll().
-        When using arguments, this can be used in a data producer/consumer scheme where consumers call untilResumed and
-        producers call doFirst(data) or doAll(data) with data.
 
-        @return use co_await on return value to wait until resumed
-    */
+    /// @brief Wait until resumed by doFirst() or doAll().
+    /// When using arguments, this can be used in a data producer/consumer scheme where consumers call untilResumed and
+    /// producers call doFirst(data) or doAll(data) with data.
+    ///
+    /// @return use co_await on return value to wait until resumed
     template <typename ...Args>
     [[nodiscard]] Awaitable<Task> untilResumed(Args &&...args) {
         return {*this, std::forward<Args>(args)...};
     }
-};
-
-
-
-/**
- * Manual reset event inspired by Win32 event object (https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createeventa)
- */
-class Event {
-public:
-    /**
-     * Construct an event in nonsignaled state
-     */
-    Event() = default;
-
-    /**
-     * Set the event to signaled state
-     */
-    void set() {
-        this->state = true;
-        this->taskList.doAll();
-    }
-
-    /**
-     * Reseset the event to nonsignaled state
-     */
-    void reset() {
-        this->state = false;
-    }
-
-    /**
-     * Returns true if the event is in signaled state
-     */
-    bool signaled() {
-        return this->state;
-    }
-
-    /**
-     * Returns true if the event is in nonsignaled state
-     */
-    bool nonsignaled() {
-        return !this->state;
-    }
-
-    /**
-     * Wait until the event is in signaled state
-     */
-    [[nodiscard]] Awaitable<> untilSignaled() {
-        if (this->state) {
-            return {};
-        }
-        return {this->taskList};
-    }
-
-protected:
-    // list of waiting coroutines
-    TaskList<CoroutineTask> taskList;
-    bool state = false;
 };
 
 } // namespace coco
