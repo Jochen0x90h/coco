@@ -32,6 +32,14 @@ compiler.cppstd=20
 
 Change cppstd to 20 if necessary.
 
+If you want to let conan install missing packages, add these lines at the end of the profile:
+
+```
+[conf]
+tools.system.package_manager:mode=install
+tools.system.package_manager:sudo=True
+```
+
 ## Debug Profile
 
 Create debug profile ~/.conan2/profiles/debug by copying the default profile and set

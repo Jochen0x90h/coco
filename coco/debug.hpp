@@ -8,7 +8,7 @@
 
 /**
     Simple debug output on up to three LEDs and blocking sleep function.
-    Only header file, the implementation has to come from a board implementation
+    Only header file, the implementation has to come from a platform or development board
 */
 namespace coco {
 namespace debug {

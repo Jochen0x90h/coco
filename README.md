@@ -96,7 +96,7 @@ Pass -o platform=\<platform> to conan to set the platform. When no platform is g
 - Install tools and Arm GNU Toolchain
     - $ sudo apt install python3-pip python3-full pipx
     - $ pipx install conan
-    - $ sudo apt install git cmake ninja-build gcc-arm-none-eabi
+    - $ sudo apt install git cmake ninja-build gcc-arm-none-eabi pkg-config
 - Optional: python is python3
     - $ sudo apt install python-is-python3
 - Install IDE
