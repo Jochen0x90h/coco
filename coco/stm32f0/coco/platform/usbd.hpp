@@ -14,10 +14,12 @@ constexpr int irq = USB_IRQn;
 
 
 /// @brief Initalize the USB device.
-/// When HSI48 is selected as USB clock source in the RCC->CFGR3 register, HSI48 and CRS get enabled.
+/// When HSI48 is selected as USB clock source by USBSW in the RCC->CFGR3 register, HSI48 and CRS get enabled.
+/// When HSI48 does not exist (F07x), make sure that the PLL derives a precise 48MHz clock from HSE.
 /// @return Instance (wrapper for registers)
 inline Instance enableClock() {
     uint32_t apb1enr = RCC->APB1ENR;
+#ifdef RCC_CR2_HSI48ON
     if ((RCC->CFGR3 & RCC_CFGR3_USBSW) == 0) {
         // enable HSI and wait until ready
         RCC->CR2 = RCC->CR2 | RCC_CR2_HSI48ON;
@@ -33,7 +35,9 @@ inline Instance enableClock() {
 
         // use default configuration (sync on USB SOF)
         //CRS->CFGR =
-    } else {
+    } else
+#endif
+    {
         // enable clock of USB
         RCC->APB1ENR = apb1enr | RCC_APB1ENR_USBEN;
         __NOP();

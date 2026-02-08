@@ -6,6 +6,13 @@
 #include <cstddef>
 
 
+/*
+    Defines:
+    HAVE_BACKUP              Backup registers are supported (are always supported)
+*/
+
+#define HAVE_BACKUP
+
 namespace coco {
 
 /// @brief Backup helpers.

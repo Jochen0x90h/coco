@@ -12,8 +12,8 @@ constexpr int irq = USB_LP_IRQn;
 
 
 /// @brief Initalize the USB device.
-/// When HSI48 is selected as USB clock source in the RCC->CCIPR register, HSI48 and CRS get enabled.
-/// When PLLQ is selected as USB clock source, make sure that PLLQ generates 48MHz from a precise clock.
+/// When HSI48 is selected as USB clock source by CLK48SEL in the RCC->CCIPR register, HSI48 and CRS get enabled.
+/// When PLLQ is selected as USB clock source, make sure it generates a precise 48MHz clock from HSE.
 /// @return Instance (wrapper for registers)
 inline Instance enableClock() {
     uint32_t apb1enr1 = RCC->APB1ENR1;

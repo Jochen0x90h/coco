@@ -4,7 +4,7 @@
 
 #include "dma.hpp"
 #include <coco/enum.hpp>
-#include <coco/frequency.hpp>
+#include <coco/Frequency.hpp>
 
 
 /*

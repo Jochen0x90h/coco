@@ -183,7 +183,7 @@ public:
     /// @param index index of element
     /// @return reference to element
     T &operator [](int index) const {
-        assert(uint32_t(index) < this->length);
+        assert(uint32_t(index) < uint32_t(this->length));
         return this->buffer[index];
     }
 

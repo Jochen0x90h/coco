@@ -22,6 +22,8 @@ namespace coco {
 /// @brief RNG helpers.
 /// G0X0 https://www.st.com/en/microcontrollers-microprocessors/stm32g0-series/documentation.html Not supported
 /// G0X1 https://www.st.com/en/microcontrollers-microprocessors/stm32g0-series/documentation.html Section 19
+/// L46 https://www.st.com/en/microcontrollers-microprocessors/stm32l4-series/documentation.html Section 24
+/// L47 https://www.st.com/en/microcontrollers-microprocessors/stm32l4-series/documentation.html Section 27
 /// G4 https://www.st.com/en/microcontrollers-microprocessors/stm32g4-series/documentation.html Sections 26
 /// H503 https://www.st.com/en/microcontrollers-microprocessors/stm32h5-series/documentation.html Section 24
 /// H5 https://www.st.com/en/microcontrollers-microprocessors/stm32h5-series/documentation.html Section 32

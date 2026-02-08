@@ -6,6 +6,14 @@
 #include <cstddef>
 
 
+/*
+    Defines:
+    HAVE_BACKUP              Backup registers are supported
+*/
+
+#ifdef RTC_BKP0R
+#define HAVE_BACKUP
+
 namespace coco {
 namespace backup {
 
@@ -64,3 +72,5 @@ __STATIC_FORCEINLINE Value get(int index) {
 
 } // namespace backup
 } // namespace coco
+
+#endif // RTC_BKP0R

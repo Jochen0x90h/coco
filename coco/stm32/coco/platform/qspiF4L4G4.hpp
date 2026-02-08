@@ -9,10 +9,15 @@
 /*
     Defines:
     HAVE_QUADSPI              QUADSPI supported
+    HAVE_QUADSPI_DUAL_BANK    Dual bank supported
 */
+
 #ifdef QUADSPI
 #define HAVE_QUADSPI
 
+#ifdef QUADSPI_CR_FSEL
+#define HAVE_QUADSPI_DUAL_BANK
+#endif
 
 namespace coco {
 
@@ -23,7 +28,11 @@ namespace coco {
 /// G4 https://www.st.com/en/microcontrollers-microprocessors/stm32g4-series/documentation.html Section 20
 namespace qspi {
 
-constexpr uint32_t FORMAT_CR_MASK = QUADSPI_CR_PRESCALER | QUADSPI_CR_SSHIFT | QUADSPI_CR_FSEL | QUADSPI_CR_DFM;
+constexpr uint32_t FORMAT_CR_MASK = QUADSPI_CR_PRESCALER | QUADSPI_CR_SSHIFT
+#ifdef HAVE_QUADSPI_DUAL_BANK
+    | QUADSPI_CR_FSEL | QUADSPI_CR_DFM;
+#endif
+    ;
 constexpr uint32_t FORMAT_DCR_MASK = QUADSPI_DCR_FSIZE;
 
 /// @brief Format (CR and DCR registers).
@@ -54,8 +63,10 @@ enum class Format : uint32_t {
 
     // bank selection
     BANK_1 = 0, // default
+#ifdef HAVE_QUADSPI_DUAL_BANK
     BANK_2 = QUADSPI_CR_FSEL,
     DUAL_BANK = QUADSPI_CR_DFM,
+#endif
 
     // memory size in bytes
     MEMORY_16B = 3 << QUADSPI_DCR_FSIZE_Pos,
@@ -154,7 +165,9 @@ enum class CommFormat : uint32_t {
     DDR = QUADSPI_CCR_DDRM,
 
     // double data rate with delay of 1/4 clock cycle
+#ifdef QUADSPI_CCR_DHHC
     DDR_DELAY = QUADSPI_CCR_DDRM | QUADSPI_CCR_DHHC,
+#endif
 };
 COCO_ENUM(CommFormat)
 

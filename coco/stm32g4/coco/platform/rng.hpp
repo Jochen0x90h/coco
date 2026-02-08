@@ -11,7 +11,7 @@ constexpr int irq = RNG_IRQn;
 
 
 /// @brief Initalize the random number generator.
-/// When HSI48 is selected as RNG clock source in the RCC->CCIPR register, HSI48 gets enabled.
+/// When HSI48 is selected as RNG clock source by CLK48SEL in the RCC->CCIPR register, HSI48 gets enabled.
 /// @return Instance (wrapper for registers)
 inline Instance enableClock() {
     if ((RCC->CCIPR & RCC_CCIPR_CLK48SEL_Msk) == 0) {

@@ -1,0 +1,7 @@
+include(armgcc)
+[settings]
+arch=armv6
+build_type=Release
+[options]
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
