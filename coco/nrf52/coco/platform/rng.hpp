@@ -6,6 +6,15 @@
 #include <coco/enum.hpp>
 
 
+/*
+    Defines:
+    HAVE_RNG                Random number generator supported (is always supported)
+    HAVE_RNG_ENABLE_CLOCK   Need to call rng::enableClock() to enable the clock of the peripheral (not needed on nRF52)
+*/
+
+#define HAVE_RNG
+
+
 namespace coco {
 
 /// @brief RNG helpers

@@ -7,7 +7,7 @@ from conan.tools.cmake import CMake
 class Project(ConanFile):
     name = "coco"
     description = "CoCo - microCOntroller COroutines"
-    license = "Apache-2.0, BSD-3-Clause, MIT"
+    license = "MIT"
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "platform": [None, "ANY"]}

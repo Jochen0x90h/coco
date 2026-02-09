@@ -9,6 +9,18 @@
 #include <coco/Time.hpp>
 
 
+/*
+    Defines:
+    HAVE_TIMER_TRIGGER_MODE_RESET_START          timer::TriggerMode::RESET_START supported
+    HAVE_TIMER_TRIGGER_MODE_GATED_RESET          timer::TriggerMode::GATED_RESET supported
+*/
+
+#ifdef TIM_SMCR_SMS_3
+#define HAVE_TIMER_TRIGGER_MODE_RESET_START
+#define HAVE_TIMER_TRIGGER_MODE_GATED_RESET
+#endif
+
+
 namespace coco {
 
 /// @brief Timer helpers.

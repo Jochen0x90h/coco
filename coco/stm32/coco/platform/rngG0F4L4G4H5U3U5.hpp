@@ -8,7 +8,7 @@
 
 /*
     Defines:
-    HAVE_RNG                Random number genrator supported
+    HAVE_RNG                Random number generator supported
     HAVE_RNG_ENABLE_CLOCK   Need to call rng::enableClock() to enable the clock of the peripheral
 */
 
