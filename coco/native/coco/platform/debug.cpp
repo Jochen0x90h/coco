@@ -7,6 +7,9 @@
 namespace coco {
 namespace debug {
 
+// enable flags
+int enableFlags = CONSOLE;
+
 namespace {
 inline void set(const char *name, bool value, bool function) {
     if (function)
@@ -19,7 +22,13 @@ inline void set(const char *name, bool value, bool function) {
 
 void init() {}
 
+void setEnabled(int flags) {
+    enableFlags = flags;
+}
+
 void set(uint32_t bits, uint32_t function) {
+    if ((enableFlags & EnableFlags::PINS) == 0)
+        return;
     set("Red", (bits & 1) != 0, (function & 1) != 0);
     set("Green", (bits & 2) != 0, (function & 2) != 0);
     set("Blue", (bits & 4) != 0, (function & 4) != 0);
@@ -30,6 +39,8 @@ void sleep(Microseconds<> time) {
 }
 
 void write(const char *message, int length) {
+    if ((enableFlags & EnableFlags::CONSOLE) == 0)
+        return;
     int start = 0;
     for (int i = 0; i <= length; ++i) {
         if (i == length || message[i] == '\n') {

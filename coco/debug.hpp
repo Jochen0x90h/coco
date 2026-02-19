@@ -17,20 +17,31 @@ namespace debug {
 ///
 void init();
 
-/// @brief Set or toggle the debug outputs
+enum EnableFlags {
+    PINS = 1,
+    CONSOLE = 2,
+};
+
+/// @brief Set enable flags.
+/// Note that the debug output pins (LEDs) are disabled by default on native platforms
+/// @param flags
+void setEnabled(int flags);
+
+
+/// @brief Set or toggle the debug output pins (typically connected to LEDs).
 /// @param bits pins bit mask for the outputs
 /// @param function function for each output: 0: keep/toogle, 1: reset/set
 void set(uint32_t bits, uint32_t function = 0xffffffff);
 
-inline void setRed(bool value = true) {set(uint32_t(value), 1);}
+inline void setRed(bool value = true) {set(int(value), 1);}
 inline void clearRed() {set(0, 1);}
 inline void toggleRed() {set(1, 0);}
 
-inline void setGreen(bool value = true) {set(uint32_t(value) << 1, 2);}
+inline void setGreen(bool value = true) {set(int(value) << 1, 2);}
 inline void clearGreen() {set(0, 2);}
 inline void toggleGreen() {set(2, 0);}
 
-inline void setBlue(bool value = true) {set(uint32_t(value) << 2, 4);}
+inline void setBlue(bool value = true) {set(int(value) << 2, 4);}
 inline void clearBlue() {set(0, 4);}
 inline void toggleBlue() {set(4, 0);}
 

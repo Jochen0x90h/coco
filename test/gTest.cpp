@@ -8,6 +8,7 @@
 #include <coco/ContainerConcept.hpp>
 #include <coco/convert.hpp>
 #include <coco/CStringConcept.hpp>
+#include <coco/debug.hpp>
 #include <coco/enum.hpp>
 #include <coco/Frequency.hpp>
 #include <coco/IsSubclass.hpp>
@@ -1839,6 +1840,14 @@ TEST(cocoTest, File) {
 
 
 int main(int argc, char **argv) {
+    debug::setEnabled(debug::CONSOLE | debug::PINS);
+    debug::setRed();
+    debug::out << "foo\n";
+    debug::setEnabled(0);
+    debug::setRed();
+    debug::out << "foo\n";
+    debug::setEnabled(debug::CONSOLE);
+
     testing::InitGoogleTest(&argc, argv);
     int success = RUN_ALL_TESTS();
     return success;
