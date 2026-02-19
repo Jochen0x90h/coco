@@ -2,6 +2,7 @@ build/
 __pycache__/
 cpresets.txt
 !support/conan/windows/cpresets.txt
+!support/conan/linux/cpresets.txt
 CMakeUserPresets.json
 
 # VSCode
