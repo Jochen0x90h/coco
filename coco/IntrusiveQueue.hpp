@@ -5,8 +5,11 @@
 
 namespace coco {
 
+/// @brief Intrusisive queue node.
+/// Elements of the queue must inherit the IntrusiveQueueNode.
 struct IntrusiveQueueNode {
-    // pointer to next element. Use atomic to be able to use queues for cross-thread communication
+    /// @brief Pointer to next element.
+    ///
     IntrusiveQueueNode *next;
 
 
@@ -21,11 +24,11 @@ struct IntrusiveQueueNode {
 
 
 /// @brief Intrusive queue.
-/// push() pushes at back/end/head of queue
-/// pop() pops from front/begin/tail of queue
+/// Elements of the queue must inherit the IntrusiveQueueNode. This queue is not thread-safe.
+/// push() pushes at back/end/tail of queue
+/// pop() pops from front/begin/head of queue
 /// Also see https://en.cppreference.com/w/cpp/container/queue
-///
-/// @tparam T element type, must derive from IntrusiveQueueNode
+/// @tparam T queue element type that inherits IntrusiveQueueNode, e.g. class Element : public IntrusiveQueueNode {};
 template <typename T>
 class IntrusiveQueue {
 public:
@@ -34,7 +37,14 @@ public:
     /// @brief Determine if the queue is empty
     ///
     bool empty() {
-        return this->head == nullptr;
+        return this->tail == nullptr;
+    }
+
+    /// @brief Clear the queue.
+    ///
+    void clear() {
+        this->tail = nullptr;
+        this->head = nullptr;
     }
 
     /// @brief Insert an element at the end/behind back() of the queue (push_back).
@@ -42,28 +52,54 @@ public:
     bool push(T &element) {
         Node &node = element;
         node.next = nullptr;
-        Node *prev = this->head;
+        Node *prev = this->tail;
         bool wasEmpty = prev == nullptr;
         if (wasEmpty)
-            this->tail = &node;
+            this->head = &node;
         else
             prev->next = &node;
-        this->head = &node;
+        this->tail = &node;
         return wasEmpty;
     }
 
     /// @brief Remove the first/front() element from the queue (pop_front).
     /// @return removed element or nullptr if queue was empty
     T *pop() {
-        Node *tail = this->tail;
-        if (tail != nullptr) {
-            Node *next = tail->next;
-            this->tail = next;
+        Node *head = this->head;
+        if (head != nullptr) {
+            Node *next = head->next;
+            this->head = next;
             if (next == nullptr)
-                this->head = nullptr;
-            return &static_cast<T &>(*tail);
+                this->tail = nullptr;
+            return &static_cast<T &>(*head);
         }
         return nullptr;
+    }
+
+    /// @brief If the queue is not empty, the first/front() element gets removed if the function returns true.
+    /// @param function Function to determine if the first/front() element should be removed
+    /// @return -1: the queue is empty, 0: pop was rejected by the function, 1: pop succeeded
+    template <typename F>
+    int pop(const F &function) {
+        Node *head = this->head;
+        if (head != nullptr) {
+            Node *next = head->next;
+            if (function(static_cast<T &>(*head))) {
+                // remove the node
+                this->head = next;
+                if (next == nullptr)
+                    this->tail = nullptr;
+
+                // pop succeeded
+                return 1;
+            }
+
+            // remove was rejected
+            return 0;
+        }
+
+        // list is empty
+        return -1;
     }
 
     /// @brief Remove an element
@@ -71,25 +107,25 @@ public:
     void remove(T &element) {
         Node &node = element;
 
-        Node *tail = this->tail;
+        Node *head = this->head;
 
         // check if the list is empty
-        if (tail == nullptr)
+        if (head == nullptr)
             return;
 
-        // check if tail/front() node
-        if (&node == tail) {
+        // check if head/front() node
+        if (&node == head) {
             // remove the node
-            Node *next = tail->next;
-            this->tail = next;
+            Node *next = head->next;
+            this->head = next;
             if (next == nullptr)
-                this->head = nullptr;
+                this->tail = nullptr;
 
             // successfully removed the node
             return;
         }
 
-        Node *current = tail;
+        Node *current = head;
         while (true) {
             Node *next = current->next;
             if (next == nullptr)
@@ -99,7 +135,7 @@ public:
                 Node *next2 = next->next;
                 current->next = next2;
                 if (next2 == nullptr)
-                    this->head = current;
+                    this->tail = current;
 
                 // successfully removed the node
                 return;
@@ -113,18 +149,18 @@ public:
     /// @brief Get first element
     /// @return first element or nullptr if the queue is empty
     T &front() {
-        return static_cast<T &>(*this->tail);
+        return static_cast<T &>(*this->head);
     }
 
     /// @brief Get last element
     /// @return last element or nullptr if the queue is empty
     T &back() {
-        return static_cast<T &>(*this->head);
+        return static_cast<T &>(*this->tail);
     }
 
 protected:
-    Node * head = nullptr; // push() adds to head
-    Node * tail = nullptr; // pop() removes from tail
+    Node * tail = nullptr; // push() adds to tail
+    Node * head = nullptr; // pop() removes from head
 };
 
 } // namespace coco

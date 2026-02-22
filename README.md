@@ -107,13 +107,18 @@ Pass -o platform=\<platform> to conan to set the platform. When no platform is g
 - Install Python from [python.org](https://www.python.org/downloads/)
 - Install conan: $ pip install conan
 - Install [Arm GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
-  - Add C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\XXX\bin\ to PATH environment variable
-- Install tools
-    - Install [Chocolatey](https://chocolatey.org/install#individual)
+    - Add C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\XXX\bin\ to PATH environment variable
+- Optional: Install [Git for Windows](https://git-scm.com/install/windows) which includes Git Bash
+- Install tools using Winget
+    - make: $ winget install ezwinports.make
+    - ninja: $ winget install Ninja-build.Ninja
+    - pkg-config: $ winget install bloodrock.pkg-config-lite
+    - cmake: $ winget install cmake
+- Install tools using [Chocolatey](https://chocolatey.org/install#individual)
     - $ choco install make
-    - $ choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System’
     - $ choco install ninja
     - $ choco install pkgconfiglite
+    - $ choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System’
 - Install IDE
     - [VSCode](https://code.visualstudio.com/)
 

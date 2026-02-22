@@ -28,7 +28,7 @@ public:
         return this->tail.load() == this->head.load();
     }
 
-    /// @brief Clear the queue
+    /// @brief Clear the queue.
     ///
     void clear() {
         this->tail = nullptr;
@@ -141,12 +141,15 @@ public:
                 this->head = next;
                 if (next == nullptr)
                     this->tail = nullptr;
+
                 // pop succeeded
                 return 1;
             }
+
             // remove was rejected
             return 0;
         }
+
         // list is empty
         return -1;
     }

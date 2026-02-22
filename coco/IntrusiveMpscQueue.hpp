@@ -5,24 +5,24 @@
 
 namespace coco {
 
-/// @brief Node for IntrusiveMpscQueue
+/// @brief Node for IntrusiveMpscQueue.
 ////
 struct IntrusiveMpscQueueNode {
-    /// @brief Pointer to next element. Use atomic to be able to use queues for cross-thread communication
-    ///
+    /// @brief Pointer to next element.
+    /// Use atomic to be able to use queues for cross-thread communication.
     std::atomic<IntrusiveMpscQueueNode *> next;
 
-    /// @brief Default constructor
+    /// @brief Default constructor.
     ///
     IntrusiveMpscQueueNode() = default;
 
-    /// @brief Delete copy constructor
+    /// @brief Delete copy constructor.
     ///
     IntrusiveMpscQueueNode(IntrusiveMpscQueueNode const &) = delete;
 };
 
 
-/// @brief Intrusive multiple producer single consumer queue
+/// @brief Intrusive multiple producer single consumer queue.
 /// https://www.1024cores.net/home/lock-free-algorithms/queues
 /// https://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
 ///

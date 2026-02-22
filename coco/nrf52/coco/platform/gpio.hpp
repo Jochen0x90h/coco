@@ -151,7 +151,7 @@ enum class Mode : uint8_t {
 /// @param config Pin and port (configuration ignored)
 inline NRF_GPIO_Type *getPort(Config config) {return (NRF_GPIO_Type *) ((config & Config::PORT_MASK) == 0 ? NRF_P0_BASE : NRF_P1_BASE);}
 
-constexpr int getPinIndex2(Config config) {return int(config) & 0x1f;}
+constexpr int getPinIndex(Config config) {return int(config) & 0x1f;}
 constexpr int getPortIndex(Config config) {return (int(config) >> 5) & 0x7;}
 
 /// @brief Index of pin including port, e.g. P1_0 has index 32

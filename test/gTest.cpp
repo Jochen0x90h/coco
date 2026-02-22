@@ -879,14 +879,17 @@ struct TestIntrusiveQueueElement : public ElementBaseClass, public IntrusiveQueu
 };
 
 TEST(cocoTest, IntrusiveQueue) {
+    int result;
     IntrusiveQueue<TestIntrusiveQueueElement> queue;
 
     TestIntrusiveQueueElement e1;
     TestIntrusiveQueueElement e2;
 
-    // add elements
+    // check if empty
     EXPECT_TRUE(queue.empty());
     EXPECT_EQ(queue.pop(), nullptr);
+
+    // add elements
     queue.push(e1);
     EXPECT_FALSE(queue.empty());
     queue.push(e2);
@@ -900,6 +903,23 @@ TEST(cocoTest, IntrusiveQueue) {
     EXPECT_EQ(queue.pop(), &e2);
     EXPECT_EQ(queue.pop(), nullptr);
     EXPECT_TRUE(queue.empty());
+
+    // pop with function
+    queue.push(e1);
+    result = queue.pop([](auto &node) {
+        return false;
+    });
+    EXPECT_EQ(result, 0);
+    EXPECT_FALSE(queue.empty());
+    result = queue.pop([](auto &node) {
+        return true;
+    });
+    EXPECT_EQ(result, 1);
+    EXPECT_TRUE(queue.empty());
+    result = queue.pop([](auto &node) {
+        return true;
+    });
+    EXPECT_EQ(result, -1);
 }
 
 

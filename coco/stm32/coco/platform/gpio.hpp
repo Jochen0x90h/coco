@@ -282,7 +282,7 @@ enum class Mode : uint8_t {
 /// @param config Pin and port (configuration ignored)
 inline GPIO_TypeDef *getPort(Config config) {return (GPIO_TypeDef *)(GPIOA_BASE + (int(config & Config::PORT_MASK) << 6));} // * 0x00000400UL
 
-constexpr int getPinIndex2(Config config) {return int(config) & 0xf;}
+constexpr int getPinIndex(Config config) {return int(config) & 0xf;}
 constexpr int getPortIndex(Config config) {return (int(config) >> 4) & 0xf;}
 
 /// @brief Index of pin including port, e.g. PB0 has index 16
