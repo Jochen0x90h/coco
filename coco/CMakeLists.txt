@@ -633,8 +633,15 @@ else()
     target_sources(${PROJECT_NAME}
         PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/native FILES
             native/coco/platform/compiler.hpp
-            native/coco/platform/File.hpp
+            native/coco/platform/NativeFile.hpp
     )
+    if(WIN32)
+        target_sources(${PROJECT_NAME}
+            PUBLIC FILE_SET platform_headers FILES
+                native/coco/platform/WindowsDef.hpp
+                native/coco/platform/WindowsUndef.hpp
+        )
+    endif()
 
     # if platform is "native", implement debug interface using std::cout. All other platforms have to bring their own debug.cpp
     if(${PLATFORM} STREQUAL "native")

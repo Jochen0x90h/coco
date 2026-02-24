@@ -106,8 +106,11 @@ Pass -o platform=\<platform> to conan to set the platform. When no platform is g
 
 - Install Python from [python.org](https://www.python.org/downloads/)
 - Install conan: $ pip install conan
-- Install [Arm GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
-    - Add C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\XXX\bin\ to PATH environment variable
+- Install Arm GNU Toolchain using either of these options:
+    - Install [Arm GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) (mingw-w64-x86_64)
+        - Add to PATH: C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\XXX\bin\
+    - Install [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html)
+        - Add to PATH: C:\ST\STM32CubeIDE_2.XXX\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.XXX\tools\bin\
 - Optional: Install [Git for Windows](https://git-scm.com/install/windows) which includes Git Bash
 - Install tools using Winget
     - make: $ winget install ezwinports.make

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <coco/platform/compiler.hpp>
+#include <coco/platform/NativeFile.hpp>
 #include <coco/align.hpp>
 #include <coco/Array.hpp>
 #include <coco/ArrayBuffer.hpp>
