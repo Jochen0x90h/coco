@@ -43,8 +43,8 @@ public:
     /// @brief Clear the queue.
     ///
     void clear() {
-        this->tail = nullptr;
         this->head = nullptr;
+        this->tail = nullptr;
     }
 
     /// @brief Insert an element at the end/behind back() of the queue (push_back).
@@ -52,6 +52,7 @@ public:
     bool push(T &element) {
         Node &node = element;
         node.next = nullptr;
+
         Node *prev = this->tail;
         bool wasEmpty = prev == nullptr;
         if (wasEmpty)
@@ -66,40 +67,87 @@ public:
     /// @return removed element or nullptr if queue was empty
     T *pop() {
         Node *head = this->head;
-        if (head != nullptr) {
-            Node *next = head->next;
-            this->head = next;
-            if (next == nullptr)
-                this->tail = nullptr;
-            return &static_cast<T &>(*head);
-        }
-        return nullptr;
+        if (head == nullptr)
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        this->head = next;
+        if (next == nullptr)
+            this->tail = nullptr;
+
+        // pop succeeded
+        return &static_cast<T &>(*head);
     }
 
-    /// @brief If the queue is not empty, the first/front() element gets removed if the function returns true.
-    /// @param function Function to determine if the first/front() element should be removed
-    /// @return -1: the queue is empty, 0: pop was rejected by the function, 1: pop succeeded
     template <typename F>
-    int pop(const F &function) {
+    T *pop(const F &removeFunction) {
         Node *head = this->head;
-        if (head != nullptr) {
-            Node *next = head->next;
-            if (function(static_cast<T &>(*head))) {
-                // remove the node
-                this->head = next;
-                if (next == nullptr)
-                    this->tail = nullptr;
+        if (head == nullptr)
+            return nullptr;
 
-                // pop succeeded
-                return 1;
-            }
+        // remove the node
+        Node *next = head->next;
+        this->head = next;
+        if (next == nullptr)
+            this->tail = nullptr;
 
-            // remove was rejected
-            return 0;
-        }
+        // call remove function when the element is not part of the queue any more
+        auto &element = static_cast<T &>(*head);
+        removeFunction(element);
 
-        // list is empty
-        return -1;
+        // pop succeeded
+        return &element;
+    }
+
+    template <typename P>
+    T *popp(const P &predicate) {
+        Node *head = this->head;
+        if (head == nullptr)
+            return nullptr;
+
+        // reject if predicate returns false
+        if (!predicate(static_cast<T &>(*head)))
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        this->head = next;
+        if (next == nullptr)
+            this->tail = nullptr;
+
+        // pop succeeded
+        return &static_cast<T &>(*head);
+    }
+
+    /// @brief Pop the first/front() element from the queue if the predicate returns true.
+    /// The predicate function must not modify the queue while the removeFunction may modify this queue or add the
+    /// element to another queue.
+    /// @param predicate Predicate function to determine if the first/front() element should be removed
+    /// @param removeFunction Function to be called when an element is removed from the queue
+    /// @return removed element or nullptr if queue was empty or if the predicate returned false
+    template <typename P, typename F>
+    T *popp(const P &predicate, const F &removeFunction) {
+        Node *head = this->head;
+        if (head == nullptr)
+            return nullptr;
+
+        // reject if predicate returns false
+        if (!predicate(static_cast<T &>(*head)))
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        this->head = next;
+        if (next == nullptr)
+            this->tail = nullptr;
+
+        // call remove function when the element is not part of the queue any more
+        auto &element = static_cast<T &>(*head);
+        removeFunction(element);
+
+        // pop succeeded
+        return &element;
     }
 
     /// @brief Remove an element
@@ -159,8 +207,8 @@ public:
     }
 
 protected:
+    Node *head = nullptr; // pop() removes from head
     Node * tail = nullptr; // push() adds to tail
-    Node * head = nullptr; // pop() removes from head
 };
 
 } // namespace coco

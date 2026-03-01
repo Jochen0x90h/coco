@@ -1,9 +1,7 @@
 build/
 __pycache__/
-cpresets.txt
-!support/conan/windows/cpresets.txt
-!support/conan/linux/cpresets.txt
-CMakeUserPresets.json
+/cpresets.txt
+/CMakeUserPresets.json
 
 # VSCode
 .vscode/
@@ -14,6 +12,3 @@ cmake-build*/
 
 # QtCreator
 CMakeLists.txt.user
-
-# test output
-foo.txt

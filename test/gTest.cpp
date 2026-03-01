@@ -24,7 +24,6 @@
 #include <coco/StringConcept.hpp>
 #include <coco/Time.hpp>
 #include <coco/Vector2.hpp>
-//#include <coco/platform/File.hpp>
 #include <vector>
 #include <string>
 #include <list>
@@ -880,7 +879,7 @@ struct TestIntrusiveQueueElement : public ElementBaseClass, public IntrusiveQueu
 };
 
 TEST(cocoTest, IntrusiveQueue) {
-    int result;
+    TestIntrusiveQueueElement *result;
     IntrusiveQueue<TestIntrusiveQueueElement> queue;
 
     TestIntrusiveQueueElement e1;
@@ -905,22 +904,38 @@ TEST(cocoTest, IntrusiveQueue) {
     EXPECT_EQ(queue.pop(), nullptr);
     EXPECT_TRUE(queue.empty());
 
-    // pop with function
+    // pop with predicate
     queue.push(e1);
-    result = queue.pop([](auto &node) {
+    result = queue.popp([](auto &node) {
+        // reject pop
         return false;
     });
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, nullptr);
     EXPECT_FALSE(queue.empty());
-    result = queue.pop([](auto &node) {
+    result = queue.popp([](auto &node) {
+        // accept pop
         return true;
     });
-    EXPECT_EQ(result, 1);
+    EXPECT_EQ(result, &e1);
     EXPECT_TRUE(queue.empty());
-    result = queue.pop([](auto &node) {
+    result = queue.popp([](auto &node) {
+        // should not be called as queue is empty
+        EXPECT_TRUE(false);
         return true;
     });
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, nullptr);
+
+    // pop with function that adds new element while popping
+    queue.push(e1);
+    result = queue.pop([&queue, &e2](auto &node) {
+        // add new element while popping
+        queue.push(e2);
+    });
+    EXPECT_EQ(result, &e1);
+    EXPECT_FALSE(queue.empty());
+    result = queue.pop();
+    EXPECT_EQ(result, &e2);
+    EXPECT_TRUE(queue.empty());
 }
 
 
