@@ -52,15 +52,14 @@ struct Awaitable {
     using Task = typename CoroutineTaskSelector<T, IsSubclass<T, CoroutineTask>::value>::Task;
     Task task;
 
+
     Awaitable() : task(std::noop_coroutine()) {
     }
 
-    /**
-        Constructor
-        @tparam L task list type
-        @param list task list
-        @param args arguments for task
-    */
+    /// @brief Constructor.
+    /// @tparam L task list type
+    /// @param list task list
+    /// @param args arguments for task
     template <typename L, typename ...Args>
     Awaitable(L &list, Args &&...args) noexcept : task(std::noop_coroutine(), std::forward<Args>(args)...) {
         // add task to task list
@@ -73,7 +72,7 @@ struct Awaitable {
     // delete copy constructor
     Awaitable(Awaitable const &) = delete;
 
-    /// @brief Move constructor
+    /// @brief Move constructor.
     ///
     Awaitable(Awaitable &&a) noexcept : task(std::move(a.task)) {
 #ifdef COROUTINE_DEBUG_PRINT
@@ -81,31 +80,28 @@ struct Awaitable {
 #endif
     }
 
-    /// @brief Move assignment
+    /// @brief Move assignment.
     ///
     Awaitable &operator =(Awaitable &&a) {
         this->task = std::move(a.task);
         return *this;
     }
 
-    /// @breif Determine if the operation or coroutine has finished
+    /// @brief Determine if the operation or coroutine has finished.
     /// @return true when finished, false when still in progress (coroutine: running or co_awaiting)
     bool hasFinished() const noexcept {
         return !this->task.inList();
     }
 
-    /**
-        Used by co_await to determine if the operation has finished (ready to continue)
-        @return true when finished
-    */
+    /// @brie Used by co_await to determine if the operation has finished (ready to continue).
+    /// @return true when finished
     bool await_ready() const noexcept {
         // is ready when the task is "not in list"
         return !this->task.inList();
     }
 
-    /**
-        Used by co_await to store the handle of the calling coroutine before suspending
-    */
+    /// @brief Used by co_await to store the handle of the calling coroutine before suspending.
+    /// @param handle coroutine handle
     void await_suspend(std::coroutine_handle<> handle) noexcept {
 #ifdef COROUTINE_DEBUG_PRINT
         std::cout << "Awaitable await_suspend" << std::endl;
@@ -114,9 +110,8 @@ struct Awaitable {
         this->task.task = handle;
     }
 
-    /**
-        Used by co_await to determine the return value of co_await
-    */
+    /// @brief Used by co_await to determine the return value of co_await.
+    ///
     void await_resume() noexcept {
 #ifdef COROUTINE_DEBUG_PRINT
         std::cout << "Awaitable await_resume" << std::endl;
@@ -130,9 +125,8 @@ struct Awaitable {
         return this->task.inList();
     }
 
-    /**
-        Cancel the operation or coroutine
-    */
+    /// @brief Cancel the operation or coroutine.
+    ///
     void cancel() {
 #ifdef COROUTINE_DEBUG_PRINT
         std::cout << "Awaitable cancel" << std::endl;
@@ -141,9 +135,8 @@ struct Awaitable {
     }
 
 
-    /**
-        An awaitable function or method can also be a coroutine, therefore define a promise_type
-    */
+    /// @brief An awaitable function or method can also be a coroutine, therefore define a promise_type.
+    ///
     struct promise_type {
         // the task list is part of the coroutine promise
         TaskList<T> list;

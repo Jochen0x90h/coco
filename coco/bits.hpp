@@ -53,7 +53,7 @@ constexpr int popcount(T value) {
     return std::popcount(std::make_unsigned_t<T>(value));
 }
 
-/// @brief Count number of set bits before a given bits starting at LSB.
+/// @brief Count number of set bits before a given bit starting at LSB.
 /// @tparam T Type of value
 /// @param value Value to count the bits in
 /// @param bit Bit up to which the set bits are counted. Must not be zero.

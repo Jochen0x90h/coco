@@ -906,19 +906,19 @@ TEST(cocoTest, IntrusiveQueue) {
 
     // pop with predicate
     queue.push(e1);
-    result = queue.popp([](auto &node) {
+    result = queue.popIf([](auto &node) {
         // reject pop
         return false;
     });
     EXPECT_EQ(result, nullptr);
     EXPECT_FALSE(queue.empty());
-    result = queue.popp([](auto &node) {
+    result = queue.popIf([](auto &node) {
         // accept pop
         return true;
     });
     EXPECT_EQ(result, &e1);
     EXPECT_TRUE(queue.empty());
-    result = queue.popp([](auto &node) {
+    result = queue.popIf([](auto &node) {
         // should not be called as queue is empty
         EXPECT_TRUE(false);
         return true;
@@ -935,6 +935,21 @@ TEST(cocoTest, IntrusiveQueue) {
     EXPECT_FALSE(queue.empty());
     result = queue.pop();
     EXPECT_EQ(result, &e2);
+    EXPECT_TRUE(queue.empty());
+
+    // remove
+    queue.push(e1);
+    queue.push(e2);
+    queue.remove(e2);
+    EXPECT_FALSE(queue.empty());
+    queue.remove(e1);
+    EXPECT_TRUE(queue.empty());
+
+    queue.push(e1);
+    queue.push(e2);
+    queue.remove(e1);
+    EXPECT_FALSE(queue.empty());
+    queue.remove(e2);
     EXPECT_TRUE(queue.empty());
 }
 
@@ -1855,12 +1870,11 @@ TEST(cocoTest, Vector4) {
 
 
 
+// NativeFile
+// ----------
 
-// File
-// ----
-/*
-TEST(cocoTest, File) {
-    File f("foo.txt", File::Mode::READ_WRITE | File::Mode::TRUNCATE);
+TEST(cocoTest, NativeFile) {
+    NativeFile f("foo.txt", NativeFile::Mode::CREATE_OR_TRUNCATE);
     char str[4];
 
     EXPECT_EQ(f.write(0, "foo", 3), 3);
@@ -1872,7 +1886,7 @@ TEST(cocoTest, File) {
     EXPECT_EQ(f.read(3, str, 3), 3);
     str[3] = 0;
     EXPECT_STREQ(str, "bar");
-}*/
+}
 
 
 int main(int argc, char **argv) {

@@ -26,7 +26,7 @@ public:
 /**
  * Task with parameters (mainly for parameters of awaitable functions/methods)
  * @tparam T task type
- * @tparam P parameters
+ * @tparam P parameters type
  */
 template <typename F, typename P>
 class TaskWithParameters : public Task<F> {

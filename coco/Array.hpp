@@ -9,7 +9,7 @@ namespace coco {
 
 /// @brief Array with known size that only references the data.
 /// @tparam T type of buffer elements
-/// @tparam N size of buffer
+/// @tparam N size of buffer (-1 for variable size, see specialization below)
 template <typename T, int N = -1>
 class Array {
 public:

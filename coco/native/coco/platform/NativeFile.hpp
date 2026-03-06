@@ -32,7 +32,7 @@ public:
         // truncate existing file and open in read/write mode
         TRUNCATE = TRUNCATE_EXISTING | GENERIC_READ | GENERIC_WRITE,
 
-        // create file if it does not exist or open in read/write mode
+        // create file if it does not exist or open existing file in read/write mode
         CREATE_OR_OPEN = OPEN_ALWAYS | GENERIC_READ | GENERIC_WRITE,
 
         // create file if it does not exist or truncate existing file and open in read/write mode
