@@ -173,7 +173,7 @@ public:
     template <typename C, typename R>
     T *popIf(const C &condition, const R &removeFunction) {
         Node *head = head_.next;
-        if (head_ == nullptr)
+        if (head == nullptr)
             return nullptr;
 
         // reject if condition returns false
@@ -207,7 +207,7 @@ public:
     template <typename C, typename N, typename R>
     T *popIf(const C &condition, const N &nextFunction, const R &removeFunction) {
         Node *head = head_.next;
-        if (head_ == nullptr)
+        if (head == nullptr)
             return nullptr;
 
         // reject if condition returns false

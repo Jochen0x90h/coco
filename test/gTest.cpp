@@ -899,24 +899,61 @@ TEST(cocoTest, IntrusiveQueue) {
     EXPECT_EQ(&queue.back(), &e2);
 
     // remove elements
-    EXPECT_EQ(queue.pop(), &e1);
-    EXPECT_EQ(queue.pop(), &e2);
+    result = queue.pop([&e2](auto &next) {
+        EXPECT_EQ(&next, &e2);
+    }, [&e1](auto &node) {
+        EXPECT_EQ(&node, &e1);
+    });
+    EXPECT_EQ(result, &e1);
+    result = queue.pop([&e2](auto &node) {
+        EXPECT_EQ(&node, &e2);
+    });
+    EXPECT_EQ(result, &e2);
     EXPECT_EQ(queue.pop(), nullptr);
     EXPECT_TRUE(queue.empty());
 
-    // pop with predicate
+    // pop with condition
     queue.push(e1);
     result = queue.popIf([](auto &node) {
         // reject pop
         return false;
+    }, [](auto &node) {
+        // should not be called as pop is rejected
+        EXPECT_TRUE(false);
     });
     EXPECT_EQ(result, nullptr);
     EXPECT_FALSE(queue.empty());
+    queue.push(e2);
+    bool called1 = false;
+    bool called2 = false;
     result = queue.popIf([](auto &node) {
         // accept pop
         return true;
+    }, [&e2, &called1](auto &next) {
+        // should be called as there is a next node
+        called1 = true;
+        EXPECT_EQ(&next, &e2);
+    }, [&e1, &called2](auto &node) {
+        // should be called as pop is accepted
+        called2 = true;
+        EXPECT_EQ(&node, &e1);
     });
+    EXPECT_TRUE(called1);
+    EXPECT_TRUE(called2);
     EXPECT_EQ(result, &e1);
+    called2 = false;
+    result = queue.popIf([](auto &node) {
+        // accept pop
+        return true;
+    }, [](auto &next) {
+        // should not be called as there is no next node
+        EXPECT_TRUE(false);
+    }, [&called2](auto &node) {
+        // should be called as pop is accepted
+        called2 = true;
+    });
+    EXPECT_TRUE(called2);
+    EXPECT_EQ(result, &e2);
     EXPECT_TRUE(queue.empty());
     result = queue.popIf([](auto &node) {
         // should not be called as queue is empty

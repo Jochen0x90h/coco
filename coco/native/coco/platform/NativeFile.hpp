@@ -114,7 +114,7 @@ public:
         }
         return fileInfo.EndOfFile.QuadPart;
 #else
-        stat st;
+        struct stat st;
         if (fstat(file_, &st) < 0) {
             //int error = errno;
             return -1;
