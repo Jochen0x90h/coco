@@ -6,14 +6,8 @@
 
 namespace coco {
 
-/// @brief Get the lowest set bit in a bitfield.
-/// @tparam T Type of bitfield (e.g. int)
-/// @param bitfield Bitfield to extract from
-/// @return Lowest set bit
-template <typename T>
-constexpr int firstBit(T bitfield) {
-    return bitfield & ~(bitfield - 1);
-}
+// use std::buteswap (since C++23)
+using std::byteswap;
 
 /// @brief Exract a value from a bitfield using a mask.
 /// @tparam T Type of bitfield (e.g. int)
@@ -25,6 +19,15 @@ constexpr auto extract(T bitfield, T mask) {
     auto b = std::make_unsigned_t<T>(bitfield);
     auto m = std::make_unsigned_t<T>(mask);
     return (b & m) / (m & ~(m - 1));
+}
+
+/// @brief Get the lowest set bit in a bitfield.
+/// @tparam T Type of bitfield (e.g. int)
+/// @param bitfield Bitfield to extract from
+/// @return Lowest set bit
+template <typename T>
+constexpr int firstBit(T bitfield) {
+    return bitfield & ~(bitfield - 1);
 }
 
 /// @brief Calculate parity.
@@ -47,7 +50,8 @@ constexpr int parity(T value) {
 }
 
 /// @brief Count number of set bits.
-/// Uses std::popcount
+/// Uses std::popcount but also works for enums
+/// @value Value to count bits
 template <typename T>
 constexpr int popcount(T value) {
     return std::popcount(std::make_unsigned_t<T>(value));

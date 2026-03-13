@@ -7,9 +7,9 @@ namespace coco {
 
 /// @brief String concept.
 /// C-string (char *, const char *), C-array of char or any class that is an array of char and supports
-/// std::data() and std::size()
+/// std::data() and std::size() such as coco::String, coco::ArrayBuffer<char>, std::string, std::vector<char>
 /// Usage:
-/// template <typename T> requires (CtringConcept<T>)
+/// template <typename T> requires (StringConcept<T>)
 /// void foo(const T &str) {...}
 template <typename T>
 concept StringConcept = IsCStringPointer<T> || IsCStringArray<T>

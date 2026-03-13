@@ -8,8 +8,8 @@ namespace coco {
 /// @brief Reset the microcontroller with a specific intent.
 /// The intent can be used to instruct a bootloader to stay in the bootloader and wait for commands.
 /// The intent value is stored in the backup register BKP0R.
+/// The function does not return.
 /// @param intent Intent value
-/// @return
 __NO_RETURN __STATIC_FORCEINLINE void reset(int intent) {
     __disable_irq();
 
@@ -22,7 +22,7 @@ __NO_RETURN __STATIC_FORCEINLINE void reset(int intent) {
 }
 
 /// @brief Get reset intent.
-/// Returns 0 when HAVE_BACKUP is not defined.
+/// Returns 0 when backup registers are not supported (HAVE_BACKUP is not defined).
 /// @return Reset intent
 __STATIC_FORCEINLINE int getResetIntent() {
 #ifdef HAVE_BACKUP

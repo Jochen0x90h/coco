@@ -33,15 +33,17 @@ concept CStringArrayConcept = IsCStringArray<T>;
 
 
 /// @brief C-string concept, is either (const) char * or C array of (const) char
-/// Usage:
+/// @code
 /// template <typename T> requires (CStringConcept<T>) void foo(const T &str) {...}
+/// @endcode
 template <typename T>
 concept CStringConcept = IsCStringPointer<T> || IsCStringArray<T>;
 
 
-/**
-	Determine the length of a c-string
-*/
+/// @brief Determine the length of a c-string.
+/// @tparam T C-string pointer type, e.g. char *, const char *
+/// @param str C-string
+/// @return Length of the c-string, excluding the null terminator.
 template <typename T> requires (CStringPointerConcept<T>)
 constexpr int length(const T &str) {
     int l = 0;
@@ -49,7 +51,10 @@ constexpr int length(const T &str) {
 		++l;
 	return l;
 }
-
+/// @brief Determine the length of a C-array of characters.
+/// @tparam T C-array of characters, e.g. char[10], const char[10]
+/// @param str C-array of characters
+/// @return Length of the C-array of characters, excluding the null terminator if present.
 template <typename T> requires (CStringArrayConcept<T>)
 constexpr int length(const T &str) {
     int l = 0;

@@ -6,3 +6,5 @@
 #define COCO_PACK_BEGIN
 #define COCO_PACK_END __attribute__((__packed__)) ;
 #endif
+
+// byte order: use std::endian

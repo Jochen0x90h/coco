@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
 
 # set project
-project(coco)
+project(coco C CXX ASM)
 
 # configure languages
-enable_language(C CXX ASM)
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 # build type
 message("*** Type: ${CMAKE_BUILD_TYPE}${CMAKE_CONFIGURATION_TYPES}")

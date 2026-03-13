@@ -6,7 +6,7 @@
 #include <coco/ArrayBuffer.hpp>
 #include <coco/ArrayConcept.hpp>
 #include <coco/bits.hpp>
-#include <coco/ContainerConcept.hpp>
+#include <coco/ByteConcept.hpp>
 #include <coco/convert.hpp>
 #include <coco/CStringConcept.hpp>
 #include <coco/debug.hpp>
@@ -18,6 +18,7 @@
 #include <coco/Queue.hpp>
 #include <coco/PointerConcept.hpp>
 #include <coco/PseudoRandom.hpp>
+#include <coco/RangeConcept.hpp>
 #include <coco/StreamOperators.hpp>
 #include <coco/String.hpp>
 #include <coco/StringBuffer.hpp>
@@ -353,109 +354,108 @@ TEST(cocoTest, ArrayBuffer) {
 // ArrayConcept
 // ------------
 
-template <typename T> requires (ArrayConcept<T>)
-bool testArrayConcept(T const &x) {return true;}
-
-template <typename T>
-bool testArrayConcept(T const &x) {return false;}
-
 TEST(cocoTest, ArrayConcept) {
     // basic types
-    int i1 = 0;
-    const int i2 = 0;
-    int *p1 = nullptr;
-    char *p2 = nullptr;
-    const char *p3 = nullptr;
-    EXPECT_FALSE(testArrayConcept(i1));
-    EXPECT_FALSE(testArrayConcept(i2));
-    EXPECT_FALSE(testArrayConcept(p1));
-    EXPECT_FALSE(testArrayConcept(p2));
-    EXPECT_FALSE(testArrayConcept(p3));
+    EXPECT_FALSE(ArrayConcept<char>);
+    EXPECT_FALSE(ArrayConcept<const char>);
+    EXPECT_FALSE(ArrayConcept<char *>);
+    EXPECT_FALSE(ArrayConcept<const char *>);
 
     // C arrays
-    int a1[] = {1, 2, 3};
-    const int a2[] = {1, 2, 3};
-    volatile int a3[] = {1, 2, 3};
-    char a4[] = {'f', 'o', 'o'};
-    const char a5[] = "foo";
-    EXPECT_TRUE(testArrayConcept(a1));
-    EXPECT_TRUE(testArrayConcept(a2));
-    EXPECT_TRUE(testArrayConcept(a3));
-    EXPECT_TRUE(testArrayConcept(a4));
-    EXPECT_TRUE(testArrayConcept(a5));
+    char a1[] = {'f', 'o', 'o'};
+    const char a2[] = "foo";
+    int a3[] = {1, 2, 3};
+    const int a4[] = {1, 2, 3};
+    volatile int a5[] = {1, 2, 3};
+    EXPECT_TRUE(ArrayConcept<decltype(a1)>);
+    EXPECT_TRUE(ArrayConcept<decltype(a2)>);
+    EXPECT_TRUE(ArrayConcept<decltype(a3)>);
+    EXPECT_TRUE(ArrayConcept<decltype(a4)>);
+    EXPECT_TRUE(ArrayConcept<decltype(a5)>);
 
     // coco types
-    Array<int> a6;
-    Array<int, 3> a7(a1);
-    ArrayBuffer<int, 10> b1;
-    StringBuffer<10> b2;
-    String s1 = "foo";
-    EXPECT_TRUE(testArrayConcept(a6));
-    EXPECT_TRUE(testArrayConcept(a7));
-    EXPECT_TRUE(testArrayConcept(b1));
-    EXPECT_TRUE(testArrayConcept(b2));
-    EXPECT_TRUE(testArrayConcept(s1));
+    Array<const char> b1("foo");
+    Array<int8_t> b2;
+    Array<uint8_t> b3;
+    Array<int> b4;
+    Array<int, 3> b5(a3);
+    ArrayBuffer<int, 10> b6;
+    String b7 = "foo";
+    StringBuffer<10> b8;
+    EXPECT_TRUE(ArrayConcept<decltype(b1)>);
+    EXPECT_TRUE(ArrayConcept<decltype(b2)>);
+    EXPECT_TRUE(ArrayConcept<decltype(b3)>);
+    EXPECT_TRUE(ArrayConcept<decltype(b4)>);
+    EXPECT_TRUE(ArrayConcept<decltype(b5)>);
+    EXPECT_TRUE(ArrayConcept<decltype(b6)>);
+    EXPECT_TRUE(ArrayConcept<decltype(b7)>);
+    EXPECT_TRUE(ArrayConcept<decltype(b8)>);
 
     // std types
-    std::vector<int> v1;
-    std::string s2;
-    std::list<int> l1;
-    EXPECT_TRUE(testArrayConcept(v1));
-    EXPECT_TRUE(testArrayConcept(s2));
-    EXPECT_FALSE(testArrayConcept(l1));
+    std::string c1;
+    std::string_view c2(c1);
+    std::vector<char> c3;
+    std::vector<int> c4;
+    std::list<char> c5;
+    std::list<int> c6;
+    EXPECT_TRUE(ArrayConcept<decltype(c1)>);
+    EXPECT_TRUE(ArrayConcept<decltype(c2)>);
+    EXPECT_TRUE(ArrayConcept<decltype(c3)>);
+    EXPECT_TRUE(ArrayConcept<decltype(c4)>);
+    EXPECT_FALSE(ArrayConcept<decltype(c5)>);
+    EXPECT_FALSE(ArrayConcept<decltype(c6)>);
 }
 
-
-template <typename T> requires (ArrayConcept<T, char>)
-bool testArrayConceptChar(T const &x) {return true;}
-
-template <typename T>
-bool testArrayConceptChar(T const &x) {return false;}
-
-TEST(cocoTest, ArrayConceptChar) {
+TEST(cocoTest, ArrayConcept_char) {
     // basic types
-    int i1 = 0;
-    const int i2 = 0;
-    int *p1 = nullptr;
-    char *p2 = nullptr;
-    const char *p3 = nullptr;
-    EXPECT_FALSE(testArrayConceptChar(i1));
-    EXPECT_FALSE(testArrayConceptChar(i2));
-    EXPECT_FALSE(testArrayConceptChar(p1));
-    EXPECT_FALSE(testArrayConceptChar(p2));
-    EXPECT_FALSE(testArrayConceptChar(p3));
+    EXPECT_FALSE((ArrayConcept<char, char>));
+    EXPECT_FALSE((ArrayConcept<const char, char>));
+    EXPECT_FALSE((ArrayConcept<char *, char>));
+    EXPECT_FALSE((ArrayConcept<const char *, char>));
 
     // C arrays
-    int a1[] = {1, 2, 3};
-    const int a2[] = {1, 2, 3};
-    volatile int a3[] = {1, 2, 3};
-    char a4[] = {'f', 'o', 'o'};
-    const char a5[] = "foo";
-    EXPECT_FALSE(testArrayConceptChar(a1));
-    EXPECT_FALSE(testArrayConceptChar(a2));
-    EXPECT_FALSE(testArrayConceptChar(a3));
-    EXPECT_TRUE(testArrayConceptChar(a4));
-    EXPECT_TRUE(testArrayConceptChar(a5));
+    char a1[] = {'f', 'o', 'o'};
+    const char a2[] = "foo";
+    int a3[] = {1, 2, 3};
+    const int a4[] = {1, 2, 3};
+    volatile int a5[] = {1, 2, 3};
+    EXPECT_TRUE((ArrayConcept<decltype(a1), char>));
+    EXPECT_TRUE((ArrayConcept<decltype(a2), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(a3), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(a4), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(a5), char>));
 
     // coco types
-    Array<int> a6;
-    Array<int, 3> a7(a1);
-    ArrayBuffer<int, 10> b1;
-    StringBuffer<10> b2;
-    String s1 = "foo";
-    EXPECT_FALSE(testArrayConceptChar(a6));
-    EXPECT_FALSE(testArrayConceptChar(a7));
-    EXPECT_FALSE(testArrayConceptChar(b1));
-    EXPECT_TRUE(testArrayConceptChar(b2));
-    EXPECT_TRUE(testArrayConceptChar(s1));
+    Array<const char> b1("foo");
+    Array<int8_t> b2;
+    Array<uint8_t> b3;
+    Array<int> b4;
+    Array<int, 3> b5(a3);
+    ArrayBuffer<int, 10> b6;
+    String b7 = "foo";
+    StringBuffer<10> b8;
+    EXPECT_TRUE((ArrayConcept<decltype(b1), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(b2), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(b3), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(b4), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(b5), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(b6), char>));
+    EXPECT_TRUE((ArrayConcept<decltype(b7), char>));
+    EXPECT_TRUE((ArrayConcept<decltype(b8), char>));
 
     // std types
-    std::vector<int> v1;
-    std::string s2;
-    std::list<int> l1;
-    EXPECT_FALSE(testArrayConceptChar(v1));
-    EXPECT_TRUE(testArrayConceptChar(s2));
-    EXPECT_FALSE(testArrayConceptChar(l1));
+    std::string c1;
+    std::string_view c2(c1);
+    std::vector<char> c3;
+    std::vector<int> c4;
+    std::list<char> c5;
+    std::list<int> c6;
+    EXPECT_TRUE((ArrayConcept<decltype(c1), char>));
+    EXPECT_TRUE((ArrayConcept<decltype(c2), char>));
+    EXPECT_TRUE((ArrayConcept<decltype(c3), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(c4), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(c5), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(c6), char>));
 }
 
 
@@ -530,59 +530,145 @@ TEST(cocoTest, popcountBefore) {
 }
 
 
-// ContainerConcept
+// ByteConcept
+// -----------
+
+TEST(cocoTest, ByteConcept) {
+    // basic types
+    EXPECT_TRUE(ByteConcept<char>);
+    EXPECT_TRUE(ByteConcept<const char>);
+    EXPECT_TRUE(ByteConcept<uint8_t>);
+    EXPECT_TRUE(ByteConcept<const uint8_t>);
+    EXPECT_TRUE(ByteConcept<int8_t>);
+    EXPECT_TRUE(ByteConcept<const int8_t>);
+    EXPECT_FALSE(ByteConcept<int>);
+    EXPECT_FALSE(ByteConcept<const int>);
+    EXPECT_FALSE(ByteConcept<char *>);
+    EXPECT_FALSE(ByteConcept<const char *>);
+    EXPECT_FALSE(ByteConcept<int *>);
+}
+
+
+// ByteArrayConcept
 // ----------------
 
-template <typename T> requires (ContainerConcept<T>)
-bool testContainerConcept(T const &x) {return true;}
-
-template <typename T> requires (!ContainerConcept<T>)
-bool testContainerConcept(T const &x) {return false;}
-
-TEST(cocoTest, ContainerConcept) {
+TEST(cocoTest, ByteArrayConcept) {
     // basic types
-    int i1 = 0;
-    const int i2 = 0;
-    int *p1 = nullptr;
-    char *p2 = nullptr;
-    const char *p3 = nullptr;
-    EXPECT_FALSE(testContainerConcept(i1));
-    EXPECT_FALSE(testContainerConcept(i2));
-    EXPECT_FALSE(testContainerConcept(p1));
-    EXPECT_FALSE(testContainerConcept(p2));
-    EXPECT_FALSE(testContainerConcept(p3));
+    EXPECT_FALSE(ByteArrayConcept<char>);
+    EXPECT_FALSE(ByteArrayConcept<const char>);
+    EXPECT_FALSE(ByteArrayConcept<char *>);
+    EXPECT_FALSE(ByteArrayConcept<const char *>);
 
     // C arrays
-    int a1[] = {1, 2, 3};
-    const int a2[] = {1, 2, 3};
-    volatile int a3[] = {1, 2, 3};
-    char a4[] = {'f', 'o', 'o'};
-    const char a5[] = "foo";
-    EXPECT_TRUE(testContainerConcept(a1));
-    EXPECT_TRUE(testContainerConcept(a2));
-    EXPECT_TRUE(testContainerConcept(a3));
-    EXPECT_TRUE(testContainerConcept(a4));
-    EXPECT_TRUE(testContainerConcept(a5));
+    char a1[] = {'f', 'o', 'o'};
+    const char a2[] = "foo";
+    int a3[] = {1, 2, 3};
+    const int a4[] = {1, 2, 3};
+    volatile int a5[] = {1, 2, 3};
+    EXPECT_TRUE(ByteArrayConcept<decltype(a1)>);
+    EXPECT_TRUE(ByteArrayConcept<decltype(a2)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(a3)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(a4)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(a5)>);
 
     // coco types
-    Array<int> a6;
-    Array<int, 3> a7(a1);
-    ArrayBuffer<int, 10> b1;
-    StringBuffer<10> b2;
-    String s1 = "foo";
-    EXPECT_TRUE(testContainerConcept(a6));
-    EXPECT_TRUE(testContainerConcept(a7));
-    EXPECT_TRUE(testContainerConcept(b1));
-    EXPECT_TRUE(testContainerConcept(b2));
-    EXPECT_TRUE(testContainerConcept(s1));
+    Array<const char> b1("foo");
+    Array<int8_t> b2;
+    Array<uint8_t> b3;
+    Array<int> b4;
+    Array<int, 3> b5(a3);
+    ArrayBuffer<int, 10> b6;
+    String b7 = "foo";
+    StringBuffer<10> b8;
+    EXPECT_TRUE(ByteArrayConcept<decltype(b1)>);
+    EXPECT_TRUE(ByteArrayConcept<decltype(b2)>);
+    EXPECT_TRUE(ByteArrayConcept<decltype(b3)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(b4)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(b5)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(b6)>);
+    EXPECT_TRUE(ByteArrayConcept<decltype(b7)>);
+    EXPECT_TRUE(ByteArrayConcept<decltype(b8)>);
 
     // std types
-    std::vector<int> v1;
-    std::string s2;
-    std::list<int> l1;
-    EXPECT_TRUE(testContainerConcept(v1));
-    EXPECT_TRUE(testContainerConcept(s2));
-    EXPECT_TRUE(testContainerConcept(l1));
+    std::string c1;
+    std::string_view c2(c1);
+    std::vector<char> c3;
+    std::vector<int> c4;
+    std::list<char> c5;
+    std::list<int> c6;
+    EXPECT_TRUE(ByteArrayConcept<decltype(c1)>);
+    EXPECT_TRUE(ByteArrayConcept<decltype(c2)>);
+    EXPECT_TRUE(ByteArrayConcept<decltype(c3)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(c4)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(c5)>); // only difference to ByteRangeConcept
+    EXPECT_FALSE(ByteArrayConcept<decltype(c6)>);
+}
+
+
+// ByteRangeConcept
+// ----------------
+
+TEST(cocoTest, ByteRangeConcept) {
+    // basic types
+    EXPECT_FALSE(ByteRangeConcept<char>);
+    EXPECT_FALSE(ByteRangeConcept<const char>);
+    EXPECT_FALSE(ByteRangeConcept<char *>);
+    EXPECT_FALSE(ByteRangeConcept<const char *>);
+
+    // C arrays
+    char a1[] = {'f', 'o', 'o'};
+    const char a2[] = "foo";
+    int a3[] = {1, 2, 3};
+    const int a4[] = {1, 2, 3};
+    volatile int a5[] = {1, 2, 3};
+    EXPECT_TRUE(ByteRangeConcept<decltype(a1)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(a2)>);
+    EXPECT_FALSE(ByteRangeConcept<decltype(a3)>);
+    EXPECT_FALSE(ByteRangeConcept<decltype(a4)>);
+    EXPECT_FALSE(ByteRangeConcept<decltype(a5)>);
+
+    // coco types
+    Array<const char> b1("foo");
+    Array<int8_t> b2;
+    Array<uint8_t> b3;
+    Array<int> b4;
+    Array<int, 3> b5(a3);
+    ArrayBuffer<int, 10> b6;
+    String b7 = "foo";
+    StringBuffer<10> b8;
+    EXPECT_TRUE(ByteRangeConcept<decltype(b1)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(b2)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(b3)>);
+    EXPECT_FALSE(ByteRangeConcept<decltype(b4)>);
+    EXPECT_FALSE(ByteRangeConcept<decltype(b5)>);
+    EXPECT_FALSE(ByteRangeConcept<decltype(b6)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(b7)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(b8)>);
+
+    // std types
+    std::string c1;
+    std::string_view c2(c1);
+    std::vector<char> c3;
+    std::vector<int> c4;
+    std::list<char> c5;
+    std::list<int> c6;
+    EXPECT_TRUE(ByteRangeConcept<decltype(c1)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(c2)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(c3)>);
+    EXPECT_FALSE(ByteRangeConcept<decltype(c4)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(c5)>); // only difference to ByteArrayConcept
+    EXPECT_FALSE(ByteRangeConcept<decltype(c6)>);
+}
+
+
+// byteswap
+// --------
+
+TEST(cocoTest, byteswap) {
+    uint32_t i16 = 0x0102;
+    EXPECT_EQ(byteswap(i16), 0x0201);
+    uint32_t i32 = 0x01020304;
+    EXPECT_EQ(byteswap(i32), 0x04030201);
 }
 
 
@@ -1109,6 +1195,62 @@ TEST(cocoTest, Queue) {
 }
 
 
+// RangeConcept
+// ------------
+
+TEST(cocoTest, RangeConcept) {
+    // basic types
+    EXPECT_FALSE(RangeConcept<char>);
+    EXPECT_FALSE(RangeConcept<const char>);
+    EXPECT_FALSE(RangeConcept<char *>);
+    EXPECT_FALSE(RangeConcept<const char *>);
+
+    // C arrays
+    char a1[] = {'f', 'o', 'o'};
+    const char a2[] = "foo";
+    int a3[] = {1, 2, 3};
+    const int a4[] = {1, 2, 3};
+    volatile int a5[] = {1, 2, 3};
+    EXPECT_TRUE(RangeConcept<decltype(a1)>);
+    EXPECT_TRUE(RangeConcept<decltype(a2)>);
+    EXPECT_TRUE(RangeConcept<decltype(a3)>);
+    EXPECT_TRUE(RangeConcept<decltype(a4)>);
+    EXPECT_TRUE(RangeConcept<decltype(a5)>);
+
+    // coco types
+    Array<const char> b1("foo");
+    Array<int8_t> b2;
+    Array<uint8_t> b3;
+    Array<int> b4;
+    Array<int, 3> b5(a3);
+    ArrayBuffer<int, 10> b6;
+    String b7 = "foo";
+    StringBuffer<10> b8;
+    EXPECT_TRUE(RangeConcept<decltype(b1)>);
+    EXPECT_TRUE(RangeConcept<decltype(b2)>);
+    EXPECT_TRUE(RangeConcept<decltype(b3)>);
+    EXPECT_TRUE(RangeConcept<decltype(b4)>);
+    EXPECT_TRUE(RangeConcept<decltype(b5)>);
+    EXPECT_TRUE(RangeConcept<decltype(b6)>);
+    EXPECT_TRUE(RangeConcept<decltype(b7)>);
+    EXPECT_TRUE(RangeConcept<decltype(b8)>);
+
+    // std types
+    std::string c1;
+    std::string_view c2(c1);
+    std::vector<char> c3;
+    std::vector<int> c4;
+    std::list<char> c5;
+    std::list<int> c6;
+    EXPECT_TRUE(RangeConcept<decltype(c1)>);
+    EXPECT_TRUE(RangeConcept<decltype(c2)>);
+    EXPECT_TRUE(RangeConcept<decltype(c3)>);
+    EXPECT_TRUE(RangeConcept<decltype(c4)>);
+    EXPECT_TRUE(RangeConcept<decltype(c5)>);
+    EXPECT_TRUE(RangeConcept<decltype(c6)>);
+}
+
+
 // String
 // ------
 
@@ -1284,6 +1426,7 @@ TEST(cocoTest, String) {
         EXPECT_EQ(view, "foo");
     }
 }
+
 
 // StringBuffer, StreamOperators
 // -----------------------------

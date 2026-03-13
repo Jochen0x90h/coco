@@ -1,4 +1,5 @@
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME}
     PUBLIC FILE_SET headers TYPE HEADERS FILES
@@ -7,8 +8,8 @@ target_sources(${PROJECT_NAME}
         ArrayBuffer.hpp
         ArrayConcept.hpp
         bits.hpp
+        ByteConcept.hpp
         Callback.hpp
-        ContainerConcept.hpp
         convert.hpp
         Coroutine.hpp
         CStringConcept.hpp
@@ -24,6 +25,7 @@ target_sources(${PROJECT_NAME}
         Queue.hpp
         PointerConcept.hpp
         PseudoRandom.hpp
+        RangeConcept.hpp
         Semaphore.hpp
         StreamOperators.hpp
         String.hpp
