@@ -43,13 +43,13 @@ public:
 
     /// @brief Construct String from any type of data
     ///
-    constexpr String(const char *data, int length)
+    constexpr String(const char *data, int length) noexcept
         : buffer(data), length(int(length))
     {}
 
     /// @brief Construct/cast String from any type of data
     ///
-    explicit String(const void *data, int length)
+    explicit String(const void *data, int length) noexcept
         : buffer(reinterpret_cast<char const*>(data)), length(length)
     {}
 
@@ -195,13 +195,13 @@ public:
 
     /// @brief Array access data() and size() which is O(1)
     ///
-    const char *data() const {return this->buffer;}
-    int size() const {return this->length;}
+    const char *data() const noexcept {return this->buffer;}
+    int size() const noexcept {return this->length;}
 
     /// @brief Iterators begin() and end()
     ///
-    const char *begin() const {return this->buffer;}
-    const char *end() const {return this->buffer + this->length;}
+    const char *begin() const noexcept {return this->buffer;}
+    const char *end() const noexcept {return this->buffer + this->length;}
 
 protected:
 

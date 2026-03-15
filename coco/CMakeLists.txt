@@ -34,6 +34,7 @@ target_sources(${PROJECT_NAME}
         Task.hpp
         Time.hpp
         TimedTask.hpp
+        TriviallyCopyable.hpp
         Unit.hpp
         #utf8.hpp
         Vector2.hpp
@@ -103,10 +104,9 @@ elseif(${PLATFORM} MATCHES "^stm32f0") # Cortex-M0
             stm32/coco/platform/flashF0F3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/rccF0F1F3.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdF0C0F3G4L4.hpp
@@ -160,10 +160,9 @@ elseif(${PLATFORM} MATCHES "^stm32c0") # Cortex-M0+
             stm32/coco/platform/flashC0G0L4G4U3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/rccC0G0.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32c0/coco/platform/adc.hpp
@@ -218,11 +217,10 @@ elseif(${PLATFORM} MATCHES "^stm32g0") # Cortex-M0+
             stm32/coco/platform/flashC0G0L4G4U3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/rccC0G0.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdG0H5U3U5.hpp
@@ -282,10 +280,9 @@ elseif(${PLATFORM} MATCHES "^stm32f3") # Cortex-M4F
             stm32/coco/platform/flashF0F3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/rccF0F1F3.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdF0C0F3G4L4.hpp
@@ -336,11 +333,10 @@ elseif(${PLATFORM} MATCHES "^stm32f4") # Cortex-M4F
             stm32/coco/platform/extiF0F3F4.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF1L1F4.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/qspiF4L4G4.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiF1L1F4.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF1L1F4.hpp
             stm32f4/coco/platform/adc.hpp
@@ -393,12 +389,11 @@ elseif(${PLATFORM} MATCHES "^stm32l4") # Cortex-M4F
             stm32/coco/platform/flashC0G0L4G4U3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/qspiF4L4G4.hpp
             stm32/coco/platform/rccL4G4.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdF0C0F3G4L4.hpp
@@ -457,12 +452,11 @@ elseif(${PLATFORM} MATCHES "^stm32g4") # Cortex-M4F
             stm32/coco/platform/flashC0G0L4G4U3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/qspiF4L4G4.hpp
             stm32/coco/platform/rccL4G4.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdF0C0F3G4L4.hpp
@@ -526,11 +520,10 @@ elseif(${PLATFORM} MATCHES "^stm32h5") # Cortex-M33F
             stm32/coco/platform/flashH5U5.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/rccH5.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiH5U3U5.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdG0H5U3U5.hpp
@@ -589,11 +582,10 @@ elseif(${PLATFORM} MATCHES "^stm32u3") # Cortex-M33F
             stm32/coco/platform/flashC0G0L4G4U3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/jump.hpp
             stm32/coco/platform/rccU3U5.hpp
-            stm32/coco/platform/reset.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiH5U3U5.hpp
+            stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdG0H5U3U5.hpp

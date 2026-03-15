@@ -20,16 +20,15 @@
 #if defined(STM32G4)
 #include <coco/platform/opamp.hpp>
 #endif
-#include <coco/platform/jump.hpp>
 #if defined(STM32F4) || defined(STM32L4) || defined(STM32G4)
 #include <coco/platform/qspi.hpp>
 #endif
 #include <coco/platform/rcc.hpp>
-#include <coco/platform/reset.hpp>
 #if defined(STM32G0) || defined(STM32F4) || defined(STM32L4)  || defined(STM32G4) || defined(STM32H5) || defined(STM32U3) || defined(STM32U5)
 #include <coco/platform/rng.hpp>
 #endif
 #include <coco/platform/spi.hpp>
+#include <coco/platform/system.hpp>
 #include <coco/platform/timer.hpp>
 #include <coco/platform/uart.hpp>
 #include <coco/platform/usbd.hpp>
@@ -98,6 +97,11 @@ int main() {
     qspi::QUADSPI_INFO.enableClock();
 #endif
 
+    // system
+    system::jump(0x8000000);
+    system::reset(1);
+    system::intent();
+
     // timer
 #ifdef TIM1
     timer::TIM1_INFO.irq<timer::Irq::CC>();
@@ -109,7 +113,6 @@ int main() {
     uart::USART1_INFO.instance().enable().startRx().startTx().setBaudRate(16MHz, 115200Hz).getBaudRate(16MHz);
 
 
-    jumpInline(0x8000000);
 
     return 0;
 }

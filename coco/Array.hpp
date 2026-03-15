@@ -101,16 +101,16 @@ public:
 
     /// @brief Array access data() and size() which is O(1).
     ///
-    T *data() const {return this->buffer;}
+    T *data() const noexcept {return this->buffer;}
 
     /// @brief Get size of array.
     /// @return Size
-    static int size() {return N;}
+    static int size() noexcept {return N;}
 
     /// @brief Iterators begin() and end().
     ///
-    T *begin() const {return this->buffer;}
-    T *end() const {return this->buffer + N;}
+    T *begin() const noexcept {return this->buffer;}
+    T *end() const noexcept {return this->buffer + N;}
 
 protected:
 
@@ -204,16 +204,16 @@ public:
 
     /// @brief Array access data() and size() which is O(1).
     ///
-    T *data() const {return this->buffer;}
+    T *data() const noexcept {return this->buffer;}
 
     /// @brief Get size of array.
     /// @return Size
-    int size() const {return this->length;}
+    int size() const noexcept {return this->length;}
 
     /// @brief Iterators begin() and end().
     ///
-    T *begin() const {return this->buffer;}
-    T *end() const {return this->buffer + this->length;}
+    T *begin() const noexcept {return this->buffer;}
+    T *end() const noexcept {return this->buffer + this->length;}
 
 protected:
 

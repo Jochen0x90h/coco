@@ -1,10 +1,50 @@
 #pragma once
 
+#include "backup.hpp"
 #include "nvic.hpp"
 #include "rcc.hpp"
 
 
 namespace coco {
+
+/// @brief System functions.
+/// System functions such as reset, intent, jump
+namespace system {
+
+
+/// @brief Reset the microcontroller.
+///
+__NO_RETURN __STATIC_FORCEINLINE void reset() {
+    NVIC_SystemReset();
+}
+
+/// @brief Reset the microcontroller with a specific intent.
+/// The intent can be used to instruct a bootloader to stay in the bootloader and wait for commands.
+/// The intent value is stored in the backup register BKP0R.
+/// The function does not return.
+/// @param intent Intent value
+__NO_RETURN __STATIC_FORCEINLINE void reset(int intent) {
+    __disable_irq();
+
+#ifdef HAVE_BACKUP
+    backup::unlock();
+    backup::set(0, intent);
+#endif
+
+    NVIC_SystemReset();
+}
+
+/// @brief Get intent.
+/// The intent indicates what to do at startup, e.g. stay in bootloader or run the application.
+/// Returns 0 when backup registers are not supported (HAVE_BACKUP is not defined).
+/// @return Reset intent
+__STATIC_FORCEINLINE int intent() {
+#ifdef HAVE_BACKUP
+    return backup::get(0);
+#else
+    return 0;
+#endif
+}
 
 /// @brief Jump to an address, e.g. bootloader or application.
 /// Function is inline so that it is placed into the section of the containing function,
@@ -56,4 +96,5 @@ __attribute__((noreturn)) inline void jump(uint32_t address) {
     jumpInline(address);
 }
 
+} // namespace system
 } // namespace coco

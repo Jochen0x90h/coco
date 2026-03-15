@@ -396,14 +396,18 @@ TEST(cocoTest, ArrayConcept) {
     std::string_view c2(c1);
     std::vector<char> c3;
     std::vector<int> c4;
-    std::list<char> c5;
-    std::list<int> c6;
+    std::span<char> c5(c3);
+    std::span<int> c6(c4);
+    std::list<char> c7;
+    std::list<int> c8;
     EXPECT_TRUE(ArrayConcept<decltype(c1)>);
     EXPECT_TRUE(ArrayConcept<decltype(c2)>);
     EXPECT_TRUE(ArrayConcept<decltype(c3)>);
     EXPECT_TRUE(ArrayConcept<decltype(c4)>);
-    EXPECT_FALSE(ArrayConcept<decltype(c5)>);
-    EXPECT_FALSE(ArrayConcept<decltype(c6)>);
+    EXPECT_TRUE(ArrayConcept<decltype(c5)>);
+    EXPECT_TRUE(ArrayConcept<decltype(c6)>);
+    EXPECT_FALSE(ArrayConcept<decltype(c7)>);
+    EXPECT_FALSE(ArrayConcept<decltype(c8)>);
 }
 
 TEST(cocoTest, ArrayConcept_char) {
@@ -448,14 +452,74 @@ TEST(cocoTest, ArrayConcept_char) {
     std::string_view c2(c1);
     std::vector<char> c3;
     std::vector<int> c4;
-    std::list<char> c5;
-    std::list<int> c6;
+    std::span<char> c5(c3);
+    std::span<int> c6(c4);
+    std::list<char> c7;
+    std::list<int> c8;
     EXPECT_TRUE((ArrayConcept<decltype(c1), char>));
     EXPECT_TRUE((ArrayConcept<decltype(c2), char>));
     EXPECT_TRUE((ArrayConcept<decltype(c3), char>));
     EXPECT_FALSE((ArrayConcept<decltype(c4), char>));
-    EXPECT_FALSE((ArrayConcept<decltype(c5), char>));
+    EXPECT_TRUE((ArrayConcept<decltype(c5), char>));
     EXPECT_FALSE((ArrayConcept<decltype(c6), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(c7), char>));
+    EXPECT_FALSE((ArrayConcept<decltype(c8), char>));
+}
+
+TEST(cocoTest, ArrayConstructible) {
+    // basic types
+    EXPECT_FALSE(ArrayConstructible<char>);
+    EXPECT_FALSE(ArrayConstructible<const char>);
+    EXPECT_FALSE(ArrayConstructible<char *>);
+    EXPECT_FALSE(ArrayConstructible<const char *>);
+
+    // C arrays
+    char a1[] = {'f', 'o', 'o'};
+    const char a2[] = "foo";
+    int a3[] = {1, 2, 3};
+    const int a4[] = {1, 2, 3};
+    volatile int a5[] = {1, 2, 3};
+    EXPECT_FALSE(ArrayConstructible<decltype(a1)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(a2)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(a3)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(a4)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(a5)>);
+
+    // coco types
+    Array<const char> b1("foo");
+    Array<int8_t> b2;
+    Array<uint8_t> b3;
+    Array<int> b4;
+    Array<int, 3> b5(a3);
+    ArrayBuffer<int, 10> b6;
+    String b7 = "foo";
+    StringBuffer<10> b8;
+    EXPECT_TRUE(ArrayConstructible<decltype(b1)>);
+    EXPECT_TRUE(ArrayConstructible<decltype(b2)>);
+    EXPECT_TRUE(ArrayConstructible<decltype(b3)>);
+    EXPECT_TRUE(ArrayConstructible<decltype(b4)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(b5)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(b6)>);
+    EXPECT_TRUE(ArrayConstructible<decltype(b7)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(b8)>);
+
+    // std types
+    std::string c1;
+    std::string_view c2(c1);
+    std::vector<char> c3;
+    std::vector<int> c4;
+    std::span<char> c5(c3);
+    std::span<int> c6(c4);
+    std::list<char> c7;
+    std::list<int> c8;
+    EXPECT_TRUE(ArrayConstructible<decltype(c1)>);
+    EXPECT_TRUE(ArrayConstructible<decltype(c2)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(c3)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(c4)>);
+    EXPECT_TRUE(ArrayConstructible<decltype(c5)>);
+    EXPECT_TRUE(ArrayConstructible<decltype(c6)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(c7)>);
+    EXPECT_FALSE(ArrayConstructible<decltype(c8)>);
 }
 
 
@@ -594,14 +658,18 @@ TEST(cocoTest, ByteArrayConcept) {
     std::string_view c2(c1);
     std::vector<char> c3;
     std::vector<int> c4;
-    std::list<char> c5;
-    std::list<int> c6;
+    std::span<char> c5(c3);
+    std::span<int> c6(c4);
+    std::list<char> c7;
+    std::list<int> c8;
     EXPECT_TRUE(ByteArrayConcept<decltype(c1)>);
     EXPECT_TRUE(ByteArrayConcept<decltype(c2)>);
     EXPECT_TRUE(ByteArrayConcept<decltype(c3)>);
     EXPECT_FALSE(ByteArrayConcept<decltype(c4)>);
-    EXPECT_FALSE(ByteArrayConcept<decltype(c5)>); // only difference to ByteRangeConcept
+    EXPECT_TRUE(ByteArrayConcept<decltype(c5)>);
     EXPECT_FALSE(ByteArrayConcept<decltype(c6)>);
+    EXPECT_FALSE(ByteArrayConcept<decltype(c7)>); // only difference to ByteRangeConcept
+    EXPECT_FALSE(ByteArrayConcept<decltype(c8)>);
 }
 
 
@@ -650,14 +718,18 @@ TEST(cocoTest, ByteRangeConcept) {
     std::string_view c2(c1);
     std::vector<char> c3;
     std::vector<int> c4;
-    std::list<char> c5;
-    std::list<int> c6;
+    std::span<char> c5(c3);
+    std::span<int> c6(c4);
+    std::list<char> c7;
+    std::list<int> c8;
     EXPECT_TRUE(ByteRangeConcept<decltype(c1)>);
     EXPECT_TRUE(ByteRangeConcept<decltype(c2)>);
     EXPECT_TRUE(ByteRangeConcept<decltype(c3)>);
     EXPECT_FALSE(ByteRangeConcept<decltype(c4)>);
-    EXPECT_TRUE(ByteRangeConcept<decltype(c5)>); // only difference to ByteArrayConcept
+    EXPECT_TRUE(ByteRangeConcept<decltype(c5)>);
     EXPECT_FALSE(ByteRangeConcept<decltype(c6)>);
+    EXPECT_TRUE(ByteRangeConcept<decltype(c7)>); // only difference to ByteArrayConcept
+    EXPECT_FALSE(ByteRangeConcept<decltype(c8)>);
 }
 
 
@@ -665,7 +737,7 @@ TEST(cocoTest, ByteRangeConcept) {
 // --------
 
 TEST(cocoTest, byteswap) {
-    uint32_t i16 = 0x0102;
+    uint16_t i16 = 0x0102;
     EXPECT_EQ(byteswap(i16), 0x0201);
     uint32_t i32 = 0x01020304;
     EXPECT_EQ(byteswap(i32), 0x04030201);
@@ -1240,14 +1312,18 @@ TEST(cocoTest, RangeConcept) {
     std::string_view c2(c1);
     std::vector<char> c3;
     std::vector<int> c4;
-    std::list<char> c5;
-    std::list<int> c6;
+    std::span<char> c5(c3);
+    std::span<int> c6(c4);
+    std::list<char> c7;
+    std::list<int> c8;
     EXPECT_TRUE(RangeConcept<decltype(c1)>);
     EXPECT_TRUE(RangeConcept<decltype(c2)>);
     EXPECT_TRUE(RangeConcept<decltype(c3)>);
     EXPECT_TRUE(RangeConcept<decltype(c4)>);
     EXPECT_TRUE(RangeConcept<decltype(c5)>);
     EXPECT_TRUE(RangeConcept<decltype(c6)>);
+    EXPECT_TRUE(RangeConcept<decltype(c7)>);
+    EXPECT_TRUE(RangeConcept<decltype(c8)>);
 }
 
 
