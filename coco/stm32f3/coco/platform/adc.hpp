@@ -51,6 +51,11 @@ enum class Config : uint32_t {
     OVERRUN_REPLACE = ADC_CFGR_OVRMOD
 };
 
+/// @brief Get resolution, 0: 8 bit, 1: 16 bit.
+/// @param config Configuration
+/// @return resolution
+inline int getResolution(Config config) {return 1 - (extract(config, adc::Config::RES_MASK) >> 1);}
+
 /// @brief ADC trigger
 ///
 enum class Trigger : uint32_t  {
@@ -308,7 +313,7 @@ void DualInfo::map(const dma::Info<F2> &dmaInfo, int channelIndex) const {
 
 #endif // HAVE_ADC_DUAL_MODE
 
-#else // defined(__STM32F334x8_H)
+#else // defined(__STM32F334x8_H) || defined(__STM32F398xx_H)
 
 /// @brief ADC clock configuration
 ///
@@ -322,7 +327,13 @@ enum class ClockConfig : uint32_t {
 enum class Config : uint32_t {
     // ADC resolution
     RES_12 = 0,
+    RES_MASK = 0,
 };
+
+/// @brief Get resolution, 0: 8 bit, 1: 16 bit.
+/// @param config Configuration
+/// @return resolution
+inline int getResolution(Config config) {return 1;}
 
 /// @brief ADC Trigger
 ///

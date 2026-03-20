@@ -54,6 +54,11 @@ enum class Config : uint32_t {
     OVERRUN_REPLACE = ADC_CFGR1_OVRMOD
 };
 
+/// @brief Get resolution, 0: 8 bit, 1: 16 bit.
+/// @param config Configuration
+/// @return resolution
+inline int getResolution(Config config) {return 1 - (extract(config, adc::Config::RES_MASK) >> 1);}
+
 /// @brief DMA mode
 ///
 enum class DmaMode : uint32_t {

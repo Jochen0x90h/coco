@@ -6,14 +6,17 @@
 
 namespace coco {
 
-template<class R>
-concept RangeConcept = std::ranges::range<R>;
+/// @brief Range concept, any range of elements with size 1 byte, e.g. std::vector<char>, std::string_view, coco::String etc.
+/// tparam T Range type
+template<class T>
+concept RangeConcept = std::ranges::range<T>;
 
 /// @brief Byte range concept, any range of elements with size 1 byte, e.g. std::vector<char>, std::string_view, coco::String etc.
-template<class R>
-concept ByteRangeConcept = std::ranges::range<R> &&
-    requires(R& r) {
-        requires sizeof(std::ranges::range_reference_t<R>) == 1;
+/// tparam T Range type
+template <class T>
+concept ByteRangeConcept = std::ranges::range<T> &&
+    requires {
+        requires sizeof(std::ranges::range_reference_t<T>) == 1;
     };
 
 

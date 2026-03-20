@@ -532,12 +532,20 @@ enum class ExtractEnum {
 };
 
 TEST(cocoTest, bits) {
-    EXPECT_EQ(firstBit(6), 2);
+    // byteswap
+    uint16_t i16 = 0x0102;
+    EXPECT_EQ(byteswap(i16), 0x0201);
+    uint32_t i32 = 0x01020304;
+    EXPECT_EQ(byteswap(i32), 0x04030201);
 
+    // extract
     EXPECT_EQ(extract(int(0x50000000), int(0xf0000000)), 5);
-
     EXPECT_EQ(extract(ExtractEnum::FOO_1, ExtractEnum::FOO_MASK), 1);
 
+    // firstBit
+    EXPECT_EQ(firstBit(6), 2);
+
+    // parity
     EXPECT_EQ(parity(uint8_t(4)), 1);
     EXPECT_EQ(parity(uint16_t(4)), 1);
     EXPECT_EQ(parity(uint32_t(4)), 1);
@@ -547,7 +555,7 @@ TEST(cocoTest, bits) {
     EXPECT_EQ(parity(UINT64_C(0xffffffff00000001)), 1);
     EXPECT_EQ(parity(ExtractEnum::FOO_1), 1);
 
-
+    // popcount
     EXPECT_EQ(popcount(ExtractEnum::FOO_MASK), 4);
     EXPECT_EQ(popcountBefore(0x0a, 0x08), 1);
 }
@@ -730,17 +738,6 @@ TEST(cocoTest, ByteRangeConcept) {
     EXPECT_FALSE(ByteRangeConcept<decltype(c6)>);
     EXPECT_TRUE(ByteRangeConcept<decltype(c7)>); // only difference to ByteArrayConcept
     EXPECT_FALSE(ByteRangeConcept<decltype(c8)>);
-}
-
-
-// byteswap
-// --------
-
-TEST(cocoTest, byteswap) {
-    uint16_t i16 = 0x0102;
-    EXPECT_EQ(byteswap(i16), 0x0201);
-    uint32_t i32 = 0x01020304;
-    EXPECT_EQ(byteswap(i32), 0x04030201);
 }
 
 

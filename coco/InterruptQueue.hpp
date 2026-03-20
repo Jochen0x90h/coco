@@ -349,4 +349,394 @@ protected:
     std::atomic<Node *> head; // pop() removes from head, front() element
 };
 
+template <typename T>
+class InterruptQueue2 {
+public:
+    using Node = IntrusiveMpscQueueNode;
+
+    /// @brief Determine if the queue is empty
+    ///
+    bool empty() {
+        return head_.next == nullptr;
+    }
+
+    /// @brief Determine if the queue contains no nodes or one node
+    ///
+    bool emptyOrOne() {
+        return tail_.load() == head_.next.load();
+    }
+
+    /// @brief Clear the queue.
+    ///
+    void clear() {
+        head_ = nullptr;
+        tail_ = &head_;
+    }
+
+    /// @brief Insert an element at the end/behind back() of the queue (push_back).
+    /// @param element Element to insert at the end
+    /// @return true if the queue was empty
+    bool push(T &element) {
+        Node &node = element;
+        node.next = nullptr;
+        bool wasEmpty = head_.next == nullptr;
+
+        // add new node to tail
+        tail_->next = &node;
+        tail_ = &node;
+        return wasEmpty;
+    }
+
+    /// @brief Insert an element at the end/behind back() of the queue (push_back).
+    /// @param guard Guard for locking interrupts while push() is executed
+    /// @param element Element to insert at the end
+    /// @return true if the queue was empty
+    template <typename G>
+    bool push(const G &guard, T &element) {
+        return push(element);
+    }
+
+    /// @brief Visit the first element if it exists.
+    /// @tparam V Type of visitor
+    /// @param visitor Visitor
+    template <typename V>
+    void visitFirst(const V &visitor) {
+        // get front node
+        Node *head = head_.next;
+
+        // check if the list is empty
+        if (head == nullptr)
+            return;
+
+        visitor(static_cast<T &>(*head));
+    }
+
+    /// @brief Remove the first/front() element from the queue (pop_front).
+    /// @return The first element or nullptr if the queue was empty
+    T *pop() {
+        Node *head = head_.next;
+        if (head == nullptr)
+            return nullptr;
+
+        // remove the head node
+        Node *next = head->next;
+        head_.next = next;
+        if (next == nullptr)
+            tail_ = &head_;
+
+        // pop succeeded
+        return &static_cast<T &>(*head);
+    }
+
+    /// @brief If the queue is not empty, the first/front() element gets removed if the function returns true.
+    /// @param function Function to determine if the first/front() element should be removed
+    /// @return The first element or nullptr if the queue was empty
+    template <typename F>
+    T *pop(const F &removedFunction) {
+        Node *head = head_.next;
+        if (head == nullptr)
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        head_.next = next;
+        if (next == nullptr)
+            tail_ = &head_;
+
+        // call remove function when the element is not part of the queue any more
+        auto &element = static_cast<T &>(*head);
+        removedFunction(element);
+
+        // pop succeeded
+        return &element;
+    }
+
+    /// @brief If the queue is not empty, the first/front() element gets removed if the function returns true.
+    /// Calls a function (nextFunction) with the next element if it exists.
+    /// @param function function to determine if the first/front() element should be removed
+    /// @param nextFunction function to be called with the next element
+    /// @return The first element or nullptr if the queue was empty
+    template <typename N, typename R>
+    T *pop(const N &nextFunction, const R &removedFunction) {
+        Node *head = head_.next;
+        if (head == nullptr)
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        head_.next = next;
+        if (next == nullptr)
+            tail_ = &head_;
+        else
+            nextFunction(static_cast<T &>(*next));
+
+        // call remove function when the element is not part of the queue any more
+        auto &element = static_cast<T &>(*head);
+        removedFunction(element);
+
+        // pop succeeded
+        return &element;
+    }
+
+    /// @brief Pop the first/front() element from the queue if the predicate returns true.
+    /// The predicate function must not modify the queue.
+    /// @tparam C Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
+    /// @param predicate Condition function to determine if the first/front() element should be removed.
+    /// @return The first element or nullptr if the queue was empty or if the predicate returned false
+    template <typename P>
+    T *popIf(const P &predicate) {
+        Node *head = head_.next;
+        if (head == nullptr)
+            return nullptr;
+
+        // reject if predicate returns false
+        if (!predicate(static_cast<T &>(*head)))
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        head_.next = next;
+        if (next == nullptr)
+            tail_ = &head_;
+
+        // pop succeeded
+        return &static_cast<T &>(*head);
+    }
+
+    /// @brief Pop the first/front() element from the queue if the predicate returns true.
+    /// The predicate function must not modify the queue while the removeFunction may modify this queue or add the
+    /// element to another queue.
+    /// @tparam C Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
+    /// @tparam R Type of the remove function, e.g. [](auto &element) { element.cleanup(); }
+    /// @param predicate Condition function to determine if the first/front() element should be removed
+    /// @param removedFunction Function to be called when an element is removed from the queue
+    /// @return The first element or nullptr if the queue was empty or if the predicate returned false
+    template <typename P, typename R>
+    T *popIf(const P &predicate, const R &removedFunction) {
+        Node *head = head_.next;
+        if (head == nullptr)
+            return nullptr;
+
+        // reject if predicate returns false
+        if (!predicate(static_cast<T &>(*head)))
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        head_.next = next;
+        if (next == nullptr)
+            tail_ = &head_;
+
+        // call remove function when the element is not part of the queue any more
+        auto &element = static_cast<T &>(*head);
+        removedFunction(element);
+
+        // pop succeeded
+        return &element;
+    }
+
+    /// @brief Pop the first/front() element from the queue if the predicate returns true.
+    /// The predicate function must not modify the queue while the removeFunction may modify this queue or add the
+    /// element to another queue. The nextfunction is called before removeFunction and must not modify the queue.
+    /// @tparam C Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
+    /// @tparam N Type of the next function, e.g. [](auto &element) { element.startNext(); }
+    /// @tparam R Type of the remove function, e.g. [](auto &element) { element.cleanup(); }
+    /// @param predicate Condition function to determine if the first/front() element should be removed
+    /// @param nextFunction Function to be called with the next element when the first element is removed from the queue and there is a next element
+    /// @param removedFunction Function to be called when an element is removed from the queue
+    /// @return The first element or nullptr if the queue was empty or if the predicate returned false
+    template <typename P, typename N, typename R>
+    T *popIf(const P &predicate, const N &nextFunction, const R &removedFunction) {
+        Node *head = head_.next;
+        if (head == nullptr)
+            return nullptr;
+
+        // reject if predicate returns false
+        if (!predicate(static_cast<T &>(*head)))
+            return nullptr;
+
+        // remove the node
+        Node *next = head->next;
+        head_.next = next;
+        if (next == nullptr)
+            tail_ = &head_;
+        else
+            nextFunction(static_cast<T &>(*next));
+
+        // call remove function when the element is not part of the queue any more
+        auto &element = static_cast<T &>(*head);
+        removedFunction(element);
+
+        // pop succeeded
+        return &element;
+    }
+
+    /// @brief Remove an element from the queue.
+    /// @param element Element to remove
+    /// @return true if element was removed, false otherwise
+    bool remove(T &element) {
+        Node &node = element;
+        Node *prev = &head_;
+
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return false;
+            if (current == &node) {
+                // remove the node
+                Node *next = current->next;
+                prev->next = next;
+                if (next == nullptr)
+                    tail_ = prev;
+
+                // successfully removed the node
+                return true;
+            }
+
+            // go to next node
+            prev = current;
+        }
+    }
+
+    /// @brief Remove an element from the queue unless it is the first element.
+    /// @param element Element to remove
+    /// @return true if element was removed, false otherwise
+    bool removeButFirst(T &element) {
+        Node &node = element;
+        Node *prev = head_.next;
+
+        // do not remove first  node
+        if (prev == nullptr || prev == &node)
+            return false;
+
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return false;
+            if (current == &node) {
+                // remove the node
+                Node *next = current->next;
+                prev->next = next;
+                if (next == nullptr)
+                    tail_ = prev;
+
+                // successfully removed the node
+                return true;
+            }
+
+            // go to next node
+            prev = current;
+        }
+    }
+
+    /// @brief Remove an element from the queue while a guard is active.
+    /// @param guard Guard for locking interrupts while remove() is executed
+    /// @param element Element to remove
+    /// @return true if element was removed, false otherwise
+    template <typename G>
+    bool remove(const G &guard, T &element) {
+        return remove(element);
+    }
+
+    /// @brief Remove an element from the queue unless it is the first element while a guard is active.
+    /// @param guard Guard for locking interrupts while remove() is executed
+    /// @param element Element to remove
+    /// @return true if element was removed, false otherwise
+    template <typename G>
+    bool removeButFirst(const G &guard, T &element) {
+        return removeButFirst(element);
+    }
+
+    /// @brief Remove an element from the queue.
+    /// @tparam P Type of predicate function
+    /// @tparam V Type of visitor function
+    /// @param element Element to remove
+    /// @param firstPredicate If the element is the first element, the predicate determines if the element should be removed
+    /// @param nextVisitor Visitor called on the next element if the front element was removed
+    /// @return true if element was removed, false otherwise
+    template <typename P, typename V>
+    bool removeButFirstIf(T &element, const P &firstPredicate, const V &nextVisitor) {
+        Node &node = element;
+        Node *prev = &head_;
+
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return false;
+            if (current == &node) {
+                if (prev == &head_ && !firstPredicate(static_cast<T &>(*current)))
+                    return false;
+
+                // remove the node
+                Node *next = current->next;
+                prev->next = next;
+                if (next == nullptr)
+                    tail_ = prev;
+
+                // successfully removed the node
+                return true;
+            }
+            prev = current;
+        }
+    }
+
+    /// @brief Remove an element from the queue while a guard is active.
+    /// @param guard Guard for locking interrupts while remove() is executed
+    /// @param element Element to remove
+    /// @param firstPredicate If the element is the first element, the predicate determines if the element should be removed
+    /// @param nextVisitor Visitor called on the next element if the front element was removed
+    /// @return true if element was removed, false otherwise
+    template <typename G, typename P, typename V>
+    bool removeButFirstIf(const G &guard, T &element, const P &firstPredicate, const V &nextVisitor) {
+        return removeButFirstIf(element, firstPredicate, nextVisitor);
+    }
+
+    /// @brief Remove the first element from the queue for which the predicate returns true.
+    /// @return true if a node was removed, false if no node was removed
+    template <typename P>
+    bool removeIf(const P &predicate) {
+        Node *prev = &head_;
+
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return false;
+            if (predicate(static_cast<T &>(*current))) {
+                // remove the node
+                Node *next = current->next;
+                prev->next = next;
+                if (next == nullptr)
+                    tail_ = prev;
+
+                // successfully removed the node
+                return true;
+            }
+            prev = current;
+        }
+    }
+
+    /// @brief Get first element
+    /// @return Reference to first element
+    T &front() {
+        return static_cast<T &>(*this->head_.next.load());
+    }
+
+    /// @brief Get first element if it exists
+    /// @return Pointer to first element or nullptr if the queue is empty
+    T *frontOrNull() {
+        return static_cast<T *>(this->head_.next.load());
+    }
+
+    /// @brief Get last element
+    /// @return Last element or nullptr if the queue is empty
+    T &back() {
+        return static_cast<T &>(*this->tail.load());
+    }
+
+protected:
+
+    Node head_; // pop() removes from head
+    Node *tail_ = &head_; // push() adds to tail
+};
+
 } // namespace coco

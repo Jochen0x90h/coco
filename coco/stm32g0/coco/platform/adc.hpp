@@ -51,6 +51,11 @@ enum class Config : uint32_t {
 };
 COCO_ENUM(Config);
 
+/// @brief Get resolution, 0: 8 bit, 1: 16 bit.
+/// @param config Configuration
+/// @return resolution
+inline int getResolution(Config config) {return 1 - (extract(config, adc::Config::RES_MASK) >> 1);}
+
 /// @brief ADC trigger
 /// Reference manual section 15.3.1, Table 73
 enum class Trigger : uint32_t {
