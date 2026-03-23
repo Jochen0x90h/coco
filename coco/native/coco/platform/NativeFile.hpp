@@ -67,15 +67,15 @@ public:
     /// @param mode combination of Mode elements
     NativeFile(const fs::path &filename, Mode mode) {
 #ifdef _WIN32
-    file_ = CreateFileW(filename.c_str(),
-        int(mode) & (GENERIC_READ | GENERIC_WRITE),
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr, // security
-        int(mode) & 7,
-        FILE_ATTRIBUTE_NORMAL,
-        nullptr);
+        file_ = CreateFileW(filename.c_str(),
+            int(mode) & (GENERIC_READ | GENERIC_WRITE),
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            nullptr, // security
+            int(mode) & 7,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr);
 #else
-    file_ = open(filename.c_str(), int(mode), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+        file_ = open(filename.c_str(), int(mode), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 #endif
     }
 

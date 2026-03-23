@@ -369,7 +369,7 @@ public:
     /// @brief Clear the queue.
     ///
     void clear() {
-        head_ = nullptr;
+        head_.next = nullptr;
         tail_ = &head_;
     }
 
@@ -382,7 +382,7 @@ public:
         bool wasEmpty = head_.next == nullptr;
 
         // add new node to tail
-        tail_->next = &node;
+        tail_.load()->next = &node;
         tail_ = &node;
         return wasEmpty;
     }
@@ -736,7 +736,7 @@ public:
 protected:
 
     Node head_; // pop() removes from head
-    Node *tail_ = &head_; // push() adds to tail
+    std::atomic<Node *> tail_ = &head_; // push() adds to tail
 };
 
 } // namespace coco

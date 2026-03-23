@@ -273,7 +273,7 @@ TEST(cocoTest, InterruptQueue2) {
 
     // push some elements
     EXPECT_TRUE(queue.push(e1));
-    EXPECT_EQ(queue.removeButFirst(e1), 0); // can't remove e1 as it is the front element
+    EXPECT_FALSE(queue.removeButFirst(e1)); // can't remove e1 as it is the front element
     EXPECT_FALSE(queue.empty()); // therefore the queue is not empty
     EXPECT_EQ(queue.remove(e2), false); // e2 is not in list
     EXPECT_EQ(&queue.front(), &e1); // e1 is still first element
@@ -283,20 +283,27 @@ TEST(cocoTest, InterruptQueue2) {
     EXPECT_EQ(queue.frontOrNull(), &e1); // e1 is still first element
 
     // remove element
-    EXPECT_EQ(queue.remove(e3), 1); // remove succeeds
+    EXPECT_TRUE(queue.remove(e3)); // remove succeeds
 
     // pop elements and check
     EXPECT_EQ(queue.frontOrNull(), &e1);
     EXPECT_EQ(queue.pop(), &e1);
     EXPECT_EQ(queue.frontOrNull(), &e2);
+    EXPECT_FALSE(queue.empty());
     EXPECT_EQ(queue.pop(), &e2);
     EXPECT_EQ(queue.frontOrNull(), nullptr);
     EXPECT_EQ(queue.pop(), nullptr);
     EXPECT_TRUE(queue.empty());
 
-    EXPECT_TRUE(queue.push(e1));
-    EXPECT_EQ(queue.remove(e1), 1);
+    // clear has no effect
+    queue.clear();
     EXPECT_TRUE(queue.empty());
+
+    // clear has effect
+    EXPECT_TRUE(queue.push(e1));
+    queue.clear();
+    EXPECT_TRUE(queue.empty());
+
 }
 
 std::mutex mutex;
