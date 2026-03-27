@@ -141,8 +141,35 @@ struct MutexGuard {
     std::mutex &mutex;
 };
 */
+TEST(cocoTest, InterruptQueue_clear) {
+    InterruptQueue2<Element> queue;
+    Element e1, e2;
 
-TEST(cocoTest, InterruptQueue1) {
+    EXPECT_TRUE(queue.empty());
+    EXPECT_TRUE(queue.emptyOrOne());
+
+    // clear has no effect
+    queue.clear();
+    EXPECT_TRUE(queue.empty());
+    EXPECT_TRUE(queue.emptyOrOne());
+
+    // add element
+    EXPECT_TRUE(queue.push(e1));
+    EXPECT_FALSE(queue.empty());
+    EXPECT_TRUE(queue.emptyOrOne());
+
+    // add element
+    EXPECT_FALSE(queue.push(e2));
+    EXPECT_FALSE(queue.empty());
+    EXPECT_FALSE(queue.emptyOrOne());
+
+    // clear has effect
+    queue.clear();
+    EXPECT_TRUE(queue.empty());
+    EXPECT_TRUE(queue.emptyOrOne());
+}
+
+TEST(cocoTest, InterruptQueue_pop) {
     InterruptQueue2<Element> queue;
     Element e1, e2;
     Element *result;
@@ -262,9 +289,11 @@ TEST(cocoTest, InterruptQueue1) {
     EXPECT_EQ(result, nullptr);
 }
 
-TEST(cocoTest, InterruptQueue2) {
+TEST(cocoTest, InterruptQueue_remove) {
     InterruptQueue2<Element> queue;
     Element e1, e2, e3;
+    bool result;
+    bool nextCalled;
 
     // queue is initially empty
     EXPECT_TRUE(queue.empty());
@@ -278,32 +307,55 @@ TEST(cocoTest, InterruptQueue2) {
     EXPECT_EQ(queue.remove(e2), false); // e2 is not in list
     EXPECT_EQ(&queue.front(), &e1); // e1 is still first element
     EXPECT_EQ(queue.frontOrNull(), &e1);
-    EXPECT_FALSE(queue.push(e2)); // push back
+    EXPECT_FALSE(queue.push(e2)); // push e2 and e3
     EXPECT_FALSE(queue.push(e3));
     EXPECT_EQ(queue.frontOrNull(), &e1); // e1 is still first element
 
-    // remove element
+    // remove e3
     EXPECT_TRUE(queue.remove(e3)); // remove succeeds
-
-    // pop elements and check
     EXPECT_EQ(queue.frontOrNull(), &e1);
-    EXPECT_EQ(queue.pop(), &e1);
+
+    // reject removal of e1
+    result = queue.removeButFirstIf(e1,
+        [&e1](Element &e) {
+            EXPECT_EQ(&e, &e1);
+            return false;
+        },
+        [&e2, &nextCalled] (Element &next) {
+            FAIL();
+        }
+    );
+
+    // remove e1
+    nextCalled = false;
+    result = queue.removeButFirstIf(e1,
+        [&e1](Element &e) {
+            EXPECT_EQ(&e, &e1);
+            return true;
+        },
+        [&e2, &nextCalled] (Element &next) {
+            EXPECT_EQ(&next, &e2);
+            nextCalled = true;
+        }
+    );
+    EXPECT_TRUE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), &e2);
     EXPECT_FALSE(queue.empty());
-    EXPECT_EQ(queue.pop(), &e2);
+
+    // remove e2
+    result = queue.removeButFirstIf(e2,
+        [&e2](Element &e) {
+            EXPECT_EQ(&e, &e2);
+            return true;
+        },
+        [&e2, &nextCalled] (Element &next) {
+            FAIL();
+        }
+    );
+    EXPECT_TRUE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), nullptr);
     EXPECT_EQ(queue.pop(), nullptr);
     EXPECT_TRUE(queue.empty());
-
-    // clear has no effect
-    queue.clear();
-    EXPECT_TRUE(queue.empty());
-
-    // clear has effect
-    EXPECT_TRUE(queue.push(e1));
-    queue.clear();
-    EXPECT_TRUE(queue.empty());
-
 }
 
 std::mutex mutex;

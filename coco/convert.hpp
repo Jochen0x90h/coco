@@ -65,7 +65,7 @@ namespace detail {
 /// @param str String
 /// @return Converted integer and number of characters used
 template <typename T>
-ConvertedValue<T> dec(String str) {
+ConvertedValue<T> dec(String str, bool partial = false) {
     int i = 0;
 
     // check for sign
@@ -88,6 +88,8 @@ ConvertedValue<T> dec(String str) {
             value = value * 10 + ch - '0';
         } else {
             // invalid character
+            if (partial)
+                break;
             return {};
         }
     }
@@ -218,7 +220,37 @@ auto dec(const std::atomic<T> &value, int decimalCount = 3) {
 }
 
 
-/// @brief Convert a value to a hex string.
+/// @brief Convert a hex string to an integer.
+/// @tparam T Integer type
+/// @param str String
+/// @return Converted integer and number of characters used
+template <typename T>
+ConvertedValue<T> hex(String str, bool partial = false) {
+    int i = 0;
+
+    // parse integer
+    T value = 0;
+    for (; i < str.size(); ++i) {
+        value *= 10;
+        uint8_t ch = str[i];
+        if (ch >= '0' && ch <= '9') {
+            value += ch - '0';
+        } else if (ch >= 'A' && ch <= 'F') {
+            value += ch - 'A' + 10;
+        } else if (ch >= 'a' && ch <= 'f') {
+            value += ch - 'a' + 10;
+        } else {
+            // invalid character
+            if (partial)
+                break;
+            return {};
+        }
+    }
+
+    return {value, i};
+}
+
+/// @brief Convert an integer value to a hex string.
 /// @param value Value
 /// @return Buffer that has an operator String
 template <typename T> requires (std::is_integral_v<T>)

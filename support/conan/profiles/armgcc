@@ -1,7 +1,7 @@
 [settings]
 os=baremetal
 compiler=gcc
-compiler.version=13
+compiler.version=14
 compiler.libcxx=libstdc++11
 [buildenv]
 [conf]

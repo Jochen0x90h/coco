@@ -814,14 +814,19 @@ TEST(cocoTest, convert_hex) {
     EXPECT_EQ(hex(0x10), "00000010");
     EXPECT_EQ(hex(UINT64_C(0x1234567812345678)), "1234567812345678");
 
+    // enum to string
     ExtractEnum e = ExtractEnum::FOO_1;
     EXPECT_EQ(hex(e), "00000010");
     EXPECT_EQ(hex(e, 3), "010");
 
+    // std::atomic to string
     std::atomic<int> a = 0x50;
     EXPECT_EQ(hex(a), "00000050");
     EXPECT_EQ(hex(a, 1, 3), " 50");
 
+    // string to int
+    EXPECT_EQ(hex<int>("1a"), ConvertedValue<int>(0x1a, 2));
+    EXPECT_EQ(hex<uint32_t>("baadcafe"), ConvertedValue<int>(0xbaadcafe, 2));
 }
 
 TEST(cocoTest, convert_utf8) {

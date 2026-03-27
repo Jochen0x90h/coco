@@ -363,7 +363,7 @@ public:
     /// @brief Determine if the queue contains no nodes or one node
     ///
     bool emptyOrOne() {
-        return tail_.load() == head_.next.load();
+        return head_.next == nullptr || head_.next == tail_;
     }
 
     /// @brief Clear the queue.
@@ -598,21 +598,34 @@ public:
         }
     }
 
+    /// @brief Remove an element from the queue while a guard is active.
+    /// @param guard Guard for locking interrupts while remove() is executed
+    /// @param element Element to remove
+    /// @return true if element was removed, false otherwise
+    template <typename G>
+    bool remove(const G &guard, T &element) {
+        return remove(element);
+    }
+
     /// @brief Remove an element from the queue unless it is the first element.
     /// @param element Element to remove
     /// @return true if element was removed, false otherwise
     bool removeButFirst(T &element) {
         Node &node = element;
-        Node *prev = head_.next;
+        Node *current = head_.next;
 
         // do not remove first  node
-        if (prev == nullptr || prev == &node)
+        if (current == nullptr || current == &node)
             return false;
 
+        // iterate over all other nodes
         while (true) {
-            Node *current = prev->next;
-            if (current == nullptr)
+            Node *prev = current;
+            current = current->next;
+            if (current == nullptr) {
+                // node not found
                 return false;
+            }
             if (current == &node) {
                 // remove the node
                 Node *next = current->next;
@@ -623,19 +636,7 @@ public:
                 // successfully removed the node
                 return true;
             }
-
-            // go to next node
-            prev = current;
         }
-    }
-
-    /// @brief Remove an element from the queue while a guard is active.
-    /// @param guard Guard for locking interrupts while remove() is executed
-    /// @param element Element to remove
-    /// @return true if element was removed, false otherwise
-    template <typename G>
-    bool remove(const G &guard, T &element) {
-        return remove(element);
     }
 
     /// @brief Remove an element from the queue unless it is the first element while a guard is active.
@@ -647,7 +648,8 @@ public:
         return removeButFirst(element);
     }
 
-    /// @brief Remove an element from the queue.
+    /// @brief Remove an element from the queue unless it is the first element which depends on a predicate.
+    /// The first element is only removed if the predicate returns true. All other elements are always removed.
     /// @tparam P Type of predicate function
     /// @tparam V Type of visitor function
     /// @param element Element to remove
@@ -657,16 +659,40 @@ public:
     template <typename P, typename V>
     bool removeButFirstIf(T &element, const P &firstPredicate, const V &nextVisitor) {
         Node &node = element;
-        Node *prev = &head_;
+        Node *current = head_.next;
 
+        // check if queue is empty
+        if (current == nullptr)
+            return false;
+
+        // check if we want to remove the first node
+        if (current == &node) {
+            if (firstPredicate(static_cast<T &>(*current))) {
+                // remove the node
+                Node *next = current->next;
+                head_.next = next;
+                if (next == nullptr)
+                    tail_ = &head_;
+                else
+                    nextVisitor(static_cast<T &>(*next));
+
+                // successfully removed the node
+                return true;
+            }
+
+            // remove was rejected
+            return false;
+        }
+
+        // iterate over all other nodes
         while (true) {
-            Node *current = prev->next;
-            if (current == nullptr)
+            Node *prev = current;
+            current = current->next;
+            if (current == nullptr) {
+                // node not found
                 return false;
+            }
             if (current == &node) {
-                if (prev == &head_ && !firstPredicate(static_cast<T &>(*current)))
-                    return false;
-
                 // remove the node
                 Node *next = current->next;
                 prev->next = next;
@@ -676,11 +702,11 @@ public:
                 // successfully removed the node
                 return true;
             }
-            prev = current;
         }
     }
 
-    /// @brief Remove an element from the queue while a guard is active.
+    /// @brief Remove an element from the queue unless it is the first element which depends on a predicate, all while a gaurd is active.
+    /// The first element is only removed if the predicate returns true. All other elements are always removed.
     /// @param guard Guard for locking interrupts while remove() is executed
     /// @param element Element to remove
     /// @param firstPredicate If the element is the first element, the predicate determines if the element should be removed
