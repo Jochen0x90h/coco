@@ -94,11 +94,13 @@ concept ByteArrayConcept = std::ranges::contiguous_range<T>
 
 /// @brief Concept of type that is constructible like an array from data pointer and size.
 /// Applies to coco::Array, std::string, std::string_view, std::span etc.
-/// @tparam T Array type
 template <typename T>
 concept ArrayConstructible =
-    requires(int n) {
-        { T(reinterpret_cast<std::ranges::range_value_t<T> *>(nullptr), n) } /*noexcept*/ -> std::same_as<T>;
+    requires(typename std::ranges::range_value_t<T>* ptr, int n) {
+        T{ptr, n}; // check if constructor exists
+    }
+    || requires(typename std::ranges::range_value_t<T>* ptr, size_t n) {
+        T{ptr, n}; // check if constructor exists
     };
 
 } // namespace coco

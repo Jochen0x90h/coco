@@ -466,6 +466,18 @@ TEST(cocoTest, ArrayConcept_char) {
     EXPECT_FALSE((ArrayConcept<decltype(c8), char>));
 }
 
+// array that fullfils the ArrayConstructible concept, i.e. can be constructed from a pointer and size
+struct ArrayConstructibleArray {
+    int *buffer_;
+    int size_;
+
+    // methods necessary for ArrayConstructible concept
+    int *begin() {return this->buffer_;}
+    const int *begin() const {return this->buffer_;}
+    int *end() {return this->buffer_ + this->size_;}
+    const int *end() const {return this->buffer_ + this->size_;}
+};
+
 TEST(cocoTest, ArrayConstructible) {
     // basic types
     EXPECT_FALSE(ArrayConstructible<char>);
@@ -520,6 +532,9 @@ TEST(cocoTest, ArrayConstructible) {
     EXPECT_TRUE(ArrayConstructible<decltype(c6)>);
     EXPECT_FALSE(ArrayConstructible<decltype(c7)>);
     EXPECT_FALSE(ArrayConstructible<decltype(c8)>);
+
+    // custom types
+    EXPECT_TRUE(ArrayConstructible<ArrayConstructibleArray>);
 }
 
 

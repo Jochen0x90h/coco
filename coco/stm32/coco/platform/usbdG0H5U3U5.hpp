@@ -33,13 +33,13 @@ namespace usbd {
 // endpoint type
 #define USB_EP_TYPE USB_EP_UTYPE
 
-// RX status
+// RX status mask (toggle bits)
 #define USB_EP_STAT_RX USB_EP_RX_STRX
 
 // RX correct transfer
 #define USB_EP_CTR_RX USB_EP_VTRX
 
-// TX status
+// TX status mask (toggle bits)
 #define USB_EP_STAT_TX USB_EP_TX_STTX
 
 // TX correct transfer
@@ -47,10 +47,10 @@ namespace usbd {
 
 
 struct EndpointDescriptor {
-    // rx offset (lower 16 bit), size and capacity
+    // tx offset (lower 16 bit) and size
     volatile uint32_t tx;
 
-    // tx offset (lower 16 bit) and size
+    // rx offset (lower 16 bit), size and capacity (see enum RxCapacity)
     volatile uint32_t rx;
 };
 
@@ -103,6 +103,12 @@ COCO_ENUM(Interrupt)
 /// @brief Status (ISTR register)
 ///
 enum class Status : uint32_t {
+    // start of frame
+    SOF = USB_ISTR_SOF,
+
+    // expected start of frame
+    EXPECTED_SOF = USB_ISTR_ESOF,
+
     // devie was reset
     RESET = USB_ISTR_RESET,
 
@@ -167,20 +173,29 @@ struct Instance {
             offset += capacity.tx;
             ++desc;
         }
+
+        // make sure everything is written before we start using the buffers
+        __DSB();
+
         return *this;
     }
 
     /// @brief Reset the usb device.
     /// @return *this
     auto &reset() {
-        usb->ISTR = ~USB_ISTR_RESET;
-        //debug::setBlue();
-
         // setup control endpoint 0
-        usb->CHEP0R = USB_EP_RX_VALID | USB_EP_TX_STALL | USB_EP_CONTROL | 0;
+        usb->CHEP0R =
+            (usb->CHEP0R & (USB_EP_STAT_TX | USB_EP_DTOG_TX | USB_EP_STAT_RX | USB_EP_DTOG_RX)) // clear all toggles
+            | USB_EP_RX_VALID // set RX status to VALID (ready to receive)
+            | USB_EP_TX_STALL // set TX status to STALL (not ready to send)
+            | USB_EP_CONTROL // set endpoint type to control
+            | 0; // set endpoint index (address) to 0
 
         // enable usb at usb address 0
         usb->DADDR = USB_DADDR_EF | 0;
+
+        // clear al linterrupts
+        usb->ISTR = 0;
 
         return *this;
     }
@@ -253,11 +268,18 @@ struct Instance {
         usb->CHEP0R = ((usb->CHEP0R & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX | USB_EP_STAT_RX | USB_EP_CTR_RX | USB_EP_CTR_TX)) ) ^ USB_EP_TX_VALID;
     }
 
-    /// @brief Prepare status out transfer for control endpoint 0 (expect a ZLP).
+    /// @brief Prepare status out transfer (rx) for control endpoint 0 (expect a ZLP).
     ///
     void controlStatusOut() {
         // keep DTOG_RX DTOG_TX STAT_TX, cancel STAT_RX, clear CTR_RX CTR_TX, set EP_KIND (STATUS_OUT), toggle STAT_RX.VALID
-        usb->CHEP0R = ((usb->CHEP0R & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX | USB_EP_STAT_TX | USB_EP_CTR_RX | USB_EP_CTR_TX)) | USB_EP_KIND) ^ USB_EP_RX_VALID;
+        usb->CHEP0R = ((usb->CHEP0R
+                & ~(USB_EP_CTR_RX // clear RX correct transfer flag
+                    | USB_EP_DTOG_RX // keep RX toggle (by setting to 0)
+                    | USB_EP_CTR_TX // clear TX correct transfer flag
+                    | USB_EP_STAT_TX // keep TX status (by setting to 0)
+                    | USB_EP_DTOG_TX)) // keep TX toggle (by setting to 0)
+                | USB_EP_KIND) // set EP_KIND (STATUS_OUT)
+            ^ USB_EP_RX_VALID; // set RX status to VALID (ready to receive)
     }
 
     /// @brief Stall both directions of control endpoint 0.
@@ -274,16 +296,16 @@ struct Instance {
         // configure rx (out) endpoint: ready to receive, clear other toggle bits
         auto &EPxR = endpointRegister(ep);
         EPxR = ((EPxR
-                & ~(USB_EP_CTR_RX // clear RX correct transfer flag
+                & ~(USB_EP_ADDR // clear endpoint index (address)
                     | USB_EP_TYPE_MASK // clear endpoint type
                     | USB_EP_KIND // clear endpoint kind
-                    | USB_EP_ADDR // clear endpoint index (address)
+                    | USB_EP_CTR_RX // clear RX correct transfer flag
                     | USB_EP_DTOG_TX // keep TX toggle (0 = keep, 1 = toggle)
                     | USB_EP_STAT_TX)) // keep TX status (0 = keep, 1 = toggle)
-                | int(endpointType) // set endpoint type
-                | ep) // set endpoint index (address)
+                | ep // set endpoint index (address)
+                | int(endpointType)) // set endpoint type
             ^ USB_EP_RX_VALID // set RX status to VALID (ready to receive)
-            ^ 0; // clear RX toggle (toggle when set)
+            ^ 0; // clear RX toggle (by setting current bit)
     }
 
     /// @brief Indicate that we want to receive data from the host.
@@ -336,16 +358,16 @@ struct Instance {
         // configure tx (in) endpoint: stall send, clear other toggle bits
         auto &EPxR = endpointRegister(ep);
         EPxR = ((EPxR
-                & ~(USB_EP_CTR_TX // clear TX correct transfer flag
+                & ~(USB_EP_ADDR // clear endpoint index (address)
                     | USB_EP_TYPE_MASK // clear endpoint type
                     | USB_EP_KIND // clear endpoint kind
-                    | USB_EP_ADDR // clear endpoint index (address)
-                    | USB_EP_DTOG_RX // keep RX toggle (0 = keep, 1 = toggle)
-                    | USB_EP_STAT_RX)) // keep RX status (0 = keep, 1 = toggle)
-                | int(endpointType) // set endpoint type
-                | ep) // set endpoint index (address)
+                    | USB_EP_CTR_TX // clear TX correct transfer flag
+                    | USB_EP_DTOG_RX // keep RX toggle (by setting to 0)
+                    | USB_EP_STAT_RX)) // keep RX status (by setting to 0)
+                | ep // set endpoint index (address)
+                | int(endpointType)) // set endpoint type
             ^ USB_EP_TX_NAK // set TX status to NAK (nothing to send)
-            ^ 0; // clear TX toggle (toggle when set)
+            ^ 0; // clear TX toggle (by setting current bit)
     }
 
     /// @brief Send data to the host.

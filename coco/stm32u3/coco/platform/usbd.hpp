@@ -12,17 +12,21 @@ constexpr int irq = USB_FS_IRQn;
 
 
 /// @brief Initalize the USB device.
-/// When HSI48/1 is selected as USB clock source in the RCC->CCIPR1 register, HSI48 and CRS get enabled.
+/// When HSI48 and no /2 divisor are selected as USB clock source in the RCC->CCIPR1 register, HSI48 and CRS get enabled.
 /// When HSE is selected as USB clock source, make sure that HSE is a precise 48MHz clock.
 /// @return Instance (wrapper for registers)
 inline Instance enableClock() {
+    // enable independent USB supply (reference manual: 9.5.5 PWR supply voltage monitoring control register)
+    PWR->SVMCR = PWR->SVMCR | PWR_SVMCR_USV;
+
+    // check if HSI48 and no /2 divisor are selected as USB clock source
     if ((RCC->CCIPR1 & (RCC_CCIPR1_ICLKSEL_Msk | RCC_CCIPR1_USB1SEL)) == 0) {
         // enable HSI48 and wait until ready
         RCC->CR = RCC->CR | RCC_CR_HSI48ON;
         while ((RCC->CR & RCC_CR_HSI48RDY) == 0);
 
         // enable clock of USB and CRS (clock recovery system)
-        RCC->APB1ENR1 = RCC->APB1ENR1 |  RCC_APB1ENR1_CRSEN;
+        RCC->APB1ENR1 = RCC->APB1ENR1 | RCC_APB1ENR1_CRSEN;
         RCC->APB2ENR = RCC->APB2ENR | RCC_APB2ENR_USB1EN;
 
         // enable automatic trimming and oscillator clock for the frequency error counter
@@ -37,7 +41,7 @@ inline Instance enableClock() {
         __NOP();
     }
 
-    // switch on usb transceiver (clear PWDN bit), but keep reset (reference manual: USB functional description -> System and power-on reset)
+    // switch on usb transceiver (clear USB_CNTR_PDWN bit), but keep reset (reference manual: USB functional description -> System and power-on reset)
     USB_DRD_FS->CNTR = USB_CNTR_USBRST;
 
     // wait for at least 1us (see data sheet: t_STARTUP)

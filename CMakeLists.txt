@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 # set project
-project(coco ASM C CXX)
+project(coco C CXX ASM) # ASM must be last
 
 # configure languages
 set(CMAKE_C_STANDARD 99)

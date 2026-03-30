@@ -41,7 +41,7 @@ inline Instance enableClock() {
         __NOP();
     }
 
-    // switch on usb transceiver (clear PWDN bit), but keep reset (reference manual: USB functional description -> System and power-on reset)
+    // switch on usb transceiver (clear USB_CNTR_PDWN bit), but keep reset (reference manual: USB functional description -> System and power-on reset)
     USB_DRD_FS->CNTR = USB_CNTR_USBRST;
 
     // wait for at least 1us (see data sheet: t_STARTUP)

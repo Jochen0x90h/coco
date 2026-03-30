@@ -15,7 +15,7 @@ import subprocess
 
 
 # configuration
-installPrefix = str(Path.home() / ".local")
+install_prefix = str(Path.home() / ".local")
 
 # get system (Linux, Darwin, Windows)
 system = platform.system()
@@ -43,12 +43,12 @@ def addPreset(type, name):
         }
     )
 
-def addPresetWithBuildType(type, name, config):
+def addPresetWithBuildType(type, name, build_type):
     cmakePresets[type].append(
         {
             "name": name,
             "configurePreset": name,
-            "configuration": config
+            "configuration": build_type
         }
     )
 
@@ -80,7 +80,7 @@ for preset in presets:
         name = f"{platform}-{build_type}"
 
     # install dependencies using conan
-    print(f"*** Installing dependencies for {profile} {platform} {build_type} ***")
+    print(f"*** Installing dependencies for profile {profile} on platform {platform} ({build_type}) ***")
     subprocess.run(f"conan install -pr:b default -pr:h {profile} -b missing -o:a *:platform={platform} -of build/{name} .", shell=True)
 
     # create CMakeUserPresets.json
@@ -93,7 +93,7 @@ for preset in presets:
                 #"CMAKE_POLICY_DEFAULT_CMP0077": "NEW",
                 "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
                 "CMAKE_BUILD_TYPE": build_type,
-                "CMAKE_INSTALL_PREFIX": installPrefix
+                "CMAKE_INSTALL_PREFIX": install_prefix
             },
             "toolchainFile": f"build/{name}/conan_toolchain.cmake",
             "binaryDir": f"build/{name}"
