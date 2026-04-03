@@ -471,7 +471,7 @@ struct ArrayConstructibleArray {
     int *buffer_;
     int size_;
 
-    // methods necessary for ArrayConstructible concept
+    // methods necessary for ArrayConstructible to determine the element type
     int *begin() {return this->buffer_;}
     const int *begin() const {return this->buffer_;}
     int *end() {return this->buffer_ + this->size_;}

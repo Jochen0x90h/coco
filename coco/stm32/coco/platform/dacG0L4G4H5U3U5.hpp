@@ -236,6 +236,11 @@ struct Info {
 #endif
     ) const
     {
+#ifdef PWR_SVMCR_ASV
+        // enable independent analog supply (U3 reference manual: 9.5.5 PWR supply voltage monitoring control register)
+        PWR->SVMCR = PWR->SVMCR | PWR_SVMCR_ASV;
+#endif
+
         // enable clock
         rcc.enableClock();
 

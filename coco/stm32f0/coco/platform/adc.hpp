@@ -141,7 +141,7 @@ inline void setInput(ADC_TypeDef *adc, Input input) {
 }
 
 /// @brief Set ADC input sequence list.
-/// Note: Hardware only supports flags which means the order of the list gets lost. Same sampling cycles for all channels.
+/// Note: Hardware only supports channel flags which means the order of the list gets lost. Same sampling cycles for all channels.
 /// @param adc ADC registers
 /// @param sequence Input sequence and sampling cycles taken from first channel
 inline void setSequence(ADC_TypeDef *adc, const Array<const Input> &sequence) {

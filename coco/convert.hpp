@@ -65,7 +65,7 @@ namespace detail {
 /// @param str String
 /// @return Converted integer and number of characters used
 template <typename T>
-ConvertedValue<T> dec(String str, bool partial = false) {
+[[nodiscard]] ConvertedValue<T> dec(String str, bool partial = false) {
     int i = 0;
 
     // check for sign
@@ -102,7 +102,7 @@ ConvertedValue<T> dec(String str, bool partial = false) {
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
 template <typename T> requires (std::is_integral_v<T>)
-auto dec(const T &value, int digitCount = 1, int minWidth = 0) {
+[[nodiscard]] auto dec(const T &value, int digitCount = 1, int minWidth = 0) {
     if constexpr (sizeof(T) <= 4) {
         // 32 bit
         ConvertedBuffer<12> buffer;
@@ -162,7 +162,7 @@ auto dec(const T &value, int digitCount = 1, int minWidth = 0) {
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
 template <typename T> requires (std::is_enum_v<T>)
-auto dec(const T &value, int digitCount = 1, int minWidth = 0) {
+[[nodiscard]] auto dec(const T &value, int digitCount = 1, int minWidth = 0) {
     return dec(std::underlying_type_t<T>(value), digitCount, minWidth);
 }
 
@@ -190,7 +190,7 @@ auto dec(const T &value, int digitCount, int decimalCount, int minWidth = 0) {
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
 template <typename T> requires (std::is_floating_point_v<T>)
-auto dec(const T &value, int decimalCount = 3) {
+[[nodiscard]] auto dec(const T &value, int decimalCount = 3) {
     return dec(value, 1, decimalCount, 0);
 }
 
@@ -199,7 +199,7 @@ auto dec(const T &value, int decimalCount = 3) {
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
 template <typename T> requires (std::is_integral_v<T> || std::is_enum_v<T>)
-auto dec(const std::atomic<T> &value, int digitCount = 1, int minWidth = 0) {
+[[nodiscard]] auto dec(const std::atomic<T> &value, int digitCount = 1, int minWidth = 0) {
     return dec(typename std::atomic<T>::value_type(value), digitCount, minWidth);
 }
 
@@ -207,7 +207,7 @@ auto dec(const std::atomic<T> &value, int digitCount = 1, int minWidth = 0) {
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
 template <typename T> requires (std::is_floating_point_v<T>)
-auto dec(const std::atomic<T> &value, int digitCount, int decimalCount, int minWidth = 0) {
+[[nodiscard]] auto dec(const std::atomic<T> &value, int digitCount, int decimalCount, int minWidth = 0) {
     return dec(typename std::atomic<T>::value_type(value), digitCount, decimalCount, minWidth);
 }
 
@@ -215,7 +215,7 @@ auto dec(const std::atomic<T> &value, int digitCount, int decimalCount, int minW
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
 template <typename T> requires (std::is_floating_point_v<T>)
-auto dec(const std::atomic<T> &value, int decimalCount = 3) {
+[[nodiscard]] auto dec(const std::atomic<T> &value, int decimalCount = 3) {
     return dec(typename std::atomic<T>::value_type(value), 1, decimalCount, 0);
 }
 
@@ -225,7 +225,7 @@ auto dec(const std::atomic<T> &value, int decimalCount = 3) {
 /// @param str String
 /// @return Converted integer and number of characters used
 template <typename T>
-ConvertedValue<T> hex(String str, bool partial = false) {
+[[nodiscard]] ConvertedValue<T> hex(String str, bool partial = false) {
     int i = 0;
 
     // parse integer
@@ -254,7 +254,7 @@ ConvertedValue<T> hex(String str, bool partial = false) {
 /// @param value Value
 /// @return Buffer that has an operator String
 template <typename T> requires (std::is_integral_v<T>)
-auto hex(const T &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
+[[nodiscard]] auto hex(const T &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
     if constexpr (sizeof(T) <= 4) {
         // 32 bit
         ConvertedBuffer<8> buffer;
@@ -292,7 +292,7 @@ auto hex(const T &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
 /// @param value Value
 /// @return Buffer that has an operator String
 template <typename T> requires (std::is_enum_v<T>)
-auto hex(const T &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
+[[nodiscard]] auto hex(const T &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
     return hex(std::underlying_type_t<T>(value), digitCount, minWidth);
 }
 
@@ -300,7 +300,7 @@ auto hex(const T &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
 /// @param value Value
 /// @return Buffer that has an operator String
 template <typename T>
-auto hex(const std::atomic<T> &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
+[[nodiscard]] auto hex(const std::atomic<T> &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
     return hex(typename std::atomic<T>::value_type(value), digitCount, minWidth);
 }
 
@@ -312,12 +312,12 @@ auto hex(const std::atomic<T> &value, int digitCount = sizeof(T) * 2, int minWid
 /// 4 byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
 /// @param str String to convert
 /// @return Code and length
-ConvertedValue<int> utf8(String str);
+[[nodiscard]] ConvertedValue<int> utf8(String str);
 
 /// @brief Convert a character code point to an UTF-8 string.
 /// @param code Code point to convert
 /// @return Buffer that has an operator String
-inline auto utf8(int code) {
+[[nodiscard]] inline auto utf8(int code) {
     ConvertedBuffer<7> buffer;
     auto end = std::end(buffer.data);
     auto begin = detail::utf8(end, uint32_t(code));

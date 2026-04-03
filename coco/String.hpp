@@ -5,6 +5,7 @@
 #include <limits>
 #include <algorithm>
 #include <cstdint>
+#include <string_view>
 #ifdef NATIVE
 #include <ostream>
 #endif

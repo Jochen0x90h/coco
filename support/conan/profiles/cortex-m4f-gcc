@@ -1,0 +1,9 @@
+include(armgcc)
+[settings]
+arch=armv7
+build_type=Release
+[conf]
+tools.build:cflags+=["-mcpu=cortex-m4", "-mthumb", "-mabi=aapcs", "-mfpu=fpv4-sp-d16", "-mfloat-abi=hard"]
+tools.build:cxxflags+=["-mcpu=cortex-m4", "-mthumb", "-mabi=aapcs", "-mfpu=fpv4-sp-d16", "-mfloat-abi=hard"]
+tools.build:exelinkflags+=["-mcpu=cortex-m4", "-mthumb", "-mabi=aapcs", "-mfpu=fpv4-sp-d16", "-mfloat-abi=hard"]
+tools.cmake.cmaketoolchain:generator=Ninja

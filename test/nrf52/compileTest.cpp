@@ -25,14 +25,14 @@ int main() {
         int x = 10;
         int64_t y = 10;
         std::atomic<int> a = 50;
-        dec(x);
-        dec(y);
-        dec(Foo::BAR);
-        dec(a);
-        hex(x);
-        hex(y);
-        hex(Foo::BAR);
-        hex(a);
+        (void)dec(x);
+        (void)dec(y);
+        (void)dec(Foo::BAR);
+        (void)dec(a);
+        (void)hex(x);
+        (void)hex(y);
+        (void)hex(Foo::BAR);
+        (void)hex(a);
     }
 
     // nvic

@@ -118,7 +118,8 @@ protected:
 };
 
 
-/// @brief Array with variable size that only references the data, similar to std::span.
+/// @brief Array with variable size that only references the data.
+/// Is similar to std::span, but is for small arrays and therefore uses int instead of size_t.
 /// @tparam T type of array element, e.g. Array<const int> for an array of constant integers
 template <typename T>
 class Array<T, -1> {

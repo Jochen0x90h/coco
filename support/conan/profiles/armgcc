@@ -6,3 +6,6 @@ compiler.libcxx=libstdc++11
 [buildenv]
 [conf]
 tools.build:compiler_executables={'c': "arm-none-eabi-gcc", 'cpp': "arm-none-eabi-g++"}
+tools.build:cflags=["-ffunction-sections", "-fdata-sections"]
+tools.build:cxxflags=["-ffunction-sections", "-fdata-sections", "-fno-rtti", "-fno-exceptions", "-fno-use-cxa-atexit", "-fcoroutines", "-fconcepts", "-Wno-literal-suffix"]
+tools.build:exelinkflags=["-specs=nano.specs", "--specs=nosys.specs", "-Wl,--gc-sections", "-Wl,--undefined=SystemInit"]

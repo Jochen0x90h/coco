@@ -9,28 +9,32 @@ $ conan profile detect
 It creates a default profile in ~/.conan2/profiles
 
 ## Windows
-Open default profile (~/.conan2/profiles/default) with text editor and make sure
-it contains these lines:
+Open default profile (~/.conan2/profiles/default) with text editor, check that the compiler is msvc, set cppstd to 23 and add cxxflags in the [conf] section (add [conf] section if necessary):
 
 ```
+[settings]
+...
 compiler=msvc
 compiler.cppstd=23
+...
+[conf]
+tools.build:cxxflags=["/wd4455", "/Zc:__cplusplus", "/utf-8"]
 ```
 
 If the compiler is missing, install Visual Studio Community Edition (in addition to VSCode!) with C++ for desktop option and run conan profile detect again.
 
-Change compiler.cppstd to 23.
-
 ## Linux
-Open default profile (~/.conan2/profiles/default) with text editor and make sure
-it contains these lines:
+Open default profile (~/.conan2/profiles/default) with text editor, check that the compiler is gcc, set cppstd to 23 and add cxxflags in the [conf] section (add [conf] section if necessary):
 
 ```
+[settings]
+...
 compiler=gcc
 compiler.cppstd=23
+...
+[conf]
+tools.build:cxxflags=["-fcoroutines", "-fconcepts", "-Wno-literal-suffix"]
 ```
-
-Change compiler.cppstd to 23.
 
 If you want to let conan install missing packages, add these lines at the end of the profile:
 
@@ -50,7 +54,7 @@ build_type=Debug
 
 ## Arm Compiler
 
-Copy the profiles (armgcc, armv6, armv7) from the profiles subdirectory into ~/.conan2/profiles
+Copy the profiles (armgcc, cortex-m0-gcc, cortex-m0plus-gcc, cortex-m4f-gcc, cortex-m33-gcc) from the profiles subdirectory into ~/.conan2/profiles.
 
 Open armgcc profile (~/.conan2/profiles/armgcc) with text editor and adjust compiler.version if necessary.
 Obtain compiler version:

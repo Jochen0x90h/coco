@@ -97,10 +97,7 @@ concept ByteArrayConcept = std::ranges::contiguous_range<T>
 template <typename T>
 concept ArrayConstructible =
     requires(typename std::ranges::range_value_t<T>* ptr, int n) {
-        T{ptr, n}; // check if constructor exists
-    }
-    || requires(typename std::ranges::range_value_t<T>* ptr, size_t n) {
-        T{ptr, n}; // check if constructor exists
+        T(ptr, n); // check if constructor exists
     };
 
 } // namespace coco

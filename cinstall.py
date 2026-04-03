@@ -67,9 +67,9 @@ for preset in presets:
     generator = p[2]
 
     # get build_type (Debug/Release) from profile
-    result = subprocess.run(f"conan profile show -pr:b={profile} --format=json", shell=True, capture_output=True, check=True)
+    result = subprocess.run(f"conan profile show -pr:h={profile} --format=json", shell=True, capture_output=True, check=True)
     j = json.loads(result.stdout)
-    build_type = j.get("build", {}).get("settings", {}).get("build_type")
+    build_type = j.get("host", {}).get("settings", {}).get("build_type")
     if build_type is None:
         print(f"Warning: build type for profile {profile} not found")
         continue

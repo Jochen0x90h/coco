@@ -1,0 +1,9 @@
+include(armgcc)
+[settings]
+arch=armv6
+build_type=Release
+[conf]
+tools.build:cflags+=["-mcpu=cortex-m0", "-mthumb", "-mabi=aapcs", "-mfloat-abi=soft"]
+tools.build:cxxflags+=["-mcpu=cortex-m0", "-mthumb", "-mabi=aapcs", "-mfloat-abi=soft"]
+tools.build:exelinkflags+=["-mcpu=cortex-m0", "-mthumb", "-mabi=aapcs", "-mfloat-abi=soft"]
+tools.cmake.cmaketoolchain:generator=Ninja

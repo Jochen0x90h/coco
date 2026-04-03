@@ -17,7 +17,7 @@ for file in os.listdir(dir):
         shutil.copyfile('cpresets.txt', dst)
 
         # also copy helper scripts
-        if False: #name != 'coco-toolchain':
+        if False:
             dst = f"../{name}/cinstall.py"
             print(dst)
             shutil.copyfile('cinstall.py', dst)

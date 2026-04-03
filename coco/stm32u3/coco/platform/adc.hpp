@@ -10,24 +10,8 @@ namespace adc {
 /// @brief ADC clock configuration (CCR register)
 ///
 enum class ClockConfig : uint32_t {
-    // ADC clock source is AHB clock
-    //AHB_DIV1 = 1 << ADC_CCR_CKMODE_Pos, // AHB / 1
-    //AHB_DIV2 = 2 << ADC_CCR_CKMODE_Pos, // AHB / 2
-    //AHB_DIV4 = 3 << ADC_CCR_CKMODE_Pos, // AHB / 4 (e.g. 160Mhz / 4 = 40MHz)
-
-    // ADC clock source SYSCLK or PLLP (configured in RCC e.g. during SystemInit())
+    // ADC clock source HCLK, HSE or MSIK (configured in RCC e.g. during SystemInit(), note Errata ES0626 2.2.14 „Incorrect DAC output voltage due to DAC kernel clock setting“)
     RCC_DIV_1 = 0,
-    RCC_DIV_2 = 1 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_4 = 2 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_6 = 3 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_8 = 4 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_10 = 5 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_12 = 6 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_16 = 7 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_32 = 8 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_64 = 9 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_128 = 10 << ADC_CCR_PRESC_Pos,
-    RCC_DIV_256 = 11 << ADC_CCR_PRESC_Pos,
 };
 
 /// @brief ADC configuration (CFGR register)
@@ -165,6 +149,9 @@ inline void setInput(ADC_TypeDef *adc, Input input) {
     // select channel
     adc->SQR1 = channel << ADC_SQR1_SQ1_Pos;
 
+    // preselect channel
+    adc->PCSEL = 1 << channel;
+
     // set sampling cycles
     uint32_t smpr[2] = {0, 0};
     smpr[channel / 10] = extract(int(input), int(Input::CYCLES_MASK)) << (channel % 10) * 3;
@@ -183,7 +170,10 @@ inline void setSequence(ADC_TypeDef *adc, const Array<const Input> &sequence) {
     int sqrPos = ADC_SQR1_SQ1_Pos;
     const int sqWidth = ADC_SQR1_SQ2_Pos - ADC_SQR1_SQ1_Pos;
 
-    // sampling rate registers SMPR
+    // preselect channels (PCSEL)
+    uint32_t pcsel = 0;
+
+    // sampling cycles (SMPR1 and SMPR2)
     uint32_t smpr[2] = {0, 0};
 
     for (auto input : sequence) {
@@ -197,6 +187,7 @@ inline void setSequence(ADC_TypeDef *adc, const Array<const Input> &sequence) {
         // select channel
         int channel = int(input & Input::CHANNEL_MASK);
         sqrValue |= channel << sqrPos;
+        pcsel |= 1 << channel;
 
         // sampling cycles
         smpr[channel / 10] |= extract(int(input), int(Input::CYCLES_MASK)) << (channel % 10) * 3;
@@ -204,6 +195,11 @@ inline void setSequence(ADC_TypeDef *adc, const Array<const Input> &sequence) {
         sqrPos += sqWidth;
     }
     *SQRn = sqrValue;
+
+    // preselect channels
+    adc->PCSEL = pcsel;
+
+    // set sampling cycles
     adc->SMPR1 = smpr[0];
     adc->SMPR2 = smpr[1];
 }
@@ -216,6 +212,9 @@ inline Instance &Instance::configure(Config config, Trigger trigger, DmaMode dma
 }
 
 inline Instance Info::enableClock(ClockConfig clockConfig) const {
+    // enable independent analog supply (reference manual: 9.5.5 PWR supply voltage monitoring control register)
+    PWR->SVMCR = PWR->SVMCR | PWR_SVMCR_ASV;
+
     // enable clock
     rcc.enableClock();
 
@@ -237,27 +236,29 @@ void Info::map(const dma::Info<F2> &dmaInfo) const {
 
 inline DualInstance &DualInstance::configure(Config config, Trigger trigger, DmaMode dmaMode) {
     // set configuration (e.g. resolution) and trigger
-    uint32_t cfgr = int(config) | int(trigger);
+    uint32_t cfgr = int(config) | int(trigger) | int(dmaMode);
     adc[0]->CFGR1 = cfgr;
     adc[1]->CFGR1 = cfgr;
-// TODO
+
     // set DMA mode in common registers
-/*uint32_t ccr = common->CCR & ~(ADC_CCR_MDMA | ADC_CCR_DMACFG);
+    uint32_t ccr = common->CCR & ~(ADC_CCR_DAMDF);
     if (dmaMode != DmaMode::DISABLED) {
         int resolution = extract(config, Config::RES_MASK);
-        ccr |= ((2 + (int(resolution) >> 1)) << ADC_CCR_MDMA_Pos) // MDMA mode
-            | (extract(uint32_t(dmaMode), ADC_CFGR_DMACFG) << ADC_CCR_DMACFG_Pos); // circular mode flag
+        ccr |= ((2 + (int(resolution) >> 1)) << ADC_CCR_DAMDF_Pos); // DAMDF mode 2 (up to 16 bit) or 3 (up to 8 bit)
     }
-    common->CCR = ccr;*/
+    common->CCR = ccr;
     return *this;
 }
 
 
 inline DualInstance DualInfo::enableClock(ClockConfig clockConfig) const {
+    // enable independent analog supply (reference manual: 9.5.5 PWR supply voltage monitoring control register)
+    PWR->SVMCR = PWR->SVMCR | PWR_SVMCR_ASV;
+
     // enable clock
     rcc.enableClock();
 
-    // enable voltage regulator
+    // enable voltage regulators
     adc::enableVoltageRegulator(adc[0], adc[1]);
 
     // set clock config

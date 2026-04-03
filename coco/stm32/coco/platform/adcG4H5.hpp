@@ -201,10 +201,10 @@ inline void setSequence(ADC_TypeDef *adc, const Array<const Input> &sequence) {
     int sqrPos = ADC_SQR1_SQ1_Pos;
     const int sqWidth = ADC_SQR1_SQ2_Pos - ADC_SQR1_SQ1_Pos;
 
-    // sampling rate registers SMPR
+    // sampling cycles (SMPR1 and SMPR2)
     uint32_t smpr[2] = {0, 0};
 
-    // single-ended/differential regsiter DIFSEL
+    // single-ended/differential (DIFSEL)
     uint32_t difsel = 0;
 
     for (auto input : sequence) {
@@ -269,7 +269,7 @@ inline DualInstance &DualInstance::configure(Config config, Trigger trigger, Dma
     uint32_t ccr = common->CCR & ~(ADC_CCR_MDMA | ADC_CCR_DMACFG);
     if (dmaMode != DmaMode::DISABLED) {
         uint32_t resolution = extract(config, Config::RES_MASK);
-        ccr |= ((2 + (resolution >> 1)) << ADC_CCR_MDMA_Pos) // MDMA mode
+        ccr |= ((2 + (resolution >> 1)) << ADC_CCR_MDMA_Pos) // MDMA mode 2 (12/10 bit) or 3 (8/6 bit)
             | (extract(uint32_t(dmaMode), ADC_CFGR_DMACFG) << ADC_CCR_DMACFG_Pos); // circular mode flag
     }
     common->CCR = ccr;

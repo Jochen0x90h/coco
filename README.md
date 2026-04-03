@@ -23,7 +23,6 @@ Add coco/\<version> to your conanfile where version corresponds to the git tags
 
 Library        | Purpose
 ---------------|-----------
-coco-toolchain | Target specific CMake toolchain files for configuring MCU, FPU etc.
 coco           | Base library containing utility classes and MCU register definitions
 coco-devboards | Collection of development boards
 coco-font      | Simple pixel font library for the "emulator" platform
@@ -117,7 +116,7 @@ Pass -o platform=\<platform> to conan to set the platform. When no platform is g
     - ninja: $ winget install Ninja-build.Ninja
     - pkg-config: $ winget install bloodrock.pkg-config-lite
     - cmake: $ winget install cmake
-- Install tools using [Chocolatey](https://chocolatey.org/install#individual)
+- Or install tools using [Chocolatey](https://chocolatey.org/install#individual)
     - $ choco install make
     - $ choco install ninja
     - $ choco install pkgconfiglite
@@ -127,10 +126,9 @@ Pass -o platform=\<platform> to conan to set the platform. When no platform is g
 
 ### Create Packages in Conan Cache
 
-- Create a workspace directory and checkout at least coco-toolchain, coco, coco-devboards, coco-font, coco-loop, coco-device
+- Create a workspace directory and checkout at least coco, coco-devboards, coco-font, coco-loop, coco-device
 - Use coco projects for the first time: Follow instructions in [support/conan/README.md](support/conan/README.md)
 - Install coco projects to local conan repository:
-    - In coco-toolchain run $ python ccreate.py
     - In coco run $ python ccreate.py
     - In coco-devboards run $ python ccreate.py
     - In coco-font $ python ccreate.py
