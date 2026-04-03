@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <string_view>
+#include <coco/platform/platform.hpp>
 #ifdef NATIVE
 #include <ostream>
 #endif

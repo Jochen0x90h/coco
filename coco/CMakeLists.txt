@@ -66,6 +66,7 @@ if(${PLATFORM} MATCHES "^nrf52") # Cortex-M4F
             nrf52/coco/platform/rng.hpp
             nrf52/coco/platform/rtc.hpp
             nrf52/coco/platform/spim.hpp
+            nrf52/coco/platform/system.hpp
             nrf52/coco/platform/timer.hpp
             nrf52/coco/platform/uart.hpp
             nrf52/coco/platform/platform.hpp
@@ -627,6 +628,8 @@ else()
     target_sources(${PROJECT_NAME}
         PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/native FILES
             native/coco/platform/compiler.hpp
+            native/coco/platform/platform.hpp
+            native/coco/platform/system.hpp
             native/coco/platform/NativeFile.hpp
     )
     if(WIN32)

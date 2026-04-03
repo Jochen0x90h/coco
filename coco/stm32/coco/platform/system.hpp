@@ -3,7 +3,8 @@
 #include "backup.hpp"
 #include "nvic.hpp"
 #include "rcc.hpp"
-
+#include <coco/convert.hpp>
+#include <coco/StringBuffer.hpp>
 
 namespace coco {
 
@@ -11,6 +12,23 @@ namespace coco {
 /// System functions such as reset, intent, jump
 namespace system {
 
+/// @brief Get system id.
+/// @return System id in the format stm32-device-revision
+inline StringBuffer<16> id() {
+    StringBuffer<16> result;
+#ifdef DBGMCU
+    uint32_t idcode = DBGMCU->IDCODE;
+    int device = (idcode & DBGMCU_IDCODE_DEV_ID_Msk) >> DBGMCU_IDCODE_DEV_ID_Pos;
+    int revision = (idcode & DBGMCU_IDCODE_REV_ID_Msk) >> DBGMCU_IDCODE_REV_ID_Pos;
+#endif
+#ifdef DBG
+    uint32_t idcode = DBG->IDCODE;
+    int device = (idcode & DBG_IDCODE_DEV_ID_Msk) >> DBG_IDCODE_DEV_ID_Pos;
+    int revision = (idcode & DBG_IDCODE_REV_ID_Msk) >> DBG_IDCODE_REV_ID_Pos;
+#endif
+    result << "stm32-" << hex(device, 1) << '-' << hex(revision, 1);
+    return result;
+}
 
 /// @brief Reset the microcontroller.
 ///

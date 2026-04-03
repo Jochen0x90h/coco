@@ -7,19 +7,6 @@
 #define STM32G0
 
 
-/// @brief Get device id
-///
-inline uint32_t getDeviceId() {
-    return (DBG->IDCODE & DBG_IDCODE_DEV_ID_Msk) >> DBG_IDCODE_DEV_ID_Pos;
-}
-
-/// @brief Get variant id
-///
-inline uint32_t getVariantId() {
-    return (DBG->IDCODE & DBG_IDCODE_REV_ID_Msk) >> DBG_IDCODE_REV_ID_Pos;
-}
-
-
 // convenience constants
 
 // flash wait states

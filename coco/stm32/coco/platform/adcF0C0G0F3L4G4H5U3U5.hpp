@@ -695,9 +695,8 @@ struct DualInfo {
 
     /// @brief Map a DMA channel to the the ADC
     /// @param dmaInfo DMA info
-    /// @param channelIndex channel index 0 or 1
     template <dma::Feature F2>
-    void map(const dma::Info<F2> &dmaInfo, int channelIndex = 0) const;
+    void map(const dma::Info<F2> &dmaInfo) const;
 };
 #endif // HAVE_ADC_DUAL_MODE
 

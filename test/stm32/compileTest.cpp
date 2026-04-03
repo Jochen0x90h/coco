@@ -98,8 +98,10 @@ int main() {
 #endif
 
     // system
-    system::jump(0x8000000);
+    system::id();
+    system::reset();
     system::reset(1);
+    system::jump(0x8000000);
     system::intent();
 
     // timer

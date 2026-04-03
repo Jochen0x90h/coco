@@ -5,16 +5,3 @@
 
 #define STM32
 #define STM32F0
-
-
-/// @brief Get device id
-///
-inline uint32_t getDeviceId() {
-    return (DBGMCU->IDCODE & DBGMCU_IDCODE_DEV_ID_Msk) >> DBGMCU_IDCODE_DEV_ID_Pos;
-}
-
-/// @brief Get variant id
-///
-inline uint32_t getVariantId() {
-    return (DBGMCU->IDCODE & DBGMCU_IDCODE_REV_ID_Msk) >> DBGMCU_IDCODE_REV_ID_Pos;
-}

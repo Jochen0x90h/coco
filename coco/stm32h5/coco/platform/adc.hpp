@@ -46,8 +46,8 @@ void Info::map(const dma::Info<F2> &dmaInfo) const {
 
 #ifdef HAVE_ADC_DUAL_MODE
 template <dma::Feature F2>
-void DualInfo::map(const dma::Info<F2> &dmaInfo, int channelIndex) const {
-    dmaInfo.setRxRequest(drq + channelIndex);
+void DualInfo::map(const dma::Info<F2> &dmaInfo) const {
+    dmaInfo.setRxRequest(drq);
 }
 #endif // HAVE_ADC_DUAL_MODE
 

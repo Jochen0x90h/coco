@@ -6,6 +6,7 @@
 #include <coco/platform/rng.hpp>
 #include <coco/platform/rtc.hpp>
 #include <coco/platform/spim.hpp>
+#include <coco/platform/system.hpp>
 #include <coco/platform/timer.hpp>
 #include <coco/platform/uart.hpp>
 
@@ -53,6 +54,10 @@ int main() {
         .enable()
         .setRxData(constData, 0)
         .setTxData(data, 0);
+
+    // system
+    system::id();
+    system::reset();
 
     // uart
     uart::UART0_INFO.instance()

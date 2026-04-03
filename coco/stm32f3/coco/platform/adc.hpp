@@ -302,11 +302,11 @@ inline DualInstance DualInfo::enableClock(ClockConfig clockConfig) const {
 }
 
 template <dma::Feature F2>
-void DualInfo::map(const dma::Info<F2> &dmaInfo, int channelIndex) const {
+void DualInfo::map(const dma::Info<F2> &dmaInfo) const {
 #ifdef ADC2
 #ifdef SYSCFG_CFGR3_ADC2_DMA_RMP
-    if (channelIndex == 1 && adc[1] == ADC2 && dmaInfo.channelIndex == 3)
-        SYSCFG->CFGR3 = SYSCFG->CFGR3 | SYSCFG_CFGR3_ADC2_DMA_RMP;
+    //if (channelIndex == 1 && adc[1] == ADC2 && dmaInfo.channelIndex == 3)
+    //    SYSCFG->CFGR3 = SYSCFG->CFGR3 | SYSCFG_CFGR3_ADC2_DMA_RMP;
 #endif
 #endif
 }

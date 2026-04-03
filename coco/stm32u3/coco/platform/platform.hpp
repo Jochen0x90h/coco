@@ -11,20 +11,6 @@
 #undef FLASH_SIZE
 
 
-/// @brief Get device id
-///
-inline uint32_t getDeviceId() {
-    // read DBGMCU_IDCODE register
-    return *(const uint32_t *)(0xE0042000) & 0xfff;
-}
-
-/// @brief Get variant id
-///
-inline uint32_t getVariantId() {
-    // read DBGMCU_IDCODE register
-    return (*(const uint32_t *)(0xE0042000) >> 16) & 0xffff;
-}
-
 // convenience constants
 constexpr uint32_t FLASH_ACR_LATENCY_0WS = 0;
 constexpr uint32_t FLASH_ACR_LATENCY_1WS = FLASH_ACR_LATENCY_0;

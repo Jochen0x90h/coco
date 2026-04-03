@@ -95,8 +95,8 @@ void Info::map(const dma::Info<F2> &dmaInfo) const {
 }
 
 template <dma::Feature F2>
-void DualInfo::map(const dma::Info<F2> &dmaInfo, int channelIndex) const {
-    dmaInfo.setRequest(drq + channelIndex);
+void DualInfo::map(const dma::Info<F2> &dmaInfo) const {
+    dmaInfo.setRequest(drq);
 }
 
 
