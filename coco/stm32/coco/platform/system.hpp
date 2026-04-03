@@ -9,8 +9,34 @@
 namespace coco {
 
 /// @brief System functions.
-/// System functions such as reset, intent, jump
+/// System functions such as id(), reset(), intent(), jump()
 namespace system {
+
+/// Get device id.
+/// @return Device id, e.g. 0x441 for STM32F441
+inline int device() {
+#ifdef DBGMCU
+    uint32_t idcode = DBGMCU->IDCODE;
+    return (idcode & DBGMCU_IDCODE_DEV_ID_Msk) >> DBGMCU_IDCODE_DEV_ID_Pos;
+#endif
+#ifdef DBG
+    uint32_t idcode = DBG->IDCODE;
+    return (idcode & DBG_IDCODE_DEV_ID_Msk) >> DBG_IDCODE_DEV_ID_Pos;
+#endif
+}
+
+/// Get revision id.
+/// @return Revision id
+inline int revision() {
+#ifdef DBGMCU
+    uint32_t idcode = DBGMCU->IDCODE;
+    return (idcode & DBGMCU_IDCODE_REV_ID_Msk) >> DBGMCU_IDCODE_REV_ID_Pos;
+#endif
+#ifdef DBG
+    uint32_t idcode = DBG->IDCODE;
+    return (idcode & DBG_IDCODE_REV_ID_Msk) >> DBG_IDCODE_REV_ID_Pos;
+#endif
+}
 
 /// @brief Get system id.
 /// @return System id in the format stm32-device-revision

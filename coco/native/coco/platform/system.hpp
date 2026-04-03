@@ -3,6 +3,15 @@
 #include <coco/StringBuffer.hpp>
 
 namespace coco {
+namespace system {
+
+inline int device() {
+    return 0;
+}
+
+inline int revision() {
+    return 0;
+}
 
 /// @brief Get system id.
 /// @return System id
@@ -14,4 +23,5 @@ inline StringBuffer<16> id() {
     return result;
 }
 
+} // namespace system
 } // namespace coco

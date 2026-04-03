@@ -8,8 +8,20 @@
 namespace coco {
 
 /// @brief System functions.
-/// System functions such as reset, intent, jump
+/// System functions such as id(), reset(), jump()
 namespace system {
+
+/// Get device id.
+/// @return Device id, e.g. 0x52840 for nrf52840
+inline int device() {
+    return NRF_FICR->INFO.PART;
+}
+
+/// @brief Get revision id.
+/// @return Revision id
+inline int revision() {
+    return NRF_FICR->INFO.VARIANT & 0xffff;
+}
 
 /// @brief Get system id.
 /// @return System id in the format nrf-device-variant
