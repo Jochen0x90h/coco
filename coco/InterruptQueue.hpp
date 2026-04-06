@@ -388,11 +388,12 @@ public:
     }
 
     /// @brief Insert an element at the end/behind back() of the queue (push_back).
+    /// @tparam G Type of guard, e.g. nvic::Guard
     /// @param guard Guard for locking interrupts while push() is executed
     /// @param element Element to insert at the end
     /// @return true if the queue was empty
     template <typename G>
-    bool push(const G &guard, T &element) {
+    bool guardedPush(const G &guard, T &element) {
         return push(element);
     }
 
@@ -429,10 +430,11 @@ public:
     }
 
     /// @brief If the queue is not empty, the first/front() element gets removed if the function returns true.
-    /// @param function Function to determine if the first/front() element should be removed
+    /// @tparam R Type of the removed function, e.g. [](auto &element) { element.cleanup(); }
+    /// @param removedFunction Function to be called when an element is removed from the queue
     /// @return The first element or nullptr if the queue was empty
-    template <typename F>
-    T *pop(const F &removedFunction) {
+    template <typename R>
+    T *pop(const R &removedFunction) {
         Node *head = head_.next;
         if (head == nullptr)
             return nullptr;
@@ -443,7 +445,7 @@ public:
         if (next == nullptr)
             tail_ = &head_;
 
-        // call remove function when the element is not part of the queue any more
+        // call removed function when the element is not part of the queue any more
         auto &element = static_cast<T &>(*head);
         removedFunction(element);
 
@@ -453,8 +455,10 @@ public:
 
     /// @brief If the queue is not empty, the first/front() element gets removed if the function returns true.
     /// Calls a function (nextFunction) with the next element if it exists.
-    /// @param function function to determine if the first/front() element should be removed
+    /// @tparam N Type of the next function, e.g. [](auto &element) { element.startNext(); }
+    /// @tparam R Type of the removed function, e.g. [](auto &element) { element.cleanup(); }
     /// @param nextFunction function to be called with the next element
+    /// @param removedFunction Function to be called when an element is removed from the queue
     /// @return The first element or nullptr if the queue was empty
     template <typename N, typename R>
     T *pop(const N &nextFunction, const R &removedFunction) {
@@ -470,7 +474,7 @@ public:
         else
             nextFunction(static_cast<T &>(*next));
 
-        // call remove function when the element is not part of the queue any more
+        // call removed function when the element is not part of the queue any more
         auto &element = static_cast<T &>(*head);
         removedFunction(element);
 
@@ -480,8 +484,8 @@ public:
 
     /// @brief Pop the first/front() element from the queue if the predicate returns true.
     /// The predicate function must not modify the queue.
-    /// @tparam C Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
-    /// @param predicate Condition function to determine if the first/front() element should be removed.
+    /// @tparam P Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
+    /// @param predicate Predicate to determine if the first/front() element should be removed.
     /// @return The first element or nullptr if the queue was empty or if the predicate returned false
     template <typename P>
     T *popIf(const P &predicate) {
@@ -506,9 +510,9 @@ public:
     /// @brief Pop the first/front() element from the queue if the predicate returns true.
     /// The predicate function must not modify the queue while the removeFunction may modify this queue or add the
     /// element to another queue.
-    /// @tparam C Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
-    /// @tparam R Type of the remove function, e.g. [](auto &element) { element.cleanup(); }
-    /// @param predicate Condition function to determine if the first/front() element should be removed
+    /// @tparam P Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
+    /// @tparam R Type of the removed function, e.g. [](auto &element) { element.cleanup(); }
+    /// @param predicate Predicate to determine if the first/front() element should be removed
     /// @param removedFunction Function to be called when an element is removed from the queue
     /// @return The first element or nullptr if the queue was empty or if the predicate returned false
     template <typename P, typename R>
@@ -538,10 +542,10 @@ public:
     /// @brief Pop the first/front() element from the queue if the predicate returns true.
     /// The predicate function must not modify the queue while the removeFunction may modify this queue or add the
     /// element to another queue. The nextfunction is called before removeFunction and must not modify the queue.
-    /// @tparam C Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
+    /// @tparam P Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
     /// @tparam N Type of the next function, e.g. [](auto &element) { element.startNext(); }
-    /// @tparam R Type of the remove function, e.g. [](auto &element) { element.cleanup(); }
-    /// @param predicate Condition function to determine if the first/front() element should be removed
+    /// @tparam R Type of the removed function, e.g. [](auto &element) { element.cleanup(); }
+    /// @param predicate predicate to determine if the first/front() element should be removed
     /// @param nextFunction Function to be called with the next element when the first element is removed from the queue and there is a next element
     /// @param removedFunction Function to be called when an element is removed from the queue
     /// @return The first element or nullptr if the queue was empty or if the predicate returned false
@@ -563,7 +567,7 @@ public:
         else
             nextFunction(static_cast<T &>(*next));
 
-        // call remove function when the element is not part of the queue any more
+        // call removed function when the element is not part of the queue any more
         auto &element = static_cast<T &>(*head);
         removedFunction(element);
 
@@ -573,7 +577,7 @@ public:
 
     /// @brief Remove an element from the queue.
     /// @param element Element to remove
-    /// @return true if element was removed, false otherwise
+    /// @return true if the element was removed, false otherwise
     bool remove(T &element) {
         Node &node = element;
         Node *prev = &head_;
@@ -599,22 +603,23 @@ public:
     }
 
     /// @brief Remove an element from the queue while a guard is active.
+    /// @tparam G Type of guard, e.g. nvic::Guard
     /// @param guard Guard for locking interrupts while remove() is executed
     /// @param element Element to remove
-    /// @return true if element was removed, false otherwise
+    /// @return true if the element was removed, false otherwise
     template <typename G>
-    bool remove(const G &guard, T &element) {
+    bool guardedRemove(const G &guard, T &element) {
         return remove(element);
     }
 
     /// @brief Remove an element from the queue unless it is the first element.
     /// @param element Element to remove
-    /// @return true if element was removed, false otherwise
-    bool removeButFirst(T &element) {
+    /// @return true if the element was removed, false otherwise
+    bool removeExceptFirst(T &element) {
         Node &node = element;
         Node *current = head_.next;
 
-        // do not remove first  node
+        // do not remove first node
         if (current == nullptr || current == &node)
             return false;
 
@@ -640,14 +645,15 @@ public:
     }
 
     /// @brief Remove an element from the queue unless it is the first element while a guard is active.
+    /// @tparam G Type of guard, e.g. nvic::Guard
     /// @param guard Guard for locking interrupts while remove() is executed
     /// @param element Element to remove
-    /// @return true if element was removed, false otherwise
+    /// @return true if the element was removed, false otherwise
     template <typename G>
-    bool removeButFirst(const G &guard, T &element) {
-        return removeButFirst(element);
+    bool guardedRemoveExceptFirst(const G &guard, T &element) {
+        return removeExceptFirst(element);
     }
-
+/*/
     /// @brief Remove an element from the queue unless it is the first element which depends on a predicate.
     /// The first element is only removed if the predicate returns true. All other elements are always removed.
     /// @tparam P Type of predicate function
@@ -707,6 +713,9 @@ public:
 
     /// @brief Remove an element from the queue unless it is the first element which depends on a predicate, all while a gaurd is active.
     /// The first element is only removed if the predicate returns true. All other elements are always removed.
+    /// @tparam G Type of guard, e.g. nvic::Guard
+    /// @tparam P Type of predicate function
+    /// @tparam V Type of visitor function
     /// @param guard Guard for locking interrupts while remove() is executed
     /// @param element Element to remove
     /// @param firstPredicate If the element is the first element, the predicate determines if the element should be removed
@@ -716,18 +725,20 @@ public:
     bool removeButFirstIf(const G &guard, T &element, const P &firstPredicate, const V &nextVisitor) {
         return removeButFirstIf(element, firstPredicate, nextVisitor);
     }
-
+*/
     /// @brief Remove the first element from the queue for which the predicate returns true.
-    /// @return true if a node was removed, false if no node was removed
+    /// @tparam P Type of the predicate function, e.g. [](auto &element, int index) { return index == 0 && element.isReady(); }
+    /// @param predicate Predicate to determine if the element should be removed
+    /// @return Pointer to the removed element, or nullptr if no element was removed
     template <typename P>
-    bool removeIf(const P &predicate) {
+    T *removeIf(const P &predicate) {
         Node *prev = &head_;
-
+        int index = 0;
         while (true) {
             Node *current = prev->next;
             if (current == nullptr)
-                return false;
-            if (predicate(static_cast<T &>(*current))) {
+                return nullptr;
+            if (predicate(static_cast<T &>(*current), index)) {
                 // remove the node
                 Node *next = current->next;
                 prev->next = next;
@@ -735,10 +746,95 @@ public:
                     tail_ = prev;
 
                 // successfully removed the node
-                return true;
+                return static_cast<T *>(current);
             }
             prev = current;
+            ++index;
         }
+    }
+
+    template <typename G, typename P>
+    T *guardedRemoveIf(const G &guard, const P &predicate) {
+        return removeIf(predicate);
+    }
+
+
+    /// @brief Remove the first element from the queue for which the predicate returns true.
+    /// @tparam P Type of the predicate function, e.g. [](auto &element, int index) { return index == 0 && element.isReady(); }
+    /// @tparam R Type of the removed function, e.g. [](auto &element) { element.cleanup(); }
+    /// @param predicate Condition function to determine if the first/front() element should be removed
+    /// @param removedFunction Function to be called when an element is removed from the queue
+    /// @return Pointer to the removed element, or nullptr if no element was removed
+    template <typename P, typename R>
+    T *removeIf(const P &predicate, const R &removedFunction) {
+        Node *prev = &head_;
+        int index = 0;
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return nullptr;
+            if (predicate(static_cast<T &>(*current), index)) {
+                // remove the node
+                Node *next = current->next;
+                prev->next = next;
+                if (next == nullptr)
+                    tail_ = prev;
+
+                // call removed function when the element is not part of the queue any more
+                removedFunction(static_cast<T &>(*current));
+
+                // successfully removed the node
+                return static_cast<T *>(current);
+            }
+            prev = current;
+            ++index;
+        }
+    }
+
+    template <typename G, typename P, typename R>
+    T *guardedRemoveIf(const G &guard, const P &predicate, const R &removedFunction) {
+        return removeIf(predicate, removedFunction);
+    }
+
+    /// @brief Remove the first element from the queue for which the predicate returns true.
+    /// @tparam P Type of the predicate function, e.g. [](auto &element, int index) { return index == 0 && element.isReady(); }
+    /// @tparam V Type of the next visitor function, e.g. [](auto &element, int index) { if (index == 0) element.startNext(); }
+    /// @tparam R Type of the removed function, e.g. [](auto &element) { element.cleanup(); }
+    /// @param predicate Condition function to determine if the first/front() element should be removed
+    /// @param nextVisitor Function to be called when visiting the next element
+    /// @param removedFunction Function to be called when an element is removed from the queue
+    /// @return Pointer to the removed element, or nullptr if no element was removed
+    template <typename P, typename V, typename R>
+    T *removeIf(const P &predicate, const V &nextVisitor, const R &removedFunction) {
+        Node *prev = &head_;
+        int index = 0;
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return nullptr;
+            if (predicate(static_cast<T &>(*current), index)) {
+                // remove the node
+                Node *next = current->next;
+                prev->next = next;
+                if (next == nullptr)
+                    tail_ = prev;
+                else
+                    nextVisitor(static_cast<T &>(*next), index);
+
+                // call removed function when the element is not part of the queue any more
+                removedFunction(static_cast<T &>(*current));
+
+                // successfully removed the node
+                return static_cast<T *>(current);
+            }
+            prev = current;
+            ++index;
+        }
+    }
+
+    template <typename G, typename V, typename P, typename R>
+    T *guardedRemoveIf(const G &guard, const P &predicate, const V &nextVisitor, const R &removedFunction) {
+        return removeIf(predicate, nextVisitor, removedFunction);
     }
 
     /// @brief Get first element

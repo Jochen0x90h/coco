@@ -175,7 +175,7 @@ TEST(cocoTest, InterruptQueue_pop) {
     Element *result;
 
     // push e1
-    if (queue.push(TestGuard(), e1)) {
+    if (queue.guardedPush(TestGuard(), e1)) {
         // when adding the first element push should return true
         // the guard should be inactive again
         EXPECT_FALSE(testGuardActive);
@@ -184,7 +184,7 @@ TEST(cocoTest, InterruptQueue_pop) {
     }
 
     // push e2
-    EXPECT_FALSE(queue.push(TestGuard(), e2));
+    EXPECT_FALSE(queue.guardedPush(TestGuard(), e2));
 
     // pop first element (e1)
     result = queue.popIf(
@@ -301,14 +301,14 @@ TEST(cocoTest, InterruptQueue_remove) {
     EXPECT_EQ(queue.frontOrNull(), nullptr);
 
     // push some elements
-    EXPECT_TRUE(queue.push(e1));
-    EXPECT_FALSE(queue.removeButFirst(e1)); // can't remove e1 as it is the front element
+    EXPECT_TRUE(queue.push(e1)); // push e1
+    EXPECT_FALSE(queue.removeExceptFirst(e1)); // can't remove e1 as it is the front element
     EXPECT_FALSE(queue.empty()); // therefore the queue is not empty
     EXPECT_EQ(queue.remove(e2), false); // e2 is not in list
     EXPECT_EQ(&queue.front(), &e1); // e1 is still first element
     EXPECT_EQ(queue.frontOrNull(), &e1);
-    EXPECT_FALSE(queue.push(e2)); // push e2 and e3
-    EXPECT_FALSE(queue.push(e3));
+    EXPECT_FALSE(queue.push(e2)); // push e2
+    EXPECT_FALSE(queue.push(e3)); // push e3
     EXPECT_EQ(queue.frontOrNull(), &e1); // e1 is still first element
 
     // remove e3
@@ -316,43 +316,71 @@ TEST(cocoTest, InterruptQueue_remove) {
     EXPECT_EQ(queue.frontOrNull(), &e1);
 
     // reject removal of e1
-    result = queue.removeButFirstIf(e1,
-        [&e1](Element &e) {
-            EXPECT_EQ(&e, &e1);
+    result = queue.removeIf(
+        [&e1](Element &e, int index) {
+            // e1 is first element
+            if (&e == &e1)
+                EXPECT_EQ(index, 0);
             return false;
         },
-        [&e2, &nextCalled] (Element &next) {
+        [] (Element &next, int index) {
+            // not called as e1 is not removed
             FAIL();
-        }
-    );
+        },
+        [&e1](Element &removed) {
+            // not called as e1 is not removed
+            FAIL();
+        });
 
     // remove e1
     nextCalled = false;
-    result = queue.removeButFirstIf(e1,
-        [&e1](Element &e) {
-            EXPECT_EQ(&e, &e1);
-            return true;
+    result = queue.removeIf(
+        [&e1](Element &e, int index) {
+            // e1 is first element
+            if (&e == &e1)
+                EXPECT_EQ(index, 0);
+            return &e == &e1;
         },
-        [&e2, &nextCalled] (Element &next) {
+        [&e2, &nextCalled] (Element &next, int index) {
+            // e2 is next element
             EXPECT_EQ(&next, &e2);
+
+            // e1 is first element
+            EXPECT_EQ(index, 0);
+
             nextCalled = true;
-        }
-    );
+        },
+        [&e1](Element &e) {
+            // check that the removed element is e1
+            EXPECT_EQ(&e, &e1);
+
+            // overwrite next pointer, queue should be immune to this
+            e.next = nullptr;
+        });
     EXPECT_TRUE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), &e2);
     EXPECT_FALSE(queue.empty());
 
     // remove e2
-    result = queue.removeButFirstIf(e2,
-        [&e2](Element &e) {
-            EXPECT_EQ(&e, &e2);
-            return true;
+    nextCalled = false;
+    result = queue.removeIf(
+        [&e2](Element &e, int index) {
+            // e2 is now the only element
+            EXPECT_EQ(index, 0);
+            return &e == &e2;
         },
-        [&e2, &nextCalled] (Element &next) {
+        [] (Element &next, int index) {
+            // no next element
             FAIL();
-        }
-    );
-    EXPECT_TRUE(nextCalled);
+        },
+        [&e2](Element &e) {
+            // check that the removed element is e2
+            EXPECT_EQ(&e, &e2);
+
+            // overwrite next pointer, queue should be immune to this
+            e.next = nullptr;
+        });
+    EXPECT_FALSE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), nullptr);
     EXPECT_EQ(queue.pop(), nullptr);
     EXPECT_TRUE(queue.empty());
@@ -371,11 +399,11 @@ TEST(cocoTest, InterruptQueueMultiThreaded) {
     std::thread t([&queue, &e1, &e2, &e3, &c3, &finishCount] {
         //std::cout << "started thread" << std::endl;
         for (int i = 0; i < COUNT; ++i) {
-            queue.push(std::lock_guard(mutex), e1);
-            queue.push(std::lock_guard(mutex), e2);
-            queue.push(std::lock_guard(mutex), e3);
+            queue.guardedPush(std::lock_guard(mutex), e1);
+            queue.guardedPush(std::lock_guard(mutex), e2);
+            queue.guardedPush(std::lock_guard(mutex), e3);
 
-            if (queue.removeButFirst(std::lock_guard(mutex), e3)) {
+            if (queue.guardedRemoveExceptFirst(std::lock_guard(mutex), e3)) {
                 // remove succeeded
                 ++c3;
             } else {
