@@ -20,6 +20,10 @@ enum class Config : uint32_t {
     INP_PIN0 = 0,
     INP_PIN1 = 1 << OPAMP_CSR_VPSEL_Pos,
     INP_PIN2 = 2 << OPAMP_CSR_VPSEL_Pos,
+    INP_PIN3 = 3 << OPAMP_CSR_VPSEL_Pos, // only OPAMP2
+    INP_DAC = 3 << OPAMP_CSR_VPSEL_Pos, // except OPAMP2
+
+    // per op-amp specific plus input
     OPAMP1_INP_DAC3_CH1 = 3 << OPAMP_CSR_VPSEL_Pos,
     OPAMP2_INP_PIN3 = 3 << OPAMP_CSR_VPSEL_Pos,
     OPAMP3_INP_DAC3_CH2 = 3 << OPAMP_CSR_VPSEL_Pos,

@@ -214,6 +214,8 @@ struct Instance {
 /// @brief DAC info
 /// Contains pointer to registers, reset and clock control, interrupt and DMA request index
 struct Info {
+    using Instance = dac::Instance;
+
     // registers
     DAC_TypeDef *registers;
 

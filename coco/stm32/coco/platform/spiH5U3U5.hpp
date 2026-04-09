@@ -415,6 +415,8 @@ struct Instance {
 /// @brief SPI instance info
 /// Contains pointer to the SPI instance, interrupt index and methods to map DMA channels
 struct Info {
+    using Instance = spi::Instance;
+
     // registers
     SPI_TypeDef *spi;
 

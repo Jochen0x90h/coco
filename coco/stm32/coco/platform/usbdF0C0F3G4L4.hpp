@@ -288,7 +288,7 @@ struct Instance {
     /// @brief Initialize endpoint rx.
     /// @param ep Endpoint index
     /// @param endpointType Endpont type
-    void rxInit(int ep, EndpointType endpointType) {
+    void initRx(int ep, EndpointType endpointType) {
         // configure rx (out) endpoint: ready to receive, clear other toggle bits
         auto &EPxR = endpointRegister(ep);
         EPxR = ((EPxR
@@ -306,7 +306,7 @@ struct Instance {
 
     /// @brief Indicate that we want to receive data from the host.
     ///
-    void rxStart(int ep) {
+    void startRx(int ep) {
         // keep DTOG_RX DTOG_TX STAT_TX, cancel STAT_RX, clear CTR_RX, don't clear CTR_TX, toggle STAT_RX.STALL
         auto &EPxR = endpointRegister(ep);
         EPxR = ((EPxR & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX | USB_EP_STAT_TX | USB_EP_CTR_RX)) | USB_EP_CTR_TX) ^ USB_EP_RX_VALID;
@@ -341,7 +341,7 @@ struct Instance {
 
     /// @brief Acknowledge receive.
     /// @param ep Endpoint index
-    void rxAck(int ep) {
+    void ackRx(int ep) {
         // keep DTOG_RX DTOG_TX STAT_RX STAT_TX, clear CTR_RX, don't clear CTR_TX
         auto &EPxR = endpointRegister(ep);
         EPxR = ((EPxR & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX | USB_EP_STAT_RX | USB_EP_STAT_TX | USB_EP_CTR_RX)) | USB_EP_CTR_TX);
@@ -350,7 +350,7 @@ struct Instance {
     /// @brief Initialize endpoint tx.
     /// @param ep Endpoint index
     /// @param endpointType Endpont type
-    void txInit(int ep, EndpointType endpointType) {
+    void initTx(int ep, EndpointType endpointType) {
         // configure tx (in) endpoint: stall send, clear other toggle bits
         auto &EPxR = endpointRegister(ep);
         EPxR = ((EPxR
@@ -398,7 +398,7 @@ struct Instance {
 
     /// @brief Acknowledge send.
     ///
-    void txAck(int ep) {
+    void ackTx(int ep) {
         // keep DTOG_RX DTOG_TX STAT_RX STAT_TX, clear CTR_TX, don't clear CTR_RX
         auto &EPxR = endpointRegister(ep);
         EPxR = ((EPxR & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX | USB_EP_STAT_RX | USB_EP_STAT_TX | USB_EP_CTR_TX)) | USB_EP_CTR_RX);

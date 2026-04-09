@@ -142,7 +142,7 @@ struct MutexGuard {
 };
 */
 TEST(cocoTest, InterruptQueue_clear) {
-    InterruptQueue2<Element> queue;
+    InterruptQueue<Element> queue;
     Element e1, e2;
 
     EXPECT_TRUE(queue.empty());
@@ -170,7 +170,7 @@ TEST(cocoTest, InterruptQueue_clear) {
 }
 
 TEST(cocoTest, InterruptQueue_pop) {
-    InterruptQueue2<Element> queue;
+    InterruptQueue<Element> queue;
     Element e1, e2;
     Element *result;
 
@@ -191,13 +191,6 @@ TEST(cocoTest, InterruptQueue_pop) {
         [](Element &e) {
             // return true to remove the element
             return true;
-        },
-        [&e1](Element &removed) {
-            // check that the removed element is e1
-            EXPECT_EQ(&removed, &e1);
-
-            // overwrite next pointer, queue should be immune to this
-            removed.next = nullptr;
         }
     );
     EXPECT_EQ(result, &e1);
@@ -211,15 +204,9 @@ TEST(cocoTest, InterruptQueue_pop) {
         [](Element &next) {
             // no next element
             FAIL();
-        },
-        [&e2](Element &removed) {
-            // check that the removed element is e1
-            EXPECT_EQ(&removed, &e2);
-
-            // overwrite next pointer, queue should be immune to this
-            removed.next = nullptr;
         }
     );
+    EXPECT_EQ(result, &e2);
 
     // re-add elements
     queue.push(e1);
@@ -238,13 +225,6 @@ TEST(cocoTest, InterruptQueue_pop) {
 
             // mark that next was called
             nextCalled = true;
-        },
-        [&e1](Element &removed) {
-            // check that the removed element is e1
-            EXPECT_EQ(&removed, &e1);
-
-            // overwrite next pointer, queue should be immune to this
-            removed.next = nullptr;
         }
     );
     EXPECT_EQ(result, &e1);
@@ -255,24 +235,14 @@ TEST(cocoTest, InterruptQueue_pop) {
     EXPECT_FALSE(queue.push(e1));
 
     // pop second element (e2)
-    result = queue.pop(
-        [&e2](Element &removed) {
-            // check that the removed element is e1
-            EXPECT_EQ(&removed, &e2);
-
-            // overwrite next pointer
-            removed.next = nullptr;
-        }
-    );
+    result = queue.pop();
     EXPECT_EQ(result, &e2);
     EXPECT_FALSE(queue.empty());
 
     // pop and reject
     result = queue.popIf([](Element &e) {return false;});
     EXPECT_EQ(result, nullptr);
-    result = queue.popIf([](Element &e) {return false;}, [](Element &removed) {});
-    EXPECT_EQ(result, nullptr);
-    result = queue.popIf([](Element &e) {return false;}, [](Element &next) {}, [](Element &removed) {});
+    result = queue.popIf([](Element &e) {return false;}, [](Element &next) {});
     EXPECT_EQ(result, nullptr);
 
     // pop e1
@@ -283,28 +253,29 @@ TEST(cocoTest, InterruptQueue_pop) {
 
     // try to pop empty queue
     EXPECT_EQ(queue.pop(), nullptr);
-    result = queue.pop([](Element &e) {return true;});
+    result = queue.popIf([](Element &e) {return true;});
     EXPECT_EQ(result, nullptr);
-    result = queue.pop([](Element &e) {return true;}, [](Element &next) {});
+    result = queue.popIf([](Element &e) {return true;}, [](Element &next) {});
     EXPECT_EQ(result, nullptr);
 }
 
+
 TEST(cocoTest, InterruptQueue_remove) {
-    InterruptQueue2<Element> queue;
+    InterruptQueue<Element> queue;
     Element e1, e2, e3;
-    bool result;
+    Element *result;
     bool nextCalled;
 
     // queue is initially empty
     EXPECT_TRUE(queue.empty());
-    EXPECT_EQ(queue.pop(), nullptr);
+    EXPECT_FALSE(queue.remove(e1));
     EXPECT_EQ(queue.frontOrNull(), nullptr);
 
     // push some elements
     EXPECT_TRUE(queue.push(e1)); // push e1
     EXPECT_FALSE(queue.removeExceptFirst(e1)); // can't remove e1 as it is the front element
     EXPECT_FALSE(queue.empty()); // therefore the queue is not empty
-    EXPECT_EQ(queue.remove(e2), false); // e2 is not in list
+    EXPECT_FALSE(queue.remove(e2)); // e2 is not in list
     EXPECT_EQ(&queue.front(), &e1); // e1 is still first element
     EXPECT_EQ(queue.frontOrNull(), &e1);
     EXPECT_FALSE(queue.push(e2)); // push e2
@@ -326,11 +297,8 @@ TEST(cocoTest, InterruptQueue_remove) {
         [] (Element &next, int index) {
             // not called as e1 is not removed
             FAIL();
-        },
-        [&e1](Element &removed) {
-            // not called as e1 is not removed
-            FAIL();
         });
+    EXPECT_EQ(result, nullptr);
 
     // remove e1
     nextCalled = false;
@@ -349,14 +317,8 @@ TEST(cocoTest, InterruptQueue_remove) {
             EXPECT_EQ(index, 0);
 
             nextCalled = true;
-        },
-        [&e1](Element &e) {
-            // check that the removed element is e1
-            EXPECT_EQ(&e, &e1);
-
-            // overwrite next pointer, queue should be immune to this
-            e.next = nullptr;
         });
+    EXPECT_EQ(result, &e1);
     EXPECT_TRUE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), &e2);
     EXPECT_FALSE(queue.empty());
@@ -372,24 +334,19 @@ TEST(cocoTest, InterruptQueue_remove) {
         [] (Element &next, int index) {
             // no next element
             FAIL();
-        },
-        [&e2](Element &e) {
-            // check that the removed element is e2
-            EXPECT_EQ(&e, &e2);
-
-            // overwrite next pointer, queue should be immune to this
-            e.next = nullptr;
         });
+    EXPECT_EQ(result, &e2);
     EXPECT_FALSE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), nullptr);
     EXPECT_EQ(queue.pop(), nullptr);
     EXPECT_TRUE(queue.empty());
 }
 
+
 std::mutex mutex;
 
 TEST(cocoTest, InterruptQueueMultiThreaded) {
-    InterruptQueue2<Element> queue;
+    InterruptQueue<Element> queue;
     Element e1, e2, e3;
     int c1 = 0, c2 = 0;
     std::atomic<int> c3 = 0;

@@ -37,6 +37,8 @@ struct Instance {
 /// @brief I2C info
 ///
 struct Info {
+    using Instance = i2c::Instance;
+
     // registers
     I2C_TypeDef *i2c;
 

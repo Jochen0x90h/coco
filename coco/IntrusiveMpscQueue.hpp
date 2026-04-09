@@ -19,6 +19,12 @@ struct IntrusiveMpscQueueNode {
     /// @brief Delete copy constructor.
     ///
     IntrusiveMpscQueueNode(IntrusiveMpscQueueNode const &) = delete;
+
+    /// @brief Check if the node has a next element.
+    /// @return true if there is a next element, false otherwise
+    bool hasNext() const {
+        return this->next.load() != nullptr;
+    }
 };
 
 

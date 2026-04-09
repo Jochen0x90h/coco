@@ -178,6 +178,8 @@ struct Instance {
 /// @brief DAC info
 ///
 struct Info {
+    using Instance = dac::Instance;
+
     DAC_TypeDef *dac;
 
     // reset and clock control

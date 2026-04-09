@@ -703,6 +703,8 @@ struct Instance {
 /// @brief FDCAN instance info
 /// Contains pointer to the SPI instance, interrupt index and methods to map DMA channels
 struct Info {
+    using Instance = can::Instance;
+
     // registers
     FDCAN_GlobalTypeDef *can;
 

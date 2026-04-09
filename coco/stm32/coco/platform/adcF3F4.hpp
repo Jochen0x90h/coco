@@ -572,6 +572,8 @@ struct DualInstance {
 /// @brief Info for an ADC in independent mode
 /// Contains pointer to registers, reset and clock control, interrupt and DMA request index
 struct Info {
+    using Instance = adc::Instance;
+
     // registers
     ADC_Common_TypeDef *common;
     ADC_TypeDef *adc;
@@ -613,6 +615,8 @@ struct Info {
 /// @brief Info for two ADCs in dual mode
 /// Contains pointer to registers, reset and clock control, interrupt and DMA request index
 struct DualInfo {
+    using Instance = adc::DualInstance;
+
     // registers
     ADC_Common_TypeDef *common;
     ADC_TypeDef *adc[2];
