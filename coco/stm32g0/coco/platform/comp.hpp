@@ -58,8 +58,8 @@ enum class Config : uint32_t {
 };
 COCO_ENUM(Config)
 
-/// @param Configure a comparator.
-/// Make sure SYSCFG clock enable bit is set (RCC->APB2ENR = RCC->APB2ENR | RCC_APB2ENR_SYSCFGEN)
+/// @param Enable a comparator.
+/// Make sure SYSCFG clock enable bit is set (RCC->APBENR2 = RCC->APBENR2 | RCC_APBENR2_SYSCFGEN)
 inline void enable(COMP_TypeDef *comp, Config config) {
     comp->CSR = COMP_CSR_EN | int(config);
 }

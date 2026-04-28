@@ -27,7 +27,7 @@ if(${PLATFORM} MATCHES "^nrf52")
         nrf52/compileTest.cpp
     )
 
-    # we need these includes as all platform files are copied to /coco/platform in the installed lib
+    # add platform specific includes (not needed in dependent code as all platform files are copied to /coco/platform in the installed lib)
     target_include_directories(compileTest
         PRIVATE
             ../coco/cortex/coco/platform
@@ -41,7 +41,7 @@ elseif(${PLATFORM} MATCHES "^stm32")
         stm32/compileTest.cpp
     )
 
-    # we need these includes as all platform files are copied to /coco/platform in the installed lib
+    # add platform specific includes (not needed in dependent code as all platform files are copied to /coco/platform in the installed lib)
     target_include_directories(compileTest
         PRIVATE
             ../coco/cortex/coco/platform

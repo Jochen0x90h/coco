@@ -19,15 +19,6 @@ public:
     ///
     ArrayBuffer() : length() {}
 
-    /// @brief Destructor
-    ///
-    ~ArrayBuffer() {
-        auto buffer = reinterpret_cast<T *>(this->buffer);
-        for (auto it = buffer; it < buffer + this->length; ++it) {
-            it->~T();
-        }
-    }
-
     /// @brief Construct from any container supporting std::begin() and std::end()
     /// @tparam T2 container type
     /// @param container container used to initialize the buffer
@@ -42,6 +33,15 @@ public:
         for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
             new (it1) T(*it2);
         this->length = l;
+    }
+
+    /// @brief Destructor
+    ///
+    ~ArrayBuffer() {
+        auto buffer = reinterpret_cast<T *>(this->buffer);
+        for (auto it = buffer; it < buffer + this->length; ++it) {
+            it->~T();
+        }
     }
 
     /// @brief Assign from any container supporting std::begin() and std::end()
@@ -203,7 +203,7 @@ public:
     /// @brief Construct from any container supporting std::begin() and std::end()
     /// @tparam T2 container type
     /// @param container container used to initialize the buffer
-    template <typename T2>
+    template <typename T2> requires (!StringConcept<T2>)
     ArrayBuffer(const T2 &container) {
         auto buffer = this->buffer;
         auto it1 = buffer;
@@ -214,6 +214,27 @@ public:
         for (; it1 != end1 && it2 != end2; ++it1, ++it2, ++l)
             *it1 = *it2;
         this->length = l;
+#ifdef DEBUG
+        this->buffer[l] = 0;
+#endif
+    }
+
+    /// @brief Assign a string
+    /// @tparam T2 string type
+    /// @param string string that is assigned to the buffer
+    /// @return *this
+    template <typename T2> requires (StringConcept<T2>)
+    ArrayBuffer(const T2 &string) {
+        auto buffer = this->buffer;
+        auto capacity = N;
+
+        String s(string);
+        int l = std::min(capacity, s.size());
+        std::copy(s.begin(), s.begin() + l, buffer);
+        this->length = l;
+#ifdef DEBUG
+        buffer[l] = 0;
+#endif
     }
 
     /// @brief Assign from any container supporting std::begin() and std::end()

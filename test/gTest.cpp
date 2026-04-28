@@ -759,9 +759,9 @@ TEST(cocoTest, ByteRangeConcept) {
 // convert
 // -------
 
-TEST(cocoTest, convert) {
+//TEST(cocoTest, convert) {
     // parse int
-    int i = *parseInt("-50");
+    /*int i = *parseInt("-50");
     EXPECT_EQ(i, -50);
     auto i2 = parseInt("foo");
     EXPECT_EQ(i2, std::nullopt);
@@ -776,7 +776,7 @@ TEST(cocoTest, convert) {
     auto f3 = parseFloat("");
     EXPECT_EQ(f3, std::nullopt);
 
-    char buffer16[16];
+    char buffer16[16];*/
 
     // int to string
     /*EXPECT_EQ(toString(buffer16, INT64_C(12345678900)), "12345678900");
@@ -788,7 +788,7 @@ TEST(cocoTest, convert) {
     char buffer21[21];
     EXPECT_EQ(toString(buffer21, 5.5f, 1, 2), "5.5");
     EXPECT_EQ(toString(buffer21, 5.5f, 2, -2), "05.50");*/
-}
+//}
 
 TEST(cocoTest, convert_dec) {
     // integer to string
@@ -819,10 +819,28 @@ TEST(cocoTest, convert_dec) {
     EXPECT_EQ(dec(d), "1337000000");
 
     // string to int
+    EXPECT_EQ(dec<int>(""), ConvertedValue<int>{});
     EXPECT_EQ(dec<int>("1337"), ConvertedValue<int>(1337, 4));
     EXPECT_EQ(dec<int>("+1337"), ConvertedValue<int>(1337, 5));
     EXPECT_EQ(dec<int>("-1337"), ConvertedValue<int>(1337, 5));
     EXPECT_EQ(dec<unsigned int>("1337"), ConvertedValue<unsigned int>(1337, 4));
+    EXPECT_EQ(dec<int>("1337foo"), ConvertedValue<int>{});
+
+    // string to int with partial flag
+    EXPECT_EQ(dec<int>("1337foo", true), ConvertedValue<int>(1337, 4));
+
+    // string to float
+    EXPECT_EQ(dec<float>(""), ConvertedValue<int>{});
+    EXPECT_EQ(dec<float>("50.0"), ConvertedValue<float>(50.0f, 4));
+    EXPECT_EQ(dec<float>("1."), ConvertedValue<float>(1.0f, 2));
+    EXPECT_EQ(dec<float>(".1"), ConvertedValue<float>(0.1f, 2));
+    EXPECT_EQ(dec<float>("."), ConvertedValue<float>{});
+
+    // string to float with partial flag
+    EXPECT_EQ(dec<float>("50.0x", true), ConvertedValue<float>(50.0f, 4));
+    EXPECT_EQ(dec<float>("1.x", true), ConvertedValue<float>(1.0f, 2));
+    EXPECT_EQ(dec<float>(".1x", true), ConvertedValue<float>(0.1f, 2));
+    EXPECT_EQ(dec<float>(".x", true), ConvertedValue<float>{});
 }
 
 TEST(cocoTest, convert_hex) {
@@ -842,7 +860,11 @@ TEST(cocoTest, convert_hex) {
     // string to int
     EXPECT_EQ(hex<int>("1a"), ConvertedValue<int>(0x1a, 2));
     EXPECT_EQ(hex<uint32_t>("baadcafe"), ConvertedValue<int>(0xbaadcafe, 2));
-}
+    EXPECT_EQ(hex<int>("1ag"), ConvertedValue<int>{});
+
+    // string to int with partial flag
+    EXPECT_EQ(hex<int>("1ag", true), ConvertedValue<int>(0x1a, 2));
+ }
 
 TEST(cocoTest, convert_utf8) {
     EXPECT_EQ(*utf8("a"), 'a');
@@ -1534,6 +1556,10 @@ TEST(cocoTest, StringBuffer) {
     EXPECT_EQ(std::size(b), 0);
     EXPECT_EQ(b.CAPACITY, 100);
     EXPECT_EQ(b.capacity(), 100);
+
+    // check if constructor with string omits the zero termination
+    StringBuffer<10> b2("foo");
+    EXPECT_EQ(b2.size(), 3);
 
     // check if assignment of string omits the zero termination
     b = "foo";

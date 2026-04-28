@@ -195,7 +195,7 @@ ConvertedValue<int> utf8(String str) {
 //
 
 
-
+/*
 std::optional<int> parseInt(String str) {
     if (str.size() <= 0)
         return {};
@@ -272,7 +272,7 @@ std::optional<float> parseFloat(String str) {
     }
 
     return minus ? -value : value;
-}
+}*/
 /*
 int toString(int length, char *str, uint32_t value, int digitCount) {
     // enforce valid parameters

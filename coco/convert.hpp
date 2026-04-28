@@ -64,7 +64,7 @@ namespace detail {
 /// @tparam T Integer type
 /// @param str String
 /// @return Converted integer and number of characters used
-template <typename T>
+template <typename T> requires std::is_integral_v<T>
 [[nodiscard]] ConvertedValue<T> dec(String str, bool partial = false) {
     int i = 0;
 
@@ -97,11 +97,70 @@ template <typename T>
     return {minus ? -value : value, i};
 }
 
+/// @brief Convert a decimal string to a floating point value.
+/// @tparam T Floating point type
+/// @param str String
+/// @return Converted floating point value and number of characters used
+template <typename T> requires std::is_floating_point_v<T>
+[[nodiscard]] ConvertedValue<T> dec(String str, bool partial = false) {
+    int i = 0;
+
+    // check for sign
+    bool minus = false;
+    if constexpr (std::is_signed_v<T>) {
+        // signed
+        if (str.size() > 0) {
+            minus = str[0] == '-';
+            if (minus || str[0] == '+') {
+                i = 1;
+            }
+        }
+    }
+
+    // parse integer part
+    T value = 0.0f;
+    bool dot = false;
+    for (; i < str.size(); ++i) {
+        char ch = str[i];
+        if (ch == '.') {
+            ++i;
+            dot = true;
+            break;
+        } else if (ch >= '0' && ch <= '9') {
+            int digit = ch - '0';
+            value = value * T(10.0) + T(digit);
+        } else {
+            // invalid character
+            if (partial)
+                break;
+            return {};
+        }
+    }
+
+    // parse decimal places
+    T decimal = 1.0f;
+    for (; i < str.size(); ++i) {
+        char ch = str[i];
+        if (ch >= '0' && ch <= '9') {
+            float digit = ch - '0';
+            decimal *= T(0.1);
+            value += digit * decimal;
+        } else {
+            // invalid character
+            if (partial)
+                break;
+            return {};
+        }
+    }
+
+    return {minus ? -value : value, dot && i == 1 ? 0 : i};
+}
+
 /// @brief Convert an integer value to a decimal string.
 /// use is_value_preserving_convertible when available https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2509r0.html
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
-template <typename T> requires (std::is_integral_v<T>)
+template <typename T> requires std::is_integral_v<T>
 [[nodiscard]] auto dec(const T &value, int digitCount = 1, int minWidth = 0) {
     if constexpr (sizeof(T) <= 4) {
         // 32 bit
@@ -161,7 +220,7 @@ template <typename T> requires (std::is_integral_v<T>)
 /// @brief Convert an enum to a decimal string.
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
-template <typename T> requires (std::is_enum_v<T>)
+template <typename T> requires std::is_enum_v<T>
 [[nodiscard]] auto dec(const T &value, int digitCount = 1, int minWidth = 0) {
     return dec(std::underlying_type_t<T>(value), digitCount, minWidth);
 }
@@ -169,7 +228,7 @@ template <typename T> requires (std::is_enum_v<T>)
 /// @brief Convert a floating point value to a decimal string.
 /// @param value Value
 /// @return Buffer that can convert itself to coco::String (via operator String)
-template <typename T> requires (std::is_floating_point_v<T>)
+template <typename T> requires std::is_floating_point_v<T>
 auto dec(const T &value, int digitCount, int decimalCount, int minWidth = 0) {
     ConvertedBuffer<24> buffer;
     char *end = std::end(buffer.data);
@@ -331,9 +390,6 @@ template <typename T>
 
 
 
-
-
-
 //
 
 /**
@@ -341,14 +397,14 @@ template <typename T>
  * @param str string to convert
  * @return optional int, defined if conversion was successful
  */
-std::optional<int> parseInt(String str);
+//std::optional<int> parseInt(String str);
 
 /**
  * Convert string to floating point number in the form x.y without support for exponential notation
  * @param str string to convert
  * @return optional floating point number, defined if conversion was successful
  */
-std::optional<float> parseFloat(String str);
+//std::optional<float> parseFloat(String str);
 
 /**
  * Convert a 64 bit integer to string

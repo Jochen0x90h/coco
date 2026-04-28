@@ -35,9 +35,9 @@ enum class Config : uint32_t {
     DEFAULT = 0,
 
     // mode
+    SLAVE = 0, // default
     SINGLE_MASTER = SPI_CFG2_MASTER | SPI_CFG2_SSOE,
     MULTI_MASTER = SPI_CFG2_MASTER,
-    SLAVE = 0, // default
 
     // slave select pin configuration
     SS_LOW_ACTIVE = 0, // default
@@ -72,6 +72,7 @@ enum class Format : uint32_t {
     CLOCK_DIV_64 = 5 << SPI_CFG1_MBR_Pos,
     CLOCK_DIV_128 = 6 << SPI_CFG1_MBR_Pos,
     CLOCK_DIV_256 = 7 << SPI_CFG1_MBR_Pos,
+    CLOCK_DIV_MASK = 7 << SPI_CFG1_MBR_Pos,
 
     // clock phase
     PHASE_0 = 0, // default
@@ -297,11 +298,28 @@ struct Instance {
     auto &setFormat(Format format) {
         // disable SPI
         uint32_t cr1 = spi->CR1;
-        spi->CR1 = 0;//cr1 & ~SPI_CR1_SPE;
+        spi->CR1 = 0;
 
         // set format
         spi->CFG1 = (spi->CFG1 & ~FORMAT_CFG1_MASK) | CFG1(format);
         spi->CFG2 = (spi->CFG2 & ~FORMAT_CFG2_MASK) | CFG2(format);
+
+        // restore CR1
+        spi->CR1 = cr1;
+        return *this;
+    }
+
+    /// @brief Set data size.
+    /// @param size Data size (only DATA_xx gets used)
+    /// @return *this
+    auto &setDataSize(Format format) {
+        // disable SPI
+        uint32_t cr1 = spi->CR1;
+        spi->CR1 = 0;
+
+        // set number of data bits
+        spi->CFG1 = (spi->CFG1 & ~SPI_CFG1_DSIZE) | (CFG1(format) & SPI_CFG1_DSIZE);
+        return *this;
 
         // restore CR1
         spi->CR1 = cr1;

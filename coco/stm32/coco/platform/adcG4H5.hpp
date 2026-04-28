@@ -251,7 +251,15 @@ inline Instance Info::enableClock(ClockConfig clockConfig) const {
     adc::enableVoltageRegulator(adc);
 
     // set clock config
-    common->CCR = int(clockConfig);
+#ifdef ADC5
+    if (adc == ADC5) {
+        // don't modify common mode which applies to ADC3 and ADC4
+        common->CCR = (common->CCR & ~(ADC_CCR_CKMODE | ADC_CCR_PRESC)) | int(clockConfig);
+    } else
+#endif
+    {
+        common->CCR = int(clockConfig);
+    }
 
     // return Instance
     return {adc};
@@ -283,8 +291,9 @@ inline DualInstance DualInfo::enableClock(ClockConfig clockConfig) const {
     // enable voltage regulator
     adc::enableVoltageRegulator(adc[0], adc[1]);
 
-    // set clock config
-    common->CCR = int(clockConfig) | ADC_CCR_DUAL_2 | ADC_CCR_DUAL_1; // regular simultaneous mode
+    // set clock config and common mode
+    common->CCR = int(clockConfig)
+        | ADC_CCR_DUAL_2 | ADC_CCR_DUAL_1; // regular simultaneous mode
 
     // return DualInstance
     return {common, {adc[0], adc[1]}};

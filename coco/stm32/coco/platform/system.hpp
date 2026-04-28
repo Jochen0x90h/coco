@@ -1,10 +1,11 @@
 #pragma once
 
-#include "backup.hpp"
-#include "nvic.hpp"
-#include "rcc.hpp"
 #include <coco/convert.hpp>
 #include <coco/StringBuffer.hpp>
+#include <coco/platform/backup.hpp>
+#include <coco/platform/nvic.hpp>
+#include <coco/platform/rcc.hpp>
+
 
 namespace coco {
 
@@ -12,6 +13,59 @@ namespace coco {
 /// System functions such as id(), reset(), intent(), jump()
 namespace system {
 
+/// @brief Get system name.
+/// @return System name (stm32xxx)
+StringBuffer<16> name();
+
+/// @brief Get system version.
+/// @return Device version (e.g. 1)
+inline StringBuffer<16> version() {
+    StringBuffer<16> result;
+#ifdef DBGMCU
+    uint32_t idcode = DBGMCU->IDCODE;
+    int revision = (idcode & DBGMCU_IDCODE_REV_ID_Msk) >> DBGMCU_IDCODE_REV_ID_Pos;
+#endif
+#ifdef DBG
+    uint32_t idcode = DBG->IDCODE;
+    int revision = (idcode & DBG_IDCODE_REV_ID_Msk) >> DBG_IDCODE_REV_ID_Pos;
+#endif
+    result << dec(revision);
+    return result;
+}
+
+/// Get system id.
+/// STM32G0B0xx/B1xx/C1xx: 0x467
+/// STM32F441: 0x441
+/// STM32G43x/G44x: 0x468
+/// STM32G47x/G48x/G414: 0x469
+/// STM32G491: 0x479
+/// @return Device id
+inline int id() {
+#ifdef DBGMCU
+    uint32_t idcode = DBGMCU->IDCODE;
+    return (idcode & DBGMCU_IDCODE_DEV_ID_Msk) >> DBGMCU_IDCODE_DEV_ID_Pos;
+#endif
+#ifdef DBG
+    uint32_t idcode = DBG->IDCODE;
+    return (idcode & DBG_IDCODE_DEV_ID_Msk) >> DBG_IDCODE_DEV_ID_Pos;
+#endif
+}
+
+/// Get system build.
+/// @return System build
+inline int build() {
+#ifdef DBGMCU
+    uint32_t idcode = DBGMCU->IDCODE;
+    int revision = (idcode & DBGMCU_IDCODE_REV_ID_Msk) >> DBGMCU_IDCODE_REV_ID_Pos;
+#endif
+#ifdef DBG
+    uint32_t idcode = DBG->IDCODE;
+    int revision = (idcode & DBG_IDCODE_REV_ID_Msk) >> DBG_IDCODE_REV_ID_Pos;
+#endif
+    return revision;
+}
+
+/*
 /// Get device id.
 /// @return Device id, e.g. 0x441 for STM32F441
 inline int device() {
@@ -55,6 +109,7 @@ inline StringBuffer<16> id() {
     result << "stm32-" << hex(device, 1) << '-' << hex(revision, 1);
     return result;
 }
+*/
 
 /// @brief Reset the microcontroller.
 ///

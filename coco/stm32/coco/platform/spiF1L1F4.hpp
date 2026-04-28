@@ -33,9 +33,9 @@ enum class Config : uint32_t {
     DEFAULT = 0,
 
     // mode
+    SLAVE = 0, // default
     SINGLE_MASTER = SPI_CR1_MSTR | (SPI_CR2_SSOE << CONFIG_CR2_SHIFT),
     MULTI_MASTER = SPI_CR1_MSTR,
-    SLAVE = 0, // default
 
     // slave select pin configuration
     SS_LOW_ACTIVE = 0, // default
@@ -64,7 +64,7 @@ constexpr uint32_t CR2(Config config) {
 
 constexpr int FORMAT_CR2_SHIFT = 16;
 constexpr int FORMAT_CR1_MASK = SPI_CR1_BR | SPI_CR1_CPHA | SPI_CR1_CPOL | SPI_CR1_LSBFIRST
-#ifdef SPI_CR1_DFF
+#ifdef HAVE_SPI_DATA_16
     | SPI_CR1_DFF
 #endif
     ;
@@ -82,6 +82,7 @@ enum class Format : uint32_t {
     CLOCK_DIV_64 = 5 << SPI_CR1_BR_Pos,
     CLOCK_DIV_128 = 6 << SPI_CR1_BR_Pos,
     CLOCK_DIV_256 = 7 << SPI_CR1_BR_Pos,
+    CLOCK_DIV_MASK = 7 << SPI_CR1_BR_Pos,
 
     // clock phase
     PHASE_0 = 0, // default
@@ -107,7 +108,7 @@ enum class Format : uint32_t {
 
     // number of data bits
     DATA_8 = 0,
-#ifdef SPI_CR1_DFF
+#ifdef HAVE_SPI_DATA_16
     DATA_16 = SPI_CR1_DFF,
 #endif
 
@@ -249,6 +250,16 @@ struct Instance {
     auto &setFormat(Format format) {
         spi->CR1 = (spi->CR1 & ~FORMAT_CR1_MASK) | CR1(format);
         spi->CR2 = (spi->CR2 & ~FORMAT_CR2_MASK) | CR2(format);
+        return *this;
+    }
+
+    /// @brief Set data size.
+    /// @param size Data size (only DATA_xx gets used)
+    /// @return *this
+    auto &setDataSize(Format format) {
+#ifdef HAVE_SPI_DATA_16
+        spi->CR1 = (spi->CR1 & ~SPI_CR1_DFF) | (CR1(format) & SPI_CR1_DFF);
+#endif
         return *this;
     }
 

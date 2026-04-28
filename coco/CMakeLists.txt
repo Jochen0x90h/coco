@@ -77,6 +77,7 @@ if(${PLATFORM} MATCHES "^nrf52") # Cortex-M4F
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/nrf52.h
         PRIVATE
+            nrf52/coco/platform/system.cpp
             nrf52/coco/platform/system/gcc_startup_${PLATFORM}.S
     )
     target_include_directories(${PROJECT_NAME}
@@ -131,6 +132,7 @@ elseif(${PLATFORM} MATCHES "^stm32f0") # Cortex-M0
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32f0.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32f0/coco/platform/platform.cpp
             stm32f0/coco/platform/system/startup_${PLATFORM}.s
     )
@@ -186,6 +188,7 @@ elseif(${PLATFORM} MATCHES "^stm32c0") # Cortex-M0+
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32c0.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32c0/coco/platform/platform.cpp
             stm32c0/coco/platform/system/startup_${PLATFORM}.s
     )
@@ -249,6 +252,7 @@ elseif(${PLATFORM} MATCHES "^stm32g0") # Cortex-M0+
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32g0.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32g0/coco/platform/platform.cpp
             stm32g0/coco/platform/system/startup_${PLATFORM}.s
     )
@@ -306,6 +310,7 @@ elseif(${PLATFORM} MATCHES "^stm32f3") # Cortex-M4F
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32f3.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32f3/coco/platform/system/startup_${PLATFORM}.s
     )
     target_include_directories(${PROJECT_NAME}
@@ -361,11 +366,13 @@ elseif(${PLATFORM} MATCHES "^stm32f4") # Cortex-M4F
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32f4.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32f4/coco/platform/system/startup_${PLATFORM}.s
     )
     target_include_directories(${PROJECT_NAME}
         PRIVATE
             ../coco/stm32/coco/platform
+            ../coco/stm32f4/coco/platform
     )
 elseif(${PLATFORM} MATCHES "^stm32l4") # Cortex-M4F
     file(GENERATE OUTPUT coco/platform/stm32l4.h CONTENT "#include <coco/platform/system/${PLATFORM}.h>")
@@ -420,6 +427,7 @@ elseif(${PLATFORM} MATCHES "^stm32l4") # Cortex-M4F
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32l4.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32l4/coco/platform/system/startup_${PLATFORM}.s
     )
     target_include_directories(${PROJECT_NAME}
@@ -488,6 +496,7 @@ elseif(${PLATFORM} MATCHES "^stm32g4") # Cortex-M4F
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32g4.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32g4/coco/platform/system/startup_${PLATFORM}.s
     )
     target_include_directories(${PROJECT_NAME}
@@ -552,6 +561,7 @@ elseif(${PLATFORM} MATCHES "^stm32h5") # Cortex-M33F
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32h5.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32h5/coco/platform/system/startup_${PLATFORM}.s
     )
     target_include_directories(${PROJECT_NAME}
@@ -613,6 +623,7 @@ elseif(${PLATFORM} MATCHES "^stm32u3") # Cortex-M33F
         PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_BINARY_DIR} FILES
             ${CMAKE_CURRENT_BINARY_DIR}/coco/platform/stm32u3.h
         PRIVATE
+            stm32/coco/platform/system.cpp
             stm32u3/coco/platform/system/startup_${PLATFORM}.s
     )
     target_include_directories(${PROJECT_NAME}
@@ -620,10 +631,7 @@ elseif(${PLATFORM} MATCHES "^stm32u3") # Cortex-M33F
             ../coco/stm32/coco/platform
             ../coco/stm32u3/coco/platform
     )
-elseif(${PLATFORM} MATCHES "^nrf5" OR ${PLATFORM} MATCHES "^stm32")
-    # other NRF5x or STM32 not supported yet
-    message("${PLATFORM} not supported yet")
-else()
+elseif(${PLATFORM} STREQUAL "native" OR ${PLATFORM} STREQUAL "emu")
     # native platform (Windows, MacOS, Linux)
     target_sources(${PROJECT_NAME}
         PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/native FILES
@@ -647,6 +655,16 @@ else()
                 native/coco/platform/debug.cpp
         )
     endif()
+else()
+    # other devices not supported yet
+    message("${PLATFORM} not supported yet")
+endif()
+
+if(NOT ${PLATFORM} STREQUAL "native" OR NOT ${PLATFORM} STREQUAL "emu")
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+            DEVICE=${PLATFORM}
+    )
 endif()
 
 target_include_directories(${PROJECT_NAME}

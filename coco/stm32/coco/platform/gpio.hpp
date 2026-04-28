@@ -18,8 +18,7 @@ namespace coco {
 /// U3 https://www.st.com/en/microcontrollers-microprocessors/stm32u3-series/documentation.html Section 12
 namespace gpio {
 
-
-/// @brief GPIO configuration
+/// @brief GPIO configuration.
 /// GPIO configuration including pin, port, alternate function, speed, pull up/down and invert flag.
 /// The invert flag is handled in software or can be respected in peripherals, e.g. the USART RXINV/TXINV flags
 enum class Config : uint32_t {
@@ -278,14 +277,14 @@ enum class Mode : uint8_t {
     MODE_MASK = 3,
 };
 
-/// @brief Get pointer to GPIO port structure (e.g. GPIOA)
+/// @brief Get pointer to GPIO port structure (e.g. GPIOA).
 /// @param config Pin and port (configuration ignored)
 inline GPIO_TypeDef *getPort(Config config) {return (GPIO_TypeDef *)(GPIOA_BASE + (int(config & Config::PORT_MASK) << 6));} // * 0x00000400UL
 
 constexpr int getPinIndex(Config config) {return int(config) & 0xf;}
 constexpr int getPortIndex(Config config) {return (int(config) >> 4) & 0xf;}
 
-/// @brief Index of pin including port, e.g. PB0 has index 16
+/// @brief Index of pin including port, e.g. PB0 has index 16.
 /// @param config Pin and port (configuration ignored)
 constexpr int getPinPortIndex(Config config) {return int(config) & 0xff;}
 
@@ -309,10 +308,10 @@ inline void enableInput(Config config) {
 /// @brief Enable a GPIO pin as output.
 /// Make sure the clock of the port is enabled in SystemInit()
 /// @param config pin, port and configuration (alternate function is not set)
-/// @param initialValue initial value of the output pin (may get inverted by INVERT flag)
+/// @param initialValue initial value of the output pin (may get inverted by Config::INVERT flag)
 inline void enableOutput(Config config, bool initialValue) {
     auto port = getPort(config);
-    int pin = extract(config, Config::PIN_MASK);
+    int pin = getPinIndex(config);
     int pos2 = pin << 1;
 
     // set initial value of output bit
@@ -342,7 +341,7 @@ inline void enableOutput(Config config, bool initialValue) {
 /// @param config pin, port and configuration
 inline void enableAlternate(Config config) {
     auto port = getPort(config);
-    int pin = extract(config, Config::PIN_MASK);
+    int pin = getPinIndex(config);
     int pos2 = pin << 1;
     int pos4 = (pin & 7) << 2;
 
@@ -373,7 +372,7 @@ inline void enableAlternate(Config config) {
 /// @param config pin and port (pull up/down gets disabled, no additional configuraton gets applied)
 inline void enableAnalog(Config config) {
     auto port = getPort(config);
-    int pin = extract(config, Config::PIN_MASK);
+    int pin = getPinIndex(config);
     int pos2 = pin << 1;
 
     // disable pull
@@ -390,7 +389,7 @@ inline void enableAnalog(Config config) {
 /// @param mode Mode
 inline void enable(Config config, Mode mode) {
     auto port = getPort(config);
-    int pin = extract(config, Config::PIN_MASK);
+    int pin = getPinIndex(config);
     int pos2 = pin << 1;
     int pos4 = (pin & 7) << 2;
 
@@ -415,50 +414,58 @@ inline void enable(Config config, Mode mode) {
     port->MODER = (port->MODER & ~(3 << pos2)) | (int(mode) << pos2);
 }
 
-/// @brief Set only the mode of a GPIO
+/// @brief Set only the mode of a GPIO.
 /// @param pinPort pin and port (no additional configuraton gets applied)
 /// @param mode mode
 inline void setMode(Config pinPort, Mode mode) {
     auto port = getPort(pinPort);
-    int pin = extract(pinPort, Config::PIN_MASK);
+    int pin = getPinIndex(pinPort);
     int pos2 = pin << 1;
 
     port->MODER = (port->MODER & ~(3 << pos2)) | (int(mode) << pos2);
 }
 
 
-/// @brief Get input value
+/// @brief Get input value.
 /// @param pinPort pin and port (no additional configuraton gets applied except for INVERT)
 inline bool getInput(Config pinPort) {
     auto port = getPort(pinPort);
-    int pin = extract(pinPort, Config::PIN_MASK);
+    int pin = getPinIndex(pinPort);
     return bool(((port->IDR >> pin) & 1) ^ extract(pinPort, Config::INVERT));
 }
 
-/// @brief Set output value
+/// @brief Set output value.
 /// @param pinPort pin and port (no additional configuraton gets applied except for INVERT)
 inline void setOutput(Config pinPort, bool value) {
     auto port = getPort(pinPort);
-    int pin = extract(pinPort, Config::PIN_MASK);
+    int pin = getPinIndex(pinPort);
     int flag = int(value != 0) ^ extract(pinPort, Config::INVERT);
     port->BSRR = (0x10000 | flag) << pin;
 }
 
-/// @brief Toggle output value
+/// @brief Get output value from the output data register.
+/// @param pinPort pin and port (no additional configuraton gets applied except for INVERT)
+inline bool getOutput(Config pinPort) {
+    auto port = getPort(pinPort);
+    int pin = getPinIndex(pinPort);
+    return bool(((port->ODR >> pin) & 1) ^ extract(pinPort, Config::INVERT));
+}
+
+/// @brief Toggle output value.
 /// @param pinPort pin and port (no additional configuraton gets applied)
 inline void toggleOutput(Config pinPort) {
     auto port = getPort(pinPort);
-    int pin = extract(pinPort, Config::PIN_MASK);
+    int pin = getPinIndex(pinPort);
     port->BSRR = (0x00010001 << pin) & ~port->ODR;
 }
 
-/// @brief Set or toggle output value
+/// @brief Set or toggle output value.
 /// @param pinPort pin and port (no additional configuraton gets applied except for INVERT)
 /// @param value Value to set
 /// @param function Function: false: toggle when value is set, true: set value to output
 inline void setOutput(Config pinPort, bool value, bool function) {
     auto port = getPort(pinPort);
-    int pin = extract(pinPort, Config::PIN_MASK);
+    int pin = getPinIndex(pinPort);
     if (function) {
         // clear or set
         int flag = int(value != 0) ^ extract(pinPort, Config::INVERT);

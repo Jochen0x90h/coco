@@ -22,7 +22,7 @@ enum class Config {
 };
 
 /// @brief Enable the voltage reference.
-///
+/// Make sure SYSCFG clock enable bit is set (RCC->APB2ENR = RCC->APB2ENR | RCC_APB2ENR_SYSCFGEN)
 inline void enable(Config config) {
     VREFBUF->CSR = VREFBUF_CSR_ENVR | int(config);
 
