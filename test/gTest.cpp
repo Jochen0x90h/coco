@@ -7,6 +7,7 @@
 #include <coco/ArrayConcept.hpp>
 #include <coco/bits.hpp>
 #include <coco/ByteConcept.hpp>
+#include <coco/Callback.hpp>
 #include <coco/convert.hpp>
 #include <coco/CStringConcept.hpp>
 #include <coco/debug.hpp>
@@ -753,6 +754,37 @@ TEST(cocoTest, ByteRangeConcept) {
     EXPECT_FALSE(ByteRangeConcept<decltype(c6)>);
     EXPECT_TRUE(ByteRangeConcept<decltype(c7)>); // only difference to ByteArrayConcept
     EXPECT_FALSE(ByteRangeConcept<decltype(c8)>);
+}
+
+
+// Callback
+// --------
+
+class Foo {
+public:
+    void bar() {
+        barCalled = true;
+    }
+
+    void baz(int i) {
+        bazArg = i;
+    }
+
+    bool barCalled = false;
+    int bazArg = 0;
+};
+
+TEST(cocoTest, Callback) {
+    Foo foo;
+    auto bar = makeCallback<Foo, &Foo::bar>(&foo);
+    bar();
+    EXPECT_TRUE(foo.barCalled);
+
+
+    auto baz = makeCallback<Foo, &Foo::baz, int>(&foo);
+    baz(50);
+    EXPECT_EQ(foo.bazArg, 50);
+
 }
 
 

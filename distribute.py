@@ -18,13 +18,17 @@ for file in os.listdir(dir):
 
         # also copy helper scripts
         if False:
-            dst = f"../{name}/cinstall.py"
-            print(dst)
-            shutil.copyfile('cinstall.py', dst)
-
             dst = f"../{name}/ccreate.py"
             print(dst)
             shutil.copyfile('ccreate.py', dst)
+
+            dst = f"../{name}/cdeps.py"
+            print(dst)
+            shutil.copyfile('cdeps.py', dst)
+
+            dst = f"../{name}/cinstall.py"
+            print(dst)
+            shutil.copyfile('cinstall.py', dst)
 
             dst = f"../{name}/install.py"
             print(dst)

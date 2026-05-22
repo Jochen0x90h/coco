@@ -18,7 +18,7 @@ namespace coco {
 template <typename T, int P, int U1, bool A = false>
 struct Unit {
     static constexpr int UNIT1 = U1;
-    T value;
+    T value{};
 
     Unit() = default;
 

@@ -113,18 +113,18 @@ TEST(cocoTest, TimedTaskList2) {
 	Foo foo;
 
 	// create callbacks
-	Callback c1 = makeCallback<Foo, &Foo::bar1>(&foo);
-	Callback c2 = makeCallback<Foo, &Foo::bar2>(&foo);
-	Callback c0 = makeCallback<Foo, &Foo::bar0>(&foo);
+	auto c1 = makeCallback<Foo, &Foo::bar1>(&foo);
+	auto c2 = makeCallback<Foo, &Foo::bar2>(&foo);
+	auto c0 = makeCallback<Foo, &Foo::bar0>(&foo);
 	//c1();
 
 	// create tasks
-	TimedTask<Callback> task1(c1, *1s);
-	TimedTask<Callback> task2(c2, *2s);
-	TimedTask<Callback> task0(c0, *0s);
+	TimedTask<Callback<>> task1(c1, *1s);
+	TimedTask<Callback<>> task2(c2, *2s);
+	TimedTask<Callback<>> task0(c0, *0s);
 
 	// create task list
-	TimedTaskList<Callback> taskList1;
+	TimedTaskList<Callback<>> taskList1;
 
 	// doUntil() on empty list
 	taskList1.doUntil(*0ms);
@@ -144,7 +144,7 @@ TEST(cocoTest, TimedTaskList2) {
 	EXPECT_FALSE(taskList1.empty());
 
 	// visit all tasks
-	taskList1.visitAll([](TimedTask<Callback> &task) {
+	taskList1.visitAll([](TimedTask<Callback<>> &task) {
 		std::cout << task.time.value << std::endl;
 	});
 

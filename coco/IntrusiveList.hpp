@@ -280,6 +280,8 @@ struct IntrusiveListNode2 {
         next = prev = this;
     }
 
+    IntrusiveListNode2(IntrusiveListNode2 *next, IntrusiveListNode2 *prev) noexcept : next(next), prev(prev) {}
+
     template <typename L>
     IntrusiveListNode2(L &list) {
         next = &list.node_;

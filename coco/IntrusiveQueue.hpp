@@ -143,8 +143,8 @@ public:
     /// @tparam C Type of the predicate function, e.g. [](auto &element) { return element.isReady(); }
     /// @param predicate Condition function to determine if the first/front() element should be removed.
     /// @return Removed element or nullptr if queue was empty or if the predicate returned false
-    template <typename C>
-    T *popIf(const C &predicate) {
+    template <typename P>
+    T *popIf(const P &predicate) {
         Node *head = head_.next;
         if (head == nullptr)
             return nullptr;
@@ -171,8 +171,8 @@ public:
     /// @param predicate Condition function to determine if the first/front() element should be removed
     /// @param removeFunction Function to be called when an element is removed from the queue
     /// @return Removed element or nullptr if queue was empty or if the predicate returned false
-    template <typename C, typename R>
-    T *popIf(const C &predicate, const R &removeFunction) {
+    template <typename P, typename R>
+    T *popIf(const P &predicate, const R &removeFunction) {
         Node *head = head_.next;
         if (head == nullptr)
             return nullptr;
@@ -205,8 +205,8 @@ public:
     /// @param nextFunction Function to be called with the next element when the first element is removed from the queue and there is a next element
     /// @param removeFunction Function to be called when an element is removed from the queue
     /// @return Removed element or nullptr if queue was empty or if the predicate returned false
-    template <typename C, typename N, typename R>
-    T *popIf(const C &predicate, const N &nextFunction, const R &removeFunction) {
+    template <typename P, typename N, typename R>
+    T *popIf(const P &predicate, const N &nextFunction, const R &removeFunction) {
         Node *head = head_.next;
         if (head == nullptr)
             return nullptr;

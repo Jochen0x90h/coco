@@ -20,6 +20,7 @@ target_sources(${PROJECT_NAME}
         InterruptQueue.hpp
         IntrusiveList.hpp
         IntrusiveQueue.hpp
+        IntrusiveTimeoutQueue.hpp
         IntrusiveMpscQueue.hpp
         IsSubclass.hpp
         Queue.hpp
@@ -46,7 +47,31 @@ target_sources(${PROJECT_NAME}
 )
 
 # Platform dependent files, native platforms (Windows, MacOS, Linux) are handled in the else clause at the end
-if(${PLATFORM} MATCHES "^nrf52") # Cortex-M4F
+if(${PLATFORM} STREQUAL "native" OR ${PLATFORM} STREQUAL "emu")
+    # native platform (Windows, MacOS, Linux)
+    target_sources(${PROJECT_NAME}
+        PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/native FILES
+            native/coco/platform/compiler.hpp
+            native/coco/platform/platform.hpp
+            native/coco/platform/system.hpp
+            native/coco/platform/NativeFile.hpp
+    )
+    if(WIN32)
+        target_sources(${PROJECT_NAME}
+            PUBLIC FILE_SET platform_headers FILES
+                native/coco/platform/WindowsDef.hpp
+                native/coco/platform/WindowsUndef.hpp
+        )
+    endif()
+
+    # if platform is "native", implement debug interface using std::cout. All other platforms have to bring their own debug.cpp
+    if(${PLATFORM} STREQUAL "native")
+        target_sources(${PROJECT_NAME}
+            PRIVATE
+                native/coco/platform/debug.cpp
+        )
+    endif()
+elseif(${PLATFORM} MATCHES "^nrf52") # Cortex-M4F
     file(GENERATE OUTPUT coco/platform/nrf52.h CONTENT "#include <coco/platform/system/${PLATFORM}.h>\n#include <coco/platform/system/${PLATFORM}_bitfields.h>\n#include <coco/platform/system/${PLATFORM}_peripherals.h>")
     target_sources(${PROJECT_NAME}
         PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cortex ${CMAKE_CURRENT_SOURCE_DIR}/nrf52 FILES
@@ -631,30 +656,6 @@ elseif(${PLATFORM} MATCHES "^stm32u3") # Cortex-M33F
             ../coco/stm32/coco/platform
             ../coco/stm32u3/coco/platform
     )
-elseif(${PLATFORM} STREQUAL "native" OR ${PLATFORM} STREQUAL "emu")
-    # native platform (Windows, MacOS, Linux)
-    target_sources(${PROJECT_NAME}
-        PUBLIC FILE_SET platform_headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/native FILES
-            native/coco/platform/compiler.hpp
-            native/coco/platform/platform.hpp
-            native/coco/platform/system.hpp
-            native/coco/platform/NativeFile.hpp
-    )
-    if(WIN32)
-        target_sources(${PROJECT_NAME}
-            PUBLIC FILE_SET platform_headers FILES
-                native/coco/platform/WindowsDef.hpp
-                native/coco/platform/WindowsUndef.hpp
-        )
-    endif()
-
-    # if platform is "native", implement debug interface using std::cout. All other platforms have to bring their own debug.cpp
-    if(${PLATFORM} STREQUAL "native")
-        target_sources(${PROJECT_NAME}
-            PRIVATE
-                native/coco/platform/debug.cpp
-        )
-    endif()
 else()
     # other devices not supported yet
     message("${PLATFORM} not supported yet")

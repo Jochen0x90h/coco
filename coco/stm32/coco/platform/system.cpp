@@ -7,8 +7,6 @@
 namespace coco {
 namespace system {
 
-/// @brief Get system name.
-/// @return System name (Windows, Darwin, Linux)
 StringBuffer<16> name() {
     return xstr(DEVICE);
 }

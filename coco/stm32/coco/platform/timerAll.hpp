@@ -493,7 +493,7 @@ struct Instance {
 
     /// @brief Get counter register value.
     /// @return Counter
-    int count() {
+    uint32_t count() {
         return timer->CNT;
     }
 

@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 #include <coco/InterruptQueue.hpp>
+#include <coco/IntrusiveList.hpp>
 #include <coco/IntrusiveMpscQueue.hpp>
+#include <coco/IntrusiveTimeoutQueue.hpp>
+#include <coco/Time.hpp>
 #include <semaphore>
 #include <thread>
 
 
-// test for InterruptQueue and IntrusiveMpscQueue
+// test for intrusive containers, e.g. InterruptQueue and IntrusiveMpscQueue
 
 using namespace coco;
 
@@ -22,7 +25,7 @@ public:
 };
 
 
-// MpscQueue
+// IntrusiveMpscQueue
 
 TEST(cocoTest, IntrusiveMpscQueue_SingleThreaded) {
     IntrusiveMpscQueue<Element> queue;
@@ -260,6 +263,8 @@ TEST(cocoTest, InterruptQueue_pop) {
 }
 
 
+// InterruptQueue
+
 TEST(cocoTest, InterruptQueue_remove) {
     InterruptQueue<Element> queue;
     Element e1, e2, e3;
@@ -409,4 +414,130 @@ TEST(cocoTest, InterruptQueueMultiThreaded) {
     EXPECT_EQ(c1, COUNT);
     EXPECT_EQ(c2, COUNT);
     EXPECT_EQ(c3, COUNT);
+}
+
+using namespace coco::literals;
+
+// timeout handler (note private inheritance of IntrusiveListNode)
+class TimeoutHandler : private IntrusiveListNode {
+    // IntrusiveTimeoutQueue needs to access next, prev and time
+    friend class IntrusiveTimeoutQueue<TimeoutHandler>;
+public:
+    // IntrusiveTimeoutQueue needs the Node type
+    using Node = IntrusiveListNode;
+
+    // the application may need to remove() a handler
+    using IntrusiveListNode::remove;
+
+    // timeout function
+    virtual void onTimeout() = 0;
+
+private:
+    // IntrusiveTimeoutQueue sets time in add()
+    TimeMilliseconds<> time;
+};
+
+// class that implements the timeout handler
+class Bar : public TimeoutHandler {
+public:
+    void onTimeout() override {
+        onTimeoutCalled = true;
+
+        // access to inherited members is not possible
+        //next = nullptr;
+        //time = {};
+    }
+
+    bool onTimeoutCalled = false;
+};
+
+TEST(cocoTest, IntrusiveTimeoutQueue) {
+    IntrusiveTimeoutQueue<TimeoutHandler> queue;
+    auto now = TimeMilliseconds<>();
+    Bar handler;
+
+    // queue is still empty
+    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1000s);
+
+    // add an element
+    queue.add(handler, now + 1s);
+    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1s);
+
+    queue.doUntil(now + 500ms, [](TimeoutHandler &handler) {handler.onTimeout();});
+    EXPECT_FALSE(handler.onTimeoutCalled);
+    queue.doUntil(now + 2s, [](TimeoutHandler &handler) {handler.onTimeout();});
+    EXPECT_TRUE(handler.onTimeoutCalled);
+
+    handler.remove();
+}
+
+
+// class that inherits from two timeout handlers
+class Bar2;
+
+class TimeoutHandler2 : private IntrusiveListNode2 {
+    friend class IntrusiveTimeoutQueue<Bar2, TimeoutHandler2>;
+public:
+    using Node = IntrusiveListNode2;
+
+    using IntrusiveListNode2::remove2;
+
+    //virtual void onTimeout2() = 0;
+
+private:
+    TimeMilliseconds<> time;
+};
+
+class Bar2 : public TimeoutHandler, public TimeoutHandler2 {
+public:
+    void onTimeout() override {
+        onTimeoutCalled = true;
+    }
+    void onTimeout2() {
+        onTimeoutCalled2 = true;
+    }
+
+    bool onTimeoutCalled = false;
+    bool onTimeoutCalled2 = false;
+};
+
+TEST(cocoTest, IntrusiveTimeoutQueue2) {
+    auto now = TimeMilliseconds<>();
+    Bar2 handler;
+
+    IntrusiveTimeoutQueue<TimeoutHandler> queue;
+    IntrusiveTimeoutQueue<Bar2, TimeoutHandler2> queue2;
+
+    // queue is still empty
+    EXPECT_TRUE(queue.empty());
+    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1000s);
+
+    // add an element to queue
+    queue.add(handler, now + 1s);
+    EXPECT_FALSE(queue.empty());
+    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1s);
+
+    // queue2 is still empty
+    EXPECT_TRUE(queue2.empty());
+    EXPECT_EQ(queue2.getFirstTime(now + 1000s), now + 1000s);
+
+    // add an element to queue2
+    queue2.add(handler, now + 1s);
+    EXPECT_FALSE(queue2.empty());
+    EXPECT_EQ(queue2.getFirstTime(now + 1000s), now + 1s);
+
+    // do until on queue
+    queue.doUntil(now + 500ms, [](TimeoutHandler &handler) {handler.onTimeout();});
+    EXPECT_FALSE(handler.onTimeoutCalled);
+    queue.doUntil(now + 2s, [](TimeoutHandler &handler) {handler.onTimeout();});
+    EXPECT_TRUE(handler.onTimeoutCalled);
+
+    // do until on queue2
+    queue2.doUntil(now + 500ms, [](Bar2 &handler) {handler.onTimeout2();});
+    EXPECT_FALSE(handler.onTimeoutCalled2);
+    queue2.doUntil(now + 2s, [](Bar2 &handler) {handler.onTimeout2();});
+    EXPECT_TRUE(handler.onTimeoutCalled2);
+
+    handler.remove();
+    handler.remove2();
 }

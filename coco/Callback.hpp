@@ -1,30 +1,34 @@
 #pragma once
 
+#include <utility>
+
 
 namespace coco {
 
-/**
-	Lightweight method callback
-*/
+/// @brief Lightweight method callback.
+///
+template<typename... Args>
 struct Callback {
-	void *object;
-	void (*method)(void *object);
+    void *object;
+    void (*method)(void *, Args...);
 
-	void operator ()() {
-		this->method(this->object);
-	}
+    void operator ()(Args... args) const {
+        method(object, std::forward<Args>(args)...);
+    }
 };
 
-/**
-	Create a callback. If there is a class Foo with method bar() then call makeCallback<Foo, &Foo::bar>(&foo) where foo
-	is an instance of Foo.
-*/
-template <typename T, auto method>
-inline Callback makeCallback(void *object) {
-	return {
-		object,
-		[](void *object, auto... args) { (reinterpret_cast<T *>(object)->*method)(args...); }
-	};
+/// @brief Create a callback.
+/// If there is a class Foo with method bar() then call makeCallback<Foo, &Foo::bar>(&foo) where foo is an instance
+/// of Foo.
+template <typename T, auto M, typename... Args>
+inline Callback<Args...> makeCallback(void *object) {
+    return {
+        object,
+        [](void *object, Args... args) {
+            T* self = static_cast<T *>(object);
+            (self->*M)(std::forward<Args>(args)...);
+        }
+    };
 }
 
 } // namespace coco

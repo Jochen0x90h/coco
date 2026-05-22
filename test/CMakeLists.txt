@@ -3,7 +3,7 @@ if(NOT ${CMAKE_CROSSCOMPILING})
     add_executable(gTest
         CoroutineTest.cpp
         gTest.cpp
-        IntrusiveMpscQueueTest.cpp
+        IntrusiveContainerTest.cpp
         TaskTest.cpp
     )
     #target_include_directories(gTest
