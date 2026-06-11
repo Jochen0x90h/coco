@@ -4,7 +4,7 @@ if(NOT ${CMAKE_CROSSCOMPILING})
         CoroutineTest.cpp
         gTest.cpp
         IntrusiveContainerTest.cpp
-        TaskTest.cpp
+        #TaskTest.cpp
     )
     #target_include_directories(gTest
     #	PRIVATE

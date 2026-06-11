@@ -7,6 +7,7 @@ target_sources(${PROJECT_NAME}
         Array.hpp
         ArrayBuffer.hpp
         ArrayConcept.hpp
+        Barrier.hpp
         bits.hpp
         ByteConcept.hpp
         Callback.hpp
@@ -18,9 +19,10 @@ target_sources(${PROJECT_NAME}
         Event.hpp
         Frequency.hpp
         InterruptQueue.hpp
+        IntrusiveSortedTaskList.hpp
+        IntrusiveTaskList.hpp
         IntrusiveList.hpp
         IntrusiveQueue.hpp
-        IntrusiveTimeoutQueue.hpp
         IntrusiveMpscQueue.hpp
         IsSubclass.hpp
         Queue.hpp
@@ -32,9 +34,9 @@ target_sources(${PROJECT_NAME}
         String.hpp
         StringBuffer.hpp
         StringConcept.hpp
-        Task.hpp
+        #Task.hpp
         Time.hpp
-        TimedTask.hpp
+        #TimedTask.hpp
         TriviallyCopyable.hpp
         Unit.hpp
         #utf8.hpp

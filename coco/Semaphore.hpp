@@ -27,46 +27,46 @@ public:
     /// }
     class Guard {
     public:
-        [[nodiscard]] Guard(Semaphore &semaphore) : semaphore(semaphore) {}
+        [[nodiscard]] Guard(Semaphore &semaphore) : semaphore_(semaphore) {}
 
         ~Guard() {
-            this->semaphore.release();
+            semaphore_.release();
         }
 
     protected:
-        Semaphore &semaphore;
+        Semaphore &semaphore_;
     };
 
 
     /// Construct a semaphore with a given number of initial tokens that can be handed out.
     /// @param n number of initial tokens
-    explicit Semaphore(int n) : n(n) {}
+    explicit Semaphore(int n) : n_(n) {}
 
     /// @brief Wait until a token is acquired.
     ///
-    [[nodiscard]] Awaitable<> untilAcquired() {
+    [[nodiscard]] Awaitable<CoroutineTask<>> untilAcquired() {
         // check if tokens are available
-        if (this->n > 0) {
-            --this->n;
+        if (n_ > 0) {
+            --n_;
             return {};
         }
 
         // wait until token is available
-        return {this->taskList};
+        return {taskList_};
     }
 
     /// @brief Release a token and resume the next coroutine waiting for a token.
     ///
     void release() {
-        this->n += 1 - int(this->taskList.doFirst());
+        n_ += 1 - int(taskList_.doFirst());
     }
 
 protected:
     // number of tokens
-    int n;
+    int n_;
 
     // list of waiting coroutines
-    TaskList<CoroutineTask> taskList;
+    CoroutineTaskList<> taskList_;
 };
 
 } // namespace coco

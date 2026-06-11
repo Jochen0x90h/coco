@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <coco/Coroutine.hpp>
+#include <coco/Barrier.hpp>
 #include <coco/Semaphore.hpp>
 #include <coco/String.hpp>
 
@@ -23,10 +24,10 @@ CoroutineTaskList<> taskList1;
 CoroutineTaskList<> taskList2;
 
 // wait functions
-Awaitable<> wait1() {
+Awaitable<CoroutineTask<>> wait1() {
 	return {taskList1};
 }
-Awaitable<> wait2() {
+Awaitable<CoroutineTask<>> wait2() {
 	return {taskList2};
 }
 
@@ -169,6 +170,7 @@ TEST(cocoTest, AwaitableCoroutine) {
 
 	// cancel the coroutine
 	c2.cancel();
+	c2.cancel(); // should have no effect, inList() returns false
 
 	// check that the coroutine has stopped
 	EXPECT_TRUE(c2.await_ready());
@@ -176,10 +178,10 @@ TEST(cocoTest, AwaitableCoroutine) {
 
 
 
-// Coroutine with parameters
-// -------------------------
-
-class Parameters1 : public CoroutineTask {
+// Wait with parameters
+// --------------------
+/*
+class Parameters1 : public CoroutineTask<> {
 public:
 	// default constructor
 	Parameters1(std::coroutine_handle<> task, int value) : CoroutineTask(task), value(value) {}
@@ -190,21 +192,25 @@ public:
 		remove();
 	}
 
+	//int &operator *() {return value;}
+
 	int value;
 };
 
-class MyTaskList : public TaskList<Parameters1> {
+class MyTaskList : public IntrusiveTaskList<Parameters1> {
 public:
 	// overload add e.g. to lock the waitlist against concurrent modification
 	void add(Parameters1 &node) {
 		std::cout << "MyTaskList::add" << std::endl;
-		TaskList<Parameters1>::add(node);
+		//TaskList<Parameters1>::add(node);
+		IntrusiveTaskList<Parameters1, IntrusiveListNode>::add(node);
 	}
 };
-MyTaskList myTaskList;
+*/
+CoroutineTaskList<int> intTaskList;
 
-Awaitable<Parameters1> waitWithParams(int value) {
-	return {myTaskList, value};
+Awaitable<CoroutineTask<int>> waitWithParams(int value) {
+	return {intTaskList, value};
 }
 
 bool finished1 = false;
@@ -230,14 +236,14 @@ Coroutine waitWithParams2() {
 	finished2 = true;
 }
 
-TEST(cocoTest, CoroutineValue) {
+TEST(cocoTest, WaitWithParameters) {
 	waitWithParams1();
 	waitWithParams2();
 
-	myTaskList.doAll([] (Parameters1 const &p) {return p.value == 5;});
+	intTaskList.doAll([] (auto &task) {return task.value == 5;});
 	EXPECT_TRUE(finished1);
 	EXPECT_FALSE(finished2);
-	myTaskList.doAll([] (Parameters1 const &p) {return p.value == 10;});
+	intTaskList.doAll([] (auto &task) {return task.value == 10;});
 	EXPECT_TRUE(finished1);
 	EXPECT_TRUE(finished2);
 }
@@ -247,8 +253,8 @@ TEST(cocoTest, CoroutineValue) {
 // --------------------------
 
 Coroutine move() {
-	Awaitable<> a = wait1();
-	Awaitable<> b(std::move(a));
+	Awaitable<CoroutineTask<>> a = wait1();
+	Awaitable<CoroutineTask<>> b(std::move(a));
 
 	EXPECT_TRUE(a.hasFinished());
 	co_await a;
@@ -300,8 +306,8 @@ Coroutine waitForBarrierWithParameters() {
 TEST(cocoTest, BarrierWithParameters) {
 	waitForBarrierWithParameters();
 	std::cout << "resume barrier" << std::endl;
-	barrierWithParameters.doFirst([](BarrierParameters &p) {
-		EXPECT_EQ(p.i, 1);
+	barrierWithParameters.doFirst([](auto &barrierParameters) {
+		EXPECT_EQ(barrierParameters.i, 1);
 		return true;
 	});
 }
@@ -320,13 +326,13 @@ CoroutineTaskList<int> resumeAfterReturnList;
 
 Coroutine resumedAfterReturn() {
 	co_await resumeAfterReturnBarrier.untilResumed();
-	resumeAfterReturnList.doFirst([](int i) {
-		std::cout << "resumed after return " << i << std::endl;
+	resumeAfterReturnList.doFirst([](auto &task) {
+		std::cout << "resumed after return " << task.value << std::endl;
 		return true;
 	});
 }
 
-Awaitable<int> resumeAfterReturn(int i) {
+Awaitable<CoroutineTask<int>> resumeAfterReturn(int i) {
 	Resumer r(resumeAfterReturnBarrier);
 	return {resumeAfterReturnList, i};
 	// destructor of Resumer resumes the barrier here

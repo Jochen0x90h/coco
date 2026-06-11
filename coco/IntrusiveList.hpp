@@ -23,13 +23,16 @@ struct IntrusiveListNode {
     IntrusiveListNode(IntrusiveListNode *next, IntrusiveListNode *prev) noexcept : next(next), prev(prev) {}
 
     /// Construct a new list element and add to given list.
-    ///
+    /// The list must have a node() method to expose the root node.
+    /// @tparam L List type, e.g. IntrusiveList<T>
+    /// @param list List to add to
     template <typename L>
     IntrusiveListNode(L &list) {
-        next = &list.node_;
-        prev = list.node_.prev;
-        list.node_.prev->next = this;
-        list.node_.prev = this;
+        auto &node = list.node();
+        next = &node;
+        prev = node.prev;
+        node.prev->next = this;
+        node.prev = this;
     }
 /*
     IntrusiveListNode(IntrusiveListNode &list) {
@@ -263,6 +266,10 @@ public:
         assert(false);
         return *(T *)nullptr;
     }
+
+    /// @brief Expose the internal root node for use in IntrusiveListNode constructor.
+    /// @return Root node
+    Node &node() {return node_;}
 
 protected:
     Node node_;

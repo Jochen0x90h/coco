@@ -2,7 +2,8 @@
 #include <coco/InterruptQueue.hpp>
 #include <coco/IntrusiveList.hpp>
 #include <coco/IntrusiveMpscQueue.hpp>
-#include <coco/IntrusiveTimeoutQueue.hpp>
+#include <coco/IntrusiveSortedTaskList.hpp>
+#include <coco/IntrusiveTaskList.hpp>
 #include <coco/Time.hpp>
 #include <semaphore>
 #include <thread>
@@ -416,15 +417,49 @@ TEST(cocoTest, InterruptQueueMultiThreaded) {
     EXPECT_EQ(c3, COUNT);
 }
 
+
+class Task : private IntrusiveListNode {
+public:
+    friend class IntrusiveTaskList<Task>;
+
+    // the application may need to remove() a handler
+    using IntrusiveListNode::remove;
+
+    void operator ()() {
+        operatorCalled = true;
+    }
+
+    bool operatorCalled = false;
+};
+
+TEST(cocoTest, IntrusiveTaskList) {
+    IntrusiveTaskList<Task> list;
+    Task task;
+
+    // list is still empty
+    EXPECT_TRUE(list.empty());
+
+    // add an element
+    list.add(task);
+    EXPECT_FALSE(list.empty());
+
+    list.doAll();
+    EXPECT_TRUE(task.operatorCalled);
+
+    // call remove for testing
+    task.remove();
+}
+
+
 using namespace coco::literals;
 
 // timeout handler (note private inheritance of IntrusiveListNode)
 class TimeoutHandler : private IntrusiveListNode {
-    // IntrusiveTimeoutQueue needs to access next, prev and time
-    friend class IntrusiveTimeoutQueue<TimeoutHandler>;
+    // IntrusiveSortedTaskList needs to access next, prev and value
+    friend class IntrusiveSortedTaskList<TimeoutHandler>;
 public:
-    // IntrusiveTimeoutQueue needs the Node type
-    using Node = IntrusiveListNode;
+    // IntrusiveSortedTaskList needs the Node type
+    //using Node = IntrusiveListNode;
 
     // the application may need to remove() a handler
     using IntrusiveListNode::remove;
@@ -433,8 +468,8 @@ public:
     virtual void onTimeout() = 0;
 
 private:
-    // IntrusiveTimeoutQueue sets time in add()
-    TimeMilliseconds<> time;
+    // IntrusiveSortedTaskList sets value in add()
+    TimeMilliseconds<> value;
 };
 
 // class that implements the timeout handler
@@ -445,29 +480,30 @@ public:
 
         // access to inherited members is not possible
         //next = nullptr;
-        //time = {};
+        //value = {};
     }
 
     bool onTimeoutCalled = false;
 };
 
-TEST(cocoTest, IntrusiveTimeoutQueue) {
-    IntrusiveTimeoutQueue<TimeoutHandler> queue;
+TEST(cocoTest, IntrusiveSortedTaskList) {
+    IntrusiveSortedTaskList<TimeoutHandler> list;
     auto now = TimeMilliseconds<>();
     Bar handler;
 
-    // queue is still empty
-    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1000s);
+    // list is still empty
+    EXPECT_EQ(list.nextValue(now + 1000s), now + 1000s);
 
     // add an element
-    queue.add(handler, now + 1s);
-    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1s);
+    list.add(handler, now + 1s);
+    EXPECT_EQ(list.nextValue(now + 1000s), now + 1s);
 
-    queue.doUntil(now + 500ms, [](TimeoutHandler &handler) {handler.onTimeout();});
+    list.doUntil(now + 500ms, [](TimeoutHandler &handler) {handler.onTimeout();});
     EXPECT_FALSE(handler.onTimeoutCalled);
-    queue.doUntil(now + 2s, [](TimeoutHandler &handler) {handler.onTimeout();});
+    list.doUntil(now + 2s, [](TimeoutHandler &handler) {handler.onTimeout();});
     EXPECT_TRUE(handler.onTimeoutCalled);
 
+    // call remove for testing
     handler.remove();
 }
 
@@ -475,17 +511,18 @@ TEST(cocoTest, IntrusiveTimeoutQueue) {
 // class that inherits from two timeout handlers
 class Bar2;
 
-class TimeoutHandler2 : private IntrusiveListNode2 {
-    friend class IntrusiveTimeoutQueue<Bar2, TimeoutHandler2>;
+class TimeoutHandler2 : private IntrusiveListNode/*2*/ {
+    friend class IntrusiveSortedTaskList<Bar2, TimeoutHandler2>;
 public:
-    using Node = IntrusiveListNode2;
+    //using Node = IntrusiveListNode2;
 
-    using IntrusiveListNode2::remove2;
-
-    //virtual void onTimeout2() = 0;
+    //using IntrusiveListNode2::remove2;
+    void remove2() {
+        IntrusiveListNode::remove();
+    }
 
 private:
-    TimeMilliseconds<> time;
+    TimeMilliseconds<> value;
 };
 
 class Bar2 : public TimeoutHandler, public TimeoutHandler2 {
@@ -493,50 +530,52 @@ public:
     void onTimeout() override {
         onTimeoutCalled = true;
     }
-    void onTimeout2() {
-        onTimeoutCalled2 = true;
+    void operator ()() {
+        operatorCalled = true;
     }
 
+    using TimeoutHandler::remove;
+
     bool onTimeoutCalled = false;
-    bool onTimeoutCalled2 = false;
+    bool operatorCalled = false;
 };
 
-TEST(cocoTest, IntrusiveTimeoutQueue2) {
+TEST(cocoTest, IntrusiveSortedTaskList2) {
     auto now = TimeMilliseconds<>();
     Bar2 handler;
 
-    IntrusiveTimeoutQueue<TimeoutHandler> queue;
-    IntrusiveTimeoutQueue<Bar2, TimeoutHandler2> queue2;
+    IntrusiveSortedTaskList<TimeoutHandler> list;
+    IntrusiveSortedTaskList<Bar2, TimeoutHandler2> list2;
 
-    // queue is still empty
-    EXPECT_TRUE(queue.empty());
-    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1000s);
+    // list is still empty
+    EXPECT_TRUE(list.empty());
+    EXPECT_EQ(list.nextValue(now + 1000s), now + 1000s);
 
-    // add an element to queue
-    queue.add(handler, now + 1s);
-    EXPECT_FALSE(queue.empty());
-    EXPECT_EQ(queue.getFirstTime(now + 1000s), now + 1s);
+    // add an element to list
+    list.add(handler, now + 1s);
+    EXPECT_FALSE(list.empty());
+    EXPECT_EQ(list.nextValue(now + 1000s), now + 1s);
 
-    // queue2 is still empty
-    EXPECT_TRUE(queue2.empty());
-    EXPECT_EQ(queue2.getFirstTime(now + 1000s), now + 1000s);
+    // list2 is still empty
+    EXPECT_TRUE(list2.empty());
+    EXPECT_EQ(list2.nextValue(now + 1000s), now + 1000s);
 
-    // add an element to queue2
-    queue2.add(handler, now + 1s);
-    EXPECT_FALSE(queue2.empty());
-    EXPECT_EQ(queue2.getFirstTime(now + 1000s), now + 1s);
+    // add an element to list2
+    list2.add(handler, now + 1s);
+    EXPECT_FALSE(list2.empty());
+    EXPECT_EQ(list2.nextValue(now + 1000s), now + 1s);
 
-    // do until on queue
-    queue.doUntil(now + 500ms, [](TimeoutHandler &handler) {handler.onTimeout();});
+    // advance list (calls onTimeout())
+    list.doUntil(now + 500ms, [](TimeoutHandler &handler) {handler.onTimeout();});
     EXPECT_FALSE(handler.onTimeoutCalled);
-    queue.doUntil(now + 2s, [](TimeoutHandler &handler) {handler.onTimeout();});
+    list.doUntil(now + 2s, [](TimeoutHandler &handler) {handler.onTimeout();});
     EXPECT_TRUE(handler.onTimeoutCalled);
 
-    // do until on queue2
-    queue2.doUntil(now + 500ms, [](Bar2 &handler) {handler.onTimeout2();});
-    EXPECT_FALSE(handler.onTimeoutCalled2);
-    queue2.doUntil(now + 2s, [](Bar2 &handler) {handler.onTimeout2();});
-    EXPECT_TRUE(handler.onTimeoutCalled2);
+    // advance list2 (calls operator ())
+    list2.doUntil(now + 500ms);
+    EXPECT_FALSE(handler.operatorCalled);
+    list2.doUntil(now + 2s);
+    EXPECT_TRUE(handler.operatorCalled);
 
     handler.remove();
     handler.remove2();
