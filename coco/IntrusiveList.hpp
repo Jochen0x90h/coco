@@ -104,94 +104,12 @@ struct IntrusiveListNode {
     }
 };
 
-/// @brief Intrusive list.
-/// Elements of the list must inherit the IntrusiveListNode. This list is not thread-safe.
-/// @tparam T list element type that inherits IntrusiveListNode, e.g. class Element : public IntrusiveListNode {};
-/*template <typename T>
-class IntrusiveList : public IntrusiveListNode {
-public:
-    using Node = IntrusiveListNode;
 
-    /// @brief Return true if the list is empty.
-    ///
-    bool empty() const {
-        return this->next == this;
-    }
-
-    /// Count the number of elements in the list which is O(n).
-    /// @return number of elements
-    int count() const {
-        int count = 0;
-        auto current = this->next;
-        while (current != this) {
-            current = current->next;
-            ++count;
-        }
-        return count;
-    }
-
-    /// @brief Clear the list.
-    ///
-    void clear() {remove();}
-
-    /// @brief Add one or multiple elements at the end of the list
-    /// @param node element to add, can be part of a "ring" of nodes
-    void add(T &element) {
-        Node &node = element;
-        auto p = node.prev;
-        node.prev->next = this;
-        node.prev = this->prev;
-        this->prev->next = &node;
-        this->prev = p;
-    }
-
-    /// @brief Add one list to another, take care to remove the other list from the "ring" of nodes afterwards
-    /// @param node list to add
-    void add(IntrusiveList &list) {
-        Node &node = list;
-        auto p = node.prev;
-        node.prev->next = this;
-        node.prev = this->prev;
-        this->prev->next = &node;
-        this->prev = p;
-    }
-
-    /// @brief Iterator. Do not remove() an element that an iterator points to.
-    ///
-    struct Iterator {
-        Node *node;
-        T &operator *() {return static_cast<T &>(*this->node);}
-        T *operator ->() {return &static_cast<T &>(*this->node);}
-        Iterator &operator ++() {this->node = this->node->next; return *this;}
-        Iterator &operator --() {this->node = this->node->prev; return *this;}
-        bool operator ==(Iterator it) const {return this->node == it.node;}
-        bool operator !=(Iterator it) const {return this->node != it.node;}
-    };
-
-    Iterator begin() {return {this->next};}
-    Iterator end() {return {this};}
-
-    /// @brief Get an element at the given index without bounds checking.
-    /// @param index index of element to get
-    T &get(int index) {
-        int count = 0;
-        auto node = this->next;
-        while (node != this) {
-            if (index == 0)
-                return static_cast<T &>(*node);
-            node = node->next;
-            --index;
-        }
-        assert(false);
-        return *(T *)nullptr;
-    }
-};*/
-
-template <typename T>
+template <typename T, typename N = IntrusiveListNode>
 class IntrusiveList {
 public:
-    friend struct IntrusiveListNode;
-    using Node = IntrusiveListNode;
+    //friend struct IntrusiveListNode;
+    using Node = N;
 
     /// @brief Return true if the list is empty.
     ///
@@ -213,7 +131,15 @@ public:
 
     /// @brief Clear the list.
     ///
-    void clear() {node_.remove();}
+    void clear() {
+        //node_.remove();
+        node_.next->prev = node_.prev;
+        node_.prev->next = node_.next;
+
+        // set to "not in list"
+        node_.next = &node_;
+        node_.prev = &node_;
+    }
 
     /// @brief Add one or multiple elements at the end of the list.
     /// @param node element to add, can be part of a "ring" of nodes
@@ -291,10 +217,11 @@ struct IntrusiveListNode2 {
 
     template <typename L>
     IntrusiveListNode2(L &list) {
-        next = &list.node_;
-        prev = list.node_.prev;
-        list.node_.prev->next = this;
-        list.node_.prev = this;
+        auto &node = list.node();
+        next = &node;
+        prev = node.prev;
+        node.prev->next = this;
+        node.prev = this;
     }
 /*IntrusiveListNode2(IntrusiveListNode2 &list) {
         this->next = &list;
@@ -328,6 +255,7 @@ struct IntrusiveListNode2 {
 /// @brief Second implementation to be able to add an element to two linked lists.
 /// @tparam T list element type that inherits IntrusiveListNode2,
 /// e.g. class Element : public IntrusiveListNode, public IntrusiveListNode2 {};
+/*
 template <typename T>
 class IntrusiveList2 : public IntrusiveListNode2 {
 public:
@@ -383,6 +311,6 @@ public:
 
 protected:
     Node node_;
-};
+};*/
 
 } // namespace coco

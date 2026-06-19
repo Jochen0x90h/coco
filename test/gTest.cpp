@@ -17,6 +17,7 @@
 #include <coco/IntrusiveList.hpp>
 #include <coco/IntrusiveQueue.hpp>
 #include <coco/Queue.hpp>
+#include <coco/PackedValue.hpp>
 #include <coco/PointerConcept.hpp>
 #include <coco/PseudoRandom.hpp>
 #include <coco/RangeConcept.hpp>
@@ -1045,12 +1046,12 @@ TEST(cocoTest, IntrusiveList) {
     element2.remove();
 }
 
-// additionally inherit from IntrusiveListNode2
+// inherit from IntrusiveListNode2
 struct TestListElement2 : public IntrusiveListNode2 {
     int value = 50;
 };
 
-using TestList2 = IntrusiveList2<TestListElement2>;
+using TestList2 = IntrusiveList<TestListElement2, IntrusiveListNode2>;
 
 TEST(cocoTest, IntrusiveList2) {
     // create an element
@@ -1072,7 +1073,7 @@ struct TestListElement12 : public TestListElement, public IntrusiveListNode2 {
 };
 
 using TestList12 = IntrusiveList<TestListElement12>;
-using TestList22 = IntrusiveList2<TestListElement12>;
+using TestList22 = IntrusiveList<TestListElement12, IntrusiveListNode2>;
 
 TEST(cocoTest, IntrusiveList22) {
     // create an element
@@ -1217,6 +1218,71 @@ TEST(cocoTest, IntrusiveQueue) {
     EXPECT_FALSE(queue.empty());
     queue.remove(e2);
     EXPECT_TRUE(queue.empty());
+}
+
+
+// Pack
+// ----
+
+COCO_PACK_BEGIN struct PackedStruct {
+    uint8_t a;
+    uint32_t b;
+} COCO_PACK_END
+
+TEST(cocoTest, Pack) {
+    EXPECT_EQ(offsetof(PackedStruct, b), 1);
+    EXPECT_EQ(sizeof(PackedStruct), 5);
+}
+
+
+// PackedValue
+// -----------
+
+struct PackedValueStruct {
+    uint8_t a;
+    union {
+        U32L u32l;
+        U32B u32b;
+        E32L<ExtractEnum> e32l;
+        E32B<ExtractEnum> e32b;
+
+        uint8_t data[4];
+    };
+};
+
+TEST(cocoTest, PackedValue) {
+    EXPECT_EQ(offsetof(PackedValueStruct, u32l), 1);
+    EXPECT_EQ(sizeof(PackedValueStruct), 5);
+
+    PackedValueStruct s;
+
+    s.u32l = 0x1337;
+    EXPECT_EQ(s.data[0], 0x37);
+    EXPECT_EQ(s.data[1], 0x13);
+
+    s.u32b = 0x1337;
+    EXPECT_EQ(s.data[3], 0x37);
+    EXPECT_EQ(s.data[2], 0x13);
+
+    s.e32l = ExtractEnum::FOO_1;
+    EXPECT_EQ(s.data[0], 16);
+    EXPECT_EQ(s.data[1], 0);
+
+    s.e32b = ExtractEnum::FOO_1;
+    EXPECT_EQ(s.data[3], 16);
+    EXPECT_EQ(s.data[2], 0);
+
+    U32L v1(1337);
+    U32L v2(v1);
+    U32B v3(1337);
+    U32B v4(v1);
+    if (std::endian::native == std::endian::little) {
+        EXPECT_EQ(v2.value, 1337);
+        EXPECT_EQ(v4.value, 956628992);
+    } else {
+        EXPECT_EQ(v2.value, 956628992);
+        EXPECT_EQ(v4.value, 1337);
+    }
 }
 
 

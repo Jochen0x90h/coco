@@ -13,7 +13,7 @@ class Barrier : public CoroutineTaskList<T> {
 public:
 
     // task type
-    using Task = typename CoroutineTask<T>;
+    using Task = CoroutineTask<T>;
 
 
     /// @brief Wait until resumed by doFirst() or doAll().

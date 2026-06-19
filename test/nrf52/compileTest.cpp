@@ -1,5 +1,5 @@
 #include <coco/convert.hpp>
-#include <coco/Coroutine.hpp>
+#include <coco/Barrier.hpp>
 #include <coco/platform/nvic.hpp>
 #include <coco/platform/cache.hpp>
 #include <coco/platform/gpio.hpp>
@@ -21,6 +21,7 @@ volatile const uint8_t constData[5] = {1, 2, 3, 4, 5};
 
 int main() {
     // only test if the code compiles
+    Barrier<> barrer;
 
     // convert
     {

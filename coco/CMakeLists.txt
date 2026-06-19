@@ -25,9 +25,10 @@ target_sources(${PROJECT_NAME}
         IntrusiveQueue.hpp
         IntrusiveMpscQueue.hpp
         IsSubclass.hpp
-        Queue.hpp
+        PackedValue.hpp
         PointerConcept.hpp
         PseudoRandom.hpp
+        Queue.hpp
         RangeConcept.hpp
         Semaphore.hpp
         StreamOperators.hpp

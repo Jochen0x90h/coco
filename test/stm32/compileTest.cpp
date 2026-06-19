@@ -1,4 +1,5 @@
 #include <coco/convert.hpp>
+#include <coco/Barrier.hpp>
 #include <coco/platform/nvic.hpp>
 #include <coco/platform/scb.hpp>
 #include <coco/platform/adc.hpp>
@@ -50,6 +51,7 @@ enum class Foo {BAR};
 
 int main() {
     // only test if the code compiles
+    Barrier<> barrer;
 
     // convert
     {
