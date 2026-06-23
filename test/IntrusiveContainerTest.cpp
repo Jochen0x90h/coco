@@ -534,7 +534,10 @@ public:
         operatorCalled = true;
     }
 
-    using TimeoutHandler::remove;
+    //using TimeoutHandler::remove;
+    void remove() {
+        TimeoutHandler::remove();
+    }
 
     bool onTimeoutCalled = false;
     bool operatorCalled = false;
