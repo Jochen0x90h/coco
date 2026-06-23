@@ -1251,6 +1251,8 @@ struct PackedValueStruct {
 };
 
 TEST(cocoTest, PackedValue) {
+    EXPECT_TRUE(std::is_trivially_copyable_v<U32B>);
+
     EXPECT_EQ(offsetof(PackedValueStruct, u32l), 1);
     EXPECT_EQ(sizeof(PackedValueStruct), 5);
 
@@ -1283,6 +1285,15 @@ TEST(cocoTest, PackedValue) {
         EXPECT_EQ(v2.value, 956628992);
         EXPECT_EQ(v4.value, 1337);
     }
+
+    // check equality, note that the values can stay in little or big endian byte order
+    EXPECT_EQ(v1, v2);
+    EXPECT_EQ(v3, v4);
+
+    // check less than, note the both values have to be converted to native byte order
+    U32B v5(0x00000001);
+    U32B v6(0x00000100);
+    EXPECT_LT(v5, v6);
 }
 
 

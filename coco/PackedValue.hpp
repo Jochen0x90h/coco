@@ -22,20 +22,27 @@ struct PackedValue {
     {
     }
 
-    constexpr PackedValue(const PackedValue &v)
-        : value(v.value)
-    {
-    }
+    PackedValue(const PackedValue &) = default;
+    PackedValue(PackedValue &&) = default;
 
     PackedValue &operator =(T v) {
         value = std::endian::native == E ? std::make_unsigned_t<T>(v) : std::byteswap(std::make_unsigned_t<T>(v));
         return *this;
     }
 
+    PackedValue& operator=(const PackedValue &) = default;
+    PackedValue& operator=(PackedValue &&) = default;
+
     operator T () const {
         return T(std::endian::native == E ? value : std::byteswap(value));
     }
 } COCO_PACK_END
+
+// only equality can be optimized, less/greater have to be converted to native byte order
+template <typename T, std::endian E>
+bool operator ==(PackedValue<T, E> a, PackedValue<T, E> b) {
+    return a.value == b.value;
+}
 
 using U8 = uint8_t;
 using U16 = PackedValue<uint16_t>;
