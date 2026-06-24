@@ -46,7 +46,7 @@ constexpr int WORD_SIZE = sizeof(Word);
 
 /// @brief Write to flash memory.
 /// @param address Flash address to write to, must be aligned to word size
-/// @param data Data to write, must be alignas(flash::Word)
+/// @param data Data to write
 /// @param size Size of data to write, gets extended to a multiple of word size
 /// @return true if successful
 __STATIC_FORCEINLINE void write(uint32_t address, const Word *data, int size) {

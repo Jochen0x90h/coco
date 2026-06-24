@@ -17,12 +17,13 @@ constexpr int PAGE_SIZE_16K = 16384;
 constexpr int PAGE_SIZE_64K = 65536;
 constexpr int PAGE_SIZE_128K = 131072;
 
-/// @brief Block of data that has to be written at once and is the read alignment.
+/// @brief Word of data that has to be written at once and is the read alignment.
 /// 2.7 - 3.6V, parallelism x32, PSIZE = 10
-using Block = uint32_t;
+using Word = uint32_t;
 
-// size of a block that has to be written at once and is the read alignment
-constexpr int BLOCK_SIZE = sizeof(Block);
+/// @brief Size of a word that has to be written at once and is the read alignment.
+///
+constexpr int WORD_SIZE = sizeof(Word);
 
 
 // sector sizes in kBytes
@@ -32,9 +33,9 @@ static const uint8_t sectorSizes[] = {16, 16, 16, 16, 64, 128, 128, 128, 128, 12
 /// @brief Write to flash memory.
 /// @param address Flash address to write to, must be aligned to block size
 /// @param data Data to write
-/// @param size Size of data to write, gets extended to a multiple of block size
+/// @param size Size of data to write, gets extended to a multiple of word size
 /// @return true if successful
-inline void write(uint32_t address, void *data, int size) {
+inline void write(uint32_t address, const Word *data, int size) {
     // unlock flash
     FLASH->KEYR = 0x45670123;
     FLASH->KEYR = 0xCDEF89AB;
@@ -42,10 +43,10 @@ inline void write(uint32_t address, void *data, int size) {
     // set flash write mode (PSIZE = 10)
     FLASH->CR = FLASH_CR_PG | FLASH_CR_PSIZE_1;
 
-    auto src = (const Block *)data;
-    auto dst = (Block *)address;
+    auto src = data;
+    auto dst = (Word *)address;
     while (size > 0) {
-        // write block
+        // write word
         *dst = *src;
 
         // data memory barrier
@@ -53,7 +54,7 @@ inline void write(uint32_t address, void *data, int size) {
 
         ++src;
         ++dst;
-        size -= sizeof(Block);
+        size -= sizeof(Word);
 
         // wait until flash is ready
         while ((FLASH->SR & FLASH_SR_BSY) != 0) {}
