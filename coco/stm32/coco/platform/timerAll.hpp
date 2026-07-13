@@ -491,20 +491,6 @@ struct Instance {
     TIM_TypeDef *operator ->() const {return timer;}
     operator TIM_TypeDef *() const {return timer;}
 
-    /// @brief Get counter register value.
-    /// @return Counter
-    uint32_t count() {
-        return timer->CNT;
-    }
-
-    /// @brief Set counter register value.
-    /// @param count Count
-    /// @return *this
-    auto &setCount(uint32_t count) {
-        timer->CNT = count;
-        return *this;
-    }
-
     /// @brief Set the prescaler value to PSC register
     /// @param prescalerValue prescaler value
     /// @return *this
@@ -535,7 +521,27 @@ struct Instance {
         return *this;
     }
 
-    /// @brief Set the reload value to ARR regsiter
+    /// @brief Get counter register value.
+    /// @return Counter
+    uint32_t count() {
+        return timer->CNT;
+    }
+
+    /// @brief Set counter register value.
+    /// @param count Count
+    /// @return *this
+    auto &setCount(uint32_t count) {
+        timer->CNT = count;
+        return *this;
+    }
+
+    /// @brief Get current auto reload register (ARR) value.
+    /// @return Reload value
+    uint32_t reload() {
+        return timer->ARR;
+    }
+
+    /// @brief Set the auto reload register (ARR) value.
     /// this sets reloadValue to the ARR register, i.e. if reloadValue is 4, the counter counts 0, 1, 2, 3, 4 and then
     /// rolls over to 0.
     /// @param reloadValue reload value
@@ -543,6 +549,12 @@ struct Instance {
     auto &setReload(uint32_t reloadValue) {
         timer->ARR = reloadValue;
         return *this;
+    }
+
+    /// @brief Get current timer period.
+    /// @return Timer period (ARR + 1)
+    uint32_t period() {
+        return timer->ARR + 1;
     }
 
     /// @brief Set the timer period

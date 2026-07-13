@@ -131,21 +131,21 @@ struct Unit {
 /// @brief Equality operator
 ///
 template <typename T, int P1, int P2, int U1, bool A1, bool A2> requires (A1 == A2)
-bool operator ==(const Unit<T, P1, U1, A1> &a, const Unit<T, P2, U1, A2> &b) {
+constexpr bool operator ==(const Unit<T, P1, U1, A1> &a, const Unit<T, P2, U1, A2> &b) {
     return a.value * Unit<int, 0, 0>::pow10<P1 - P2>() == b.value * Unit<int, 0, 0>::pow10<P2 - P1>();
 }
 
 /// @brief "Starship" comparison operator for relative values
 ///
 template <typename T, int P1, int P2, int U1>
-auto operator <=>(const Unit<T, P1, U1, false> &a, const Unit<T, P2, U1, false> &b) {
+constexpr auto operator <=>(const Unit<T, P1, U1, false> &a, const Unit<T, P2, U1, false> &b) {
     return a.value * Unit<int, 0, 0>::pow10<P1 - P2>() <=> b.value * Unit<int, 0, 0>::pow10<P2 - P1>();
 }
 
 /// @brief "Starship" comparison operator for absolute values
 ///
 template <typename T, int P1, int P2, int U1>
-auto operator <=>(const Unit<T, P1, U1, true> &a, const Unit<T, P2, U1, true> &b) {
+constexpr auto operator <=>(const Unit<T, P1, U1, true> &a, const Unit<T, P2, U1, true> &b) {
     return std::make_signed_t<T>(a.value * Unit<int, 0, 0>::pow10<P1 - P2>() - b.value * Unit<int, 0, 0>::pow10<P2 - P1>()) <=> 0;
 }
 

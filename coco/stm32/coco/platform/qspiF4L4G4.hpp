@@ -122,29 +122,32 @@ enum class PollConfig : uint32_t {
     MATCH_OR = QUADSPI_CR_PMM,
 };
 
-/// @brief Communication configuration (CCR register).
-///
-enum class CommFormat : uint32_t {
+/// @brief Communication mode (CCR register).
+/// Mode for instruction, address, dummy, data
+enum class Mode : uint32_t {
     // instruction mode
     INSTRUCTION_NONE = 0, // default
     INSTRUCTION_1_LINE = QUADSPI_CCR_IMODE_0,
     INSTRUCTION_2_LINES = QUADSPI_CCR_IMODE_1,
     INSTRUCTION_4_LINES = QUADSPI_CCR_IMODE_1 | QUADSPI_CCR_IMODE_0,
+    INSTRUCTION_MASK = QUADSPI_CCR_IMODE_Msk,
 
     // address mode
     ADDRESS_NONE = 0, // default
     ADDRESS_1_LINE = QUADSPI_CCR_ADMODE_0,
     ADDRESS_2_LINES = QUADSPI_CCR_ADMODE_1,
     ADDRESS_4_LINES = QUADSPI_CCR_ADMODE_1 | QUADSPI_CCR_ADMODE_0,
+    ADDRESS_MASK = QUADSPI_CCR_ADMODE_Msk,
 
     // address size
-    ADDRESS_8 = 0, // default
-    ADDRESS_16 = QUADSPI_CCR_ADSIZE_0,
-    ADDRESS_24 = QUADSPI_CCR_ADSIZE_1,
-    ADDRESS_32 = QUADSPI_CCR_ADSIZE_1 | QUADSPI_CCR_ADSIZE_0,
+    /*ADDRESS_SIZE_8 = 0, // default
+    ADDRESS_SIZE_16 = QUADSPI_CCR_ADSIZE_0,
+    ADDRESS_SIZE_24 = QUADSPI_CCR_ADSIZE_1,
+    ADDRESS_SIZE_32 = QUADSPI_CCR_ADSIZE_1 | QUADSPI_CCR_ADSIZE_0,
+    ADDRESS_SIZE_MASK = QUADSPI_CCR_ADSIZE_Msk,*/
 
     // dummy cycles
-    DUMMY_NONE = 0, // default
+    /*DUMMY_NONE = 0, // default
     DUMMY_1 = 1 << QUADSPI_CCR_DCYC_Pos,
     DUMMY_2 = 2 << QUADSPI_CCR_DCYC_Pos,
     DUMMY_3 = 3 << QUADSPI_CCR_DCYC_Pos,
@@ -153,6 +156,8 @@ enum class CommFormat : uint32_t {
     DUMMY_8 = 8 << QUADSPI_CCR_DCYC_Pos,
     DUMMY_12 = 12 << QUADSPI_CCR_DCYC_Pos,
     DUMMY_16 = 16 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_24 = 24 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_MASK = QUADSPI_CCR_DCYC_Msk,*/
 
     // data mode
     DATA_NONE = 0, // default
@@ -169,15 +174,47 @@ enum class CommFormat : uint32_t {
     DDR_DELAY = QUADSPI_CCR_DDRM | QUADSPI_CCR_DHHC,
 #endif
 };
-COCO_ENUM(CommFormat)
+COCO_ENUM(Mode)
+
+// convenience for Mode: Number of lines for instruction, addres, data
+constexpr auto MODE_DISABLED = Mode::INSTRUCTION_NONE | Mode::ADDRESS_NONE | Mode::DATA_NONE;
+constexpr auto MODE_1_0_0 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_NONE | Mode::DATA_NONE;
+constexpr auto MODE_1_0_1 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_NONE | Mode::DATA_1_LINE;
+constexpr auto MODE_1_1_1 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_1_LINE;
+constexpr auto MODE_1_1_2 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_2_LINES;
+constexpr auto MODE_1_1_4 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_4_LINES;
+constexpr auto MODE_1_2_2 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_2_LINES | Mode::DATA_2_LINES;
+constexpr auto MODE_1_4_4 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_4_LINES | Mode::DATA_4_LINES;
+constexpr auto MODE_2_0_0 = Mode::INSTRUCTION_2_LINES | Mode::ADDRESS_NONE | Mode::DATA_NONE;
+constexpr auto MODE_2_2_2 = Mode::INSTRUCTION_2_LINES | Mode::ADDRESS_2_LINES | Mode::DATA_2_LINES;
+constexpr auto MODE_4_0_0 = Mode::INSTRUCTION_4_LINES | Mode::ADDRESS_NONE | Mode::DATA_NONE;
+constexpr auto MODE_4_4_4 = Mode::INSTRUCTION_4_LINES | Mode::ADDRESS_4_LINES | Mode::DATA_4_LINES;
 
 /// @brief Functional mode (CCR register)
+///
 enum class Function : uint32_t {
     INDIRECT_WRITE = 0, // default
     INDIRECT_READ = QUADSPI_CCR_FMODE_0,
     STATUS_POLLING = QUADSPI_CCR_FMODE_1,
     MEMORY_MAPPED = QUADSPI_CCR_FMODE_1 | QUADSPI_CCR_FMODE_0,
 };
+
+/// @brief Make communication config register.
+/// @tparam I Type of instruction, e.g. int or enum
+/// @param instruction SPI Instruction (8 bit)
+/// @param function Function (read or write)
+/// @param mode Mode (number of lines for instruction, address, data)
+/// @param addressBytes Number of address bytes (1 to 4)
+/// @param dummyCycles Number of SPI clock cycles (0 to 31)
+/// @return Contents of CCR register
+template <typename I>
+constexpr uint32_t makeCommConfig(I instruction, Function function, Mode mode, int addressBytes, int dummyCycles = 0) {
+    return (int(instruction) << QUADSPI_CCR_INSTRUCTION_Pos)
+        | uint32_t(function)
+        | uint32_t(mode)
+        | (addressBytes - 1) << QUADSPI_CCR_ADSIZE_Pos
+        | (dummyCycles << QUADSPI_CCR_DCYC_Pos);
+}
 
 /// @brief Interrupt enable flags (CR register).
 ///
@@ -317,13 +354,28 @@ struct Instance {
         return *this;
     }
 
-    /// @brief Set communication configuration.
-    /// @param format Format (presence of instruction and address, address size, number of lines for address and data)
-    /// @param function Functional mode
-    /// @param instruction Instruction (command) to send to the flash before transfer
+    /// @brief Set communication configuration (CCR register).
+    /// @tparam I Type of instruction, e.g. int or enum
+    /// @param instruction SPI Instruction (8 bit)
+    /// @param function Function (read or write)
+    /// @param mode Mode (number of lines for instruction, address, data)
+    /// @param addressBytes Number of address bytes (1 to 4)
+    /// @param dummyCycles Number of SPI clock cycles (0 to 31)
     /// @return *this
-    auto &setCommConfig(CommFormat commFormat, Function function, uint8_t instruction = 0) {
-        qspi->CCR = uint32_t(commFormat) | uint32_t(function) | instruction;
+    template <typename I>
+    auto &setCommConfig(I instruction, Function function, Mode mode, int addressBytes, int dummyCycles = 0) {
+        qspi->CCR = (int(instruction) << QUADSPI_CCR_INSTRUCTION_Pos)
+            | uint32_t(function)
+            | uint32_t(mode)
+            | (addressBytes - 1) << QUADSPI_CCR_ADSIZE_Pos
+            | (dummyCycles << QUADSPI_CCR_DCYC_Pos);
+        return *this;
+    }
+
+    /// @brief Set communication configuration (CCR register).
+    /// @param ccr Contents of CCR register
+    auto &setCommConfig(uint32_t ccr) {
+        qspi->CCR = ccr;
         return *this;
     }
 

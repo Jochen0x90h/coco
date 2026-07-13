@@ -268,27 +268,25 @@ public:
     std::coroutine_handle<> context;
 };
 
-/**
-    Awaitable coroutine
-
-    Use like this:
-    AwaitableCoroutine foo() {
-        co_await bar();
-    }
-    Coroutine coro() {
-        // bad: this immediately destroys the coroutine
-        foo();
-
-        // start coroutine and wait until it is finished
-        co_await foo();
-
-        // start coroutine and keep a handle
-        AwaitableCoroutine c = foo();
-
-        // wait until coroutine is finished
-        co_await c;
-    }
-*/
+/// @brief Awaitable coroutine.
+///
+/// Use like this:
+/// AwaitableCoroutine foo() {
+///     co_await bar();
+/// }
+/// Coroutine coro() {
+///     // bad: this immediately destroys the coroutine
+///     foo();
+///
+///     // start coroutine and wait until it is finished
+///     co_await foo();
+///
+///     // start coroutine and keep a handle
+///     AwaitableCoroutine c = foo();
+///
+///     // wait until coroutine is finished
+///     co_await c;
+/// }
 using AwaitableCoroutine = Awaitable<AwaitableCoroutineTask>;
 
 
@@ -312,6 +310,10 @@ using AwaitableCoroutine = Awaitable<AwaitableCoroutineTask>;
 ///     c.destroy();
 /// }
 struct Coroutine {
+    std::coroutine_handle<> handle;
+
+    /// @brief Promise type that configures the coroutine
+    ///
     struct promise_type {
         Coroutine get_return_object() noexcept {
 #ifdef COROUTINE_DEBUG_PRINT
@@ -330,27 +332,25 @@ struct Coroutine {
         void return_void() noexcept {}
     };
 
-    std::coroutine_handle<> handle;
-
     /// @brief Destroy the coroutine if it is still alive and suspended (coroutine has called co_await).
     /// Important: Call only when it is sure that the coroutine is still alive, e.g. when it contains an infinite loop.
     void destroy() {
-        if (this->handle) {
-            this->handle.destroy();
-            this->handle = nullptr;
+        if (handle) {
+            handle.destroy();
+            handle = nullptr;
         }
     }
 
     /// @brief Clear the reference to the coroutine
     ///
     void clear() {
-        this->handle = nullptr;
+        handle = nullptr;
     }
 
     /// @brief Cast to bool to check if the coroutine handle is empty
     ///
     operator bool() const {
-        return this->handle != nullptr;
+        return handle != nullptr;
     }
 };
 
