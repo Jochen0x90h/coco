@@ -56,6 +56,7 @@ COCO_ENUM(Config)
 
 constexpr uint32_t FORMAT_CFG1_MASK = SPI_CFG1_BPASS | SPI_CFG1_MBR | SPI_CFG1_DSIZE;
 constexpr uint32_t FORMAT_CFG2_MASK = SPI_CFG2_CPHA | SPI_CFG2_CPOL | SPI_CFG2_LSBFRST | SPI_CFG2_SP;
+static_assert((FORMAT_CFG1_MASK & FORMAT_CFG2_MASK) == 0, "Bit overlap in enum Format!");
 
 /// @brief Data format (CFG1 and CFG2 registers).
 /// Bit allocation:

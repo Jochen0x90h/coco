@@ -21,8 +21,8 @@
 #if defined(STM32G4)
 #include <coco/platform/opamp.hpp>
 #endif
-#if defined(STM32F4) || defined(STM32L4) || defined(STM32G4)
-#include <coco/platform/qspi.hpp>
+#if defined(STM32F4) || defined(STM32L4) || defined(STM32G4) || defined(STM32H5) || defined(STM32U3) || defined(STM32U5)
+#include <coco/platform/xspi.hpp>
 #endif
 #include <coco/platform/rcc.hpp>
 #if defined(STM32G0) || defined(STM32F4) || defined(STM32L4)  || defined(STM32G4) || defined(STM32H5) || defined(STM32U3) || defined(STM32U5)
@@ -94,9 +94,12 @@ int main() {
     // crc
     crc::enableClock().configure(crc::Config::SIZE_32);
 
-    // qspi
-#ifdef HAVE_QUADSPI
-    qspi::QUADSPI_INFO.enableClock();
+    // xspi
+#ifdef QUADSPI
+    xspi::QUADSPI_INFO.enableClock();
+#endif
+#ifdef OCTOSPI1
+    xspi::OCTOSPI1_INFO.enableClock();
 #endif
 
     // system

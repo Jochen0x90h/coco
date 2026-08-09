@@ -41,6 +41,7 @@ using DacInfo = Info2<offsetof(RCC_TypeDef, AHB2ENR1)>;
 using DmaInfo = Info2<offsetof(RCC_TypeDef, AHB1ENR1)>;
 using FdCanInfo = Info2<offsetof(RCC_TypeDef, APB1ENR2)>;
 using I2cInfo = Info;
+using OctoSpiInfo = Info2<offsetof(RCC_TypeDef, AHB2ENR2)>;
 using SpiInfo = Info;
 using UsartInfo = Info;
 

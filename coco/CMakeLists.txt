@@ -367,12 +367,12 @@ elseif(${PLATFORM} MATCHES "^stm32f4") # Cortex-M4F
             stm32/coco/platform/extiF0F3F4.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF1L1F4.hpp
-            stm32/coco/platform/qspiF4L4G4.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiF1L1F4.hpp
             stm32/coco/platform/system.hpp
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF1L1F4.hpp
+            stm32/coco/platform/xspiF4L4G4.hpp
             stm32f4/coco/platform/adc.hpp
             stm32f4/coco/platform/backup.hpp
             stm32f4/coco/platform/cache.hpp
@@ -381,13 +381,13 @@ elseif(${PLATFORM} MATCHES "^stm32f4") # Cortex-M4F
             stm32f4/coco/platform/exti.hpp
             stm32f4/coco/platform/flash.hpp
             stm32f4/coco/platform/i2c.hpp
-            stm32f4/coco/platform/qspi.hpp
             stm32f4/coco/platform/rcc.hpp
             stm32f4/coco/platform/rng.hpp
             stm32f4/coco/platform/spi.hpp
             stm32f4/coco/platform/timer.hpp
             stm32f4/coco/platform/uart.hpp
             stm32f4/coco/platform/usbd.hpp
+            stm32f4/coco/platform/xspi.hpp
             stm32f4/coco/platform/platform.hpp
             stm32f4/coco/platform/system/${PLATFORM}.h # obtain from https://github.com/STMicroelectronics/cmsis_device_f4/tree/master/Include
             stm32f4/coco/platform/system/system_stm32f4xx.h
@@ -425,7 +425,6 @@ elseif(${PLATFORM} MATCHES "^stm32l4") # Cortex-M4F
             stm32/coco/platform/flashC0G0L4G4U3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/qspiF4L4G4.hpp
             stm32/coco/platform/rccL4G4.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
@@ -433,6 +432,7 @@ elseif(${PLATFORM} MATCHES "^stm32l4") # Cortex-M4F
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdF0C0F3G4L4.hpp
+            stm32/coco/platform/xspiF4L4G4.hpp
             stm32l4/coco/platform/adc.hpp
             stm32l4/coco/platform/backup.hpp
             stm32l4/coco/platform/cache.hpp
@@ -442,13 +442,13 @@ elseif(${PLATFORM} MATCHES "^stm32l4") # Cortex-M4F
             stm32l4/coco/platform/exti.hpp
             stm32l4/coco/platform/flash.hpp
             stm32l4/coco/platform/i2c.hpp
-            stm32l4/coco/platform/qspi.hpp
             stm32l4/coco/platform/rcc.hpp
             stm32l4/coco/platform/rng.hpp
             stm32l4/coco/platform/spi.hpp
             stm32l4/coco/platform/timer.hpp
             stm32l4/coco/platform/uart.hpp
             stm32l4/coco/platform/usbd.hpp
+            stm32l4/coco/platform/xspi.hpp
             stm32l4/coco/platform/platform.hpp
             stm32l4/coco/platform/system/${PLATFORM}.h # obtain from https://github.com/STMicroelectronics/cmsis_device_f4/tree/master/Include
             stm32l4/coco/platform/system/system_stm32l4xx.h
@@ -489,7 +489,6 @@ elseif(${PLATFORM} MATCHES "^stm32g4") # Cortex-M4F
             stm32/coco/platform/flashC0G0L4G4U3.hpp
             stm32/coco/platform/gpio.hpp
             stm32/coco/platform/i2cF0C0G0F3L4G4H5U3U5.hpp
-            stm32/coco/platform/qspiF4L4G4.hpp
             stm32/coco/platform/rccL4G4.hpp
             stm32/coco/platform/rngG0F4L4G4H5U3U5.hpp
             stm32/coco/platform/spiF0C0G0F3L4G4.hpp
@@ -497,6 +496,7 @@ elseif(${PLATFORM} MATCHES "^stm32g4") # Cortex-M4F
             stm32/coco/platform/timerAll.hpp
             stm32/coco/platform/uartF0L0C0G0F3L4G4H5U3U5.hpp
             stm32/coco/platform/usbdF0C0F3G4L4.hpp
+            stm32/coco/platform/xspiF4L4G4.hpp
             stm32g4/coco/platform/adc.hpp
             stm32g4/coco/platform/backup.hpp
             stm32g4/coco/platform/cache.hpp
@@ -510,7 +510,6 @@ elseif(${PLATFORM} MATCHES "^stm32g4") # Cortex-M4F
             stm32g4/coco/platform/exti.hpp
             stm32g4/coco/platform/i2c.hpp
             stm32g4/coco/platform/opamp.hpp
-            stm32g4/coco/platform/qspi.hpp
             stm32g4/coco/platform/rcc.hpp
             stm32g4/coco/platform/rng.hpp
             stm32g4/coco/platform/spi.hpp
@@ -518,6 +517,7 @@ elseif(${PLATFORM} MATCHES "^stm32g4") # Cortex-M4F
             stm32g4/coco/platform/uart.hpp
             stm32g4/coco/platform/usbd.hpp
             stm32g4/coco/platform/vref.hpp
+            stm32g4/coco/platform/xspi.hpp
             stm32g4/coco/platform/platform.hpp
             stm32g4/coco/platform/system/${PLATFORM}.h # obtain from https://github.com/STMicroelectronics/STM32CubeG4/tree/master/Drivers/CMSIS/Device/ST/STM32G4xx
             stm32g4/coco/platform/system/system_stm32g4xx.h

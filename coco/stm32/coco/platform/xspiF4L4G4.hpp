@@ -1,6 +1,6 @@
 #pragma once
 
-// do not include directly, use #include <coco/platform/qspi.hpp>
+// do not include directly, use #include <coco/platform/xspi.hpp>
 
 #include "dma.hpp"
 #include <coco/enum.hpp>
@@ -8,34 +8,35 @@
 
 /*
     Defines:
-    HAVE_QUADSPI              QUADSPI supported
-    HAVE_QUADSPI_DUAL_BANK    Dual bank supported
+    HAVE_XSPI              QUADSPI supported
+    HAVE_XSPI_DUAL_BANK    Dual bank supported
 */
 
 #ifdef QUADSPI
-#define HAVE_QUADSPI
+#define HAVE_XSPI
 
 #ifdef QUADSPI_CR_FSEL
-#define HAVE_QUADSPI_DUAL_BANK
+#define HAVE_XSPI_DUAL_BANK
 #endif
 
 namespace coco {
 
-/// @brief QUADSPI helpers.
+/// @brief QUADSPI (extended SPI) helpers.
 /// F469/479 https://www.st.com/en/microcontrollers-microprocessors/stm32f4-series/documentation.html Section 13
 /// L46- https://www.st.com/en/microcontrollers-microprocessors/stm32l4-series/documentation.html Section 15
 /// L47+ https://www.st.com/en/microcontrollers-microprocessors/stm32l4-series/documentation.html Section 17
 /// G4 https://www.st.com/en/microcontrollers-microprocessors/stm32g4-series/documentation.html Section 20
-namespace qspi {
+namespace xspi {
 
 constexpr uint32_t FORMAT_CR_MASK = QUADSPI_CR_PRESCALER | QUADSPI_CR_SSHIFT
-#ifdef HAVE_QUADSPI_DUAL_BANK
+#ifdef HAVE_XSPI_DUAL_BANK
     | QUADSPI_CR_FSEL | QUADSPI_CR_DFM;
 #endif
     ;
-constexpr uint32_t FORMAT_DCR_MASK = QUADSPI_DCR_FSIZE;
+constexpr uint32_t FORMAT_DCR_MASK = QUADSPI_DCR_CKMODE | QUADSPI_DCR_FSIZE;
+static_assert((FORMAT_CR_MASK & FORMAT_DCR_MASK) == 0, "Bit overlap in enum Format!");
 
-/// @brief Format (CR and DCR registers).
+/// @brief Format (CR, DCR registers).
 ///
 enum class Format : uint32_t {
     NONE = 0,
@@ -58,12 +59,13 @@ enum class Format : uint32_t {
     CLOCK_DIV_192 = 191u << QUADSPI_CR_PRESCALER_Pos,
     CLOCK_DIV_256 = 255u << QUADSPI_CR_PRESCALER_Pos,
 
-    // delay sampling by additional 1/2 clock cycle
-    SAMPLE_DELAY = QUADSPI_CR_SSHIFT,
+    // clock mode, 0: CLK low while NCS high, 3: CLK high while NCS high
+    CLOCK_MODE_0 = 0, // default
+    CLOCK_MODE_3 = 1 << QUADSPI_DCR_CKMODE_Pos,
 
     // bank selection
     BANK_1 = 0, // default
-#ifdef HAVE_QUADSPI_DUAL_BANK
+#ifdef HAVE_XSPI_DUAL_BANK
     BANK_2 = QUADSPI_CR_FSEL,
     DUAL_BANK = QUADSPI_CR_DFM,
 #endif
@@ -98,6 +100,9 @@ enum class Format : uint32_t {
     MEMORY_1GB = 29 << QUADSPI_DCR_FSIZE_Pos,
     MEMORY_2GB = 30 << QUADSPI_DCR_FSIZE_Pos,
     MEMORY_4GB = 31 << QUADSPI_DCR_FSIZE_Pos,
+
+    // sample data one CLK cycle after data is driven by external device (instead of 1/2 CLK cycle, no DDR mode)
+    SAMPLE_SHIFT = QUADSPI_CR_SSHIFT,
 };
 COCO_ENUM(Format)
 
@@ -115,6 +120,9 @@ constexpr uint32_t DCR(Format format) {
     return uint32_t(format) & FORMAT_DCR_MASK;
 }
 
+
+/// @brief Poll config (CR register).
+///
 enum class PollConfig : uint32_t {
     AUTO_STOP = QUADSPI_CR_APMS,
 
@@ -122,8 +130,19 @@ enum class PollConfig : uint32_t {
     MATCH_OR = QUADSPI_CR_PMM,
 };
 
+
+/// @brief Functional mode (CCR register)
+///
+enum class Function : uint32_t {
+    INDIRECT_WRITE = 0, // default
+    INDIRECT_READ = QUADSPI_CCR_FMODE_0,
+    STATUS_POLLING = QUADSPI_CCR_FMODE_1,
+    MEMORY_MAPPED = QUADSPI_CCR_FMODE_1 | QUADSPI_CCR_FMODE_0,
+};
+
+
 /// @brief Communication mode (CCR register).
-/// Mode for instruction, address, dummy, data
+/// Mode for instruction, address, data
 enum class Mode : uint32_t {
     // instruction mode
     INSTRUCTION_NONE = 0, // default
@@ -139,25 +158,12 @@ enum class Mode : uint32_t {
     ADDRESS_4_LINES = QUADSPI_CCR_ADMODE_1 | QUADSPI_CCR_ADMODE_0,
     ADDRESS_MASK = QUADSPI_CCR_ADMODE_Msk,
 
-    // address size
-    /*ADDRESS_SIZE_8 = 0, // default
-    ADDRESS_SIZE_16 = QUADSPI_CCR_ADSIZE_0,
-    ADDRESS_SIZE_24 = QUADSPI_CCR_ADSIZE_1,
-    ADDRESS_SIZE_32 = QUADSPI_CCR_ADSIZE_1 | QUADSPI_CCR_ADSIZE_0,
-    ADDRESS_SIZE_MASK = QUADSPI_CCR_ADSIZE_Msk,*/
-
-    // dummy cycles
-    /*DUMMY_NONE = 0, // default
-    DUMMY_1 = 1 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_2 = 2 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_3 = 3 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_4 = 4 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_6 = 6 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_8 = 8 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_12 = 12 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_16 = 16 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_24 = 24 << QUADSPI_CCR_DCYC_Pos,
-    DUMMY_MASK = QUADSPI_CCR_DCYC_Msk,*/
+    // alternate-byte mode
+    ALTERNATE_NONE = 0, // default
+    ALTERNATE_1_LINE = QUADSPI_CCR_ABMODE_0,
+    ALTERNATE_2_LINES = QUADSPI_CCR_ABMODE_1,
+    ALTERNATE_4_LINES = QUADSPI_CCR_ABMODE_1 | QUADSPI_CCR_ABMODE_0,
+    ALTERNATE_MASK = QUADSPI_CCR_ABMODE_Msk,
 
     // data mode
     DATA_NONE = 0, // default
@@ -166,17 +172,12 @@ enum class Mode : uint32_t {
     DATA_4_LINES = QUADSPI_CCR_DMODE_1 | QUADSPI_CCR_DMODE_0,
     DATA_MASK = QUADSPI_CCR_DMODE_Msk,
 
-    // double data rate
+    // double data rate (DDR)
     DDR = QUADSPI_CCR_DDRM,
-
-    // double data rate with delay of 1/4 clock cycle
-#ifdef QUADSPI_CCR_DHHC
-    DDR_DELAY = QUADSPI_CCR_DDRM | QUADSPI_CCR_DHHC,
-#endif
 };
 COCO_ENUM(Mode)
 
-// convenience for Mode: Number of lines for instruction, addres, data
+// convenience for Mode: Number of lines for instruction, addres, data, x2 for double data rate
 constexpr auto MODE_DISABLED = Mode::INSTRUCTION_NONE | Mode::ADDRESS_NONE | Mode::DATA_NONE;
 constexpr auto MODE_1_0_0 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_NONE | Mode::DATA_NONE;
 constexpr auto MODE_1_0_1 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_NONE | Mode::DATA_1_LINE;
@@ -185,36 +186,67 @@ constexpr auto MODE_1_1_2 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mo
 constexpr auto MODE_1_1_4 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_4_LINES;
 constexpr auto MODE_1_2_2 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_2_LINES | Mode::DATA_2_LINES;
 constexpr auto MODE_1_4_4 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_4_LINES | Mode::DATA_4_LINES;
+constexpr auto MODE_1S_4D_4D = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_4_LINES | Mode::DATA_4_LINES | Mode::DDR;
 constexpr auto MODE_2_0_0 = Mode::INSTRUCTION_2_LINES | Mode::ADDRESS_NONE | Mode::DATA_NONE;
 constexpr auto MODE_2_2_2 = Mode::INSTRUCTION_2_LINES | Mode::ADDRESS_2_LINES | Mode::DATA_2_LINES;
 constexpr auto MODE_4_0_0 = Mode::INSTRUCTION_4_LINES | Mode::ADDRESS_NONE | Mode::DATA_NONE;
 constexpr auto MODE_4_4_4 = Mode::INSTRUCTION_4_LINES | Mode::ADDRESS_4_LINES | Mode::DATA_4_LINES;
+constexpr auto MODE_4S_4D_4D = Mode::INSTRUCTION_4_LINES | Mode::ADDRESS_4_LINES | Mode::DATA_4_LINES | Mode::DDR;
 
-/// @brief Functional mode (CCR register)
+
+/// @brief Timing (CCR register).
 ///
-enum class Function : uint32_t {
-    INDIRECT_WRITE = 0, // default
-    INDIRECT_READ = QUADSPI_CCR_FMODE_0,
-    STATUS_POLLING = QUADSPI_CCR_FMODE_1,
-    MEMORY_MAPPED = QUADSPI_CCR_FMODE_1 | QUADSPI_CCR_FMODE_0,
-};
+enum class Timing : uint32_t {
+    DEFAULT = 0,
 
-/// @brief Make communication config register.
+    // dummy cycles (0 to 31)
+    DUMMY_CYCLES_1 = 1 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_2 = 2 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_3 = 3 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_4 = 4 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_5 = 5 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_6 = 6 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_7 = 7 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_8 = 8 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_9 = 9 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_10 = 10 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_11 = 11 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_12 = 12 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_13 = 13 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_14 = 14 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_15 = 15 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_16 = 16 << QUADSPI_CCR_DCYC_Pos,
+    DUMMY_CYCLES_MASK = QUADSPI_CCR_DCYC,
+
+    // note that SAMPLE_SHIFT is in enum Format
+
+    // delay the data output by 1/4 of the QUADSPI output clock cycle in DDR mode
+    DDR_DELAY_QUARTER = QUADSPI_CCR_DHHC, // CCR bit 30
+};
+COCO_ENUM(Timing)
+
+constexpr Timing makeTiming(Timing timing, int dummyCycles) {
+    return (timing & ~Timing::DUMMY_CYCLES_MASK) | Timing((dummyCycles << QUADSPI_CCR_DCYC_Pos));
+}
+
+
+using CommConfig = uint32_t;
+
+/// @brief Make communication configuration.
 /// @tparam I Type of instruction, e.g. int or enum
-/// @param instruction SPI Instruction (8 bit)
-/// @param function Function (read or write)
 /// @param mode Mode (number of lines for instruction, address, data)
+/// @param instruction SPI Instruction (8 bit)
 /// @param addressBytes Number of address bytes (1 to 4)
 /// @param dummyCycles Number of SPI clock cycles (0 to 31)
 /// @return Contents of CCR register
 template <typename I>
-constexpr uint32_t makeCommConfig(I instruction, Function function, Mode mode, int addressBytes, int dummyCycles = 0) {
-    return (int(instruction) << QUADSPI_CCR_INSTRUCTION_Pos)
-        | uint32_t(function)
-        | uint32_t(mode)
+constexpr CommConfig makeCommConfig(Mode mode, I instruction, int addressBytes, Timing timing = Timing::DEFAULT) {
+    return uint32_t(mode)
+        | (int(instruction) << QUADSPI_CCR_INSTRUCTION_Pos)
         | (addressBytes - 1) << QUADSPI_CCR_ADSIZE_Pos
-        | (dummyCycles << QUADSPI_CCR_DCYC_Pos);
+        | uint32_t(timing);
 }
+
 
 /// @brief Interrupt enable flags (CR register).
 ///
@@ -233,6 +265,7 @@ enum class Interrupt : uint32_t {
     ALL = FIFO_THRESHOLD | TRANSFER_COMPLETE | ERROR,
 };
 COCO_ENUM(Interrupt)
+
 
 /// @brief Status flags (SR register).
 ///
@@ -258,6 +291,7 @@ enum class Status : uint32_t {
     BUSY = QUADSPI_SR_BUSY
 };
 COCO_ENUM(Status)
+
 
 /// @brief DMA request flags (CR register).
 ///
@@ -286,10 +320,10 @@ struct Instance {
     /// @param interrupt Interrupts to enable
     /// @param dmaRequest DMA requests to enable
     /// @return *this
-    auto &configure(int fifoThreshold, Format format, PollConfig pollConfig, Interrupt interrupt = Interrupt::NONE, DmaRequest dmaRequest = DmaRequest::NONE) {
+    auto &configure(Format format, int fifoThreshold, PollConfig pollConfig, Interrupt interrupt = Interrupt::NONE, DmaRequest dmaRequest = DmaRequest::NONE) {
         qspi->DCR = DCR(format);
-        qspi->CR = (fifoThreshold << QUADSPI_CR_FTHRES_Pos)
-            | CR(format)
+        qspi->CR = CR(format)
+            | (fifoThreshold << QUADSPI_CR_FTHRES_Pos)
             | uint32_t(pollConfig)
             | uint32_t(interrupt)
             | uint32_t(dmaRequest);
@@ -318,7 +352,11 @@ struct Instance {
     /// @return *this
     auto &enable(Format format, int fifoThreshold, Interrupt interrupt = Interrupt::NONE, DmaRequest dmaRequest = DmaRequest::NONE) {
         qspi->DCR = DCR(format);
-        qspi->CR = CR(format) | (fifoThreshold << QUADSPI_CR_FTHRES_Pos) | uint32_t(interrupt) | uint32_t(dmaRequest) | QUADSPI_CR_EN;;
+        qspi->CR = CR(format)
+            | (fifoThreshold << QUADSPI_CR_FTHRES_Pos)
+            | uint32_t(interrupt)
+            | uint32_t(dmaRequest)
+            | QUADSPI_CR_EN;
         return *this;
     }
 
@@ -356,26 +394,28 @@ struct Instance {
 
     /// @brief Set communication configuration (CCR register).
     /// @tparam I Type of instruction, e.g. int or enum
-    /// @param instruction SPI Instruction (8 bit)
     /// @param function Function (read or write)
     /// @param mode Mode (number of lines for instruction, address, data)
+    /// @param instruction SPI Instruction (8 bit)
     /// @param addressBytes Number of address bytes (1 to 4)
-    /// @param dummyCycles Number of SPI clock cycles (0 to 31)
+    /// @param timing Timing, e.g. number of dummy cycles (0 to 31)
     /// @return *this
     template <typename I>
-    auto &setCommConfig(I instruction, Function function, Mode mode, int addressBytes, int dummyCycles = 0) {
-        qspi->CCR = (int(instruction) << QUADSPI_CCR_INSTRUCTION_Pos)
-            | uint32_t(function)
+    auto &setCommConfig(Function function, Mode mode, I instruction, int addressBytes, Timing timing = Timing::DEFAULT) {
+        qspi->CCR = uint32_t(function)
             | uint32_t(mode)
+            | (int(instruction) << QUADSPI_CCR_INSTRUCTION_Pos)
             | (addressBytes - 1) << QUADSPI_CCR_ADSIZE_Pos
-            | (dummyCycles << QUADSPI_CCR_DCYC_Pos);
+            | uint32_t(timing);
         return *this;
     }
 
     /// @brief Set communication configuration (CCR register).
-    /// @param ccr Contents of CCR register
-    auto &setCommConfig(uint32_t ccr) {
-        qspi->CCR = ccr;
+    /// @param function Function (read or write)
+    /// @param commConfig Communication configuration
+    auto &setCommConfig(Function function, CommConfig commConfig) {
+        qspi->CCR = uint32_t(function)
+            | uint32_t(commConfig);
         return *this;
     }
 
@@ -414,7 +454,7 @@ struct Instance {
 /// @brief SPI instance info
 /// Contains pointer to the SPI instance, interrupt index and methods to map DMA channels
 struct Info {
-    using Instance = qspi::Instance;
+    using Instance = xspi::Instance;
 
     // registers
     QUADSPI_TypeDef *qspi;
@@ -446,6 +486,6 @@ struct Info {
     void map(const dma::Info<F2> &dmaInfo) const;
 };
 
-} // namespace qspi
+} // namespace xspi
 } // namespace coco
 #endif // QUADSPI
