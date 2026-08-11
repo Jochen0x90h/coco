@@ -269,7 +269,8 @@ TEST(cocoTest, InterruptQueue_pop) {
 TEST(cocoTest, InterruptQueue_remove) {
     InterruptQueue<Element> queue;
     Element e1, e2, e3;
-    Element *result;
+    Element *element;
+    bool result;
     bool nextCalled;
 
     // queue is initially empty
@@ -292,8 +293,30 @@ TEST(cocoTest, InterruptQueue_remove) {
     EXPECT_TRUE(queue.remove(e3)); // remove succeeds
     EXPECT_EQ(queue.frontOrNull(), &e1);
 
-    // reject removal of e1
-    result = queue.removeIf(
+    // reject removal of e1 using removeIf
+    result = queue.removeIf(e1,
+        [&e1](int index) {
+            // e1 is first element
+            EXPECT_EQ(index, 0);
+            return false;
+        });
+    EXPECT_FALSE(result);
+
+    // reject removal of e1 using removeIf with next
+    result = queue.removeIf(e1,
+        [&e1](int index) {
+            // e1 is first element
+            EXPECT_EQ(index, 0);
+            return false;
+        },
+        [] (Element &next, int index) {
+            // not called as e1 is not removed
+            FAIL();
+        });
+    EXPECT_FALSE(result);
+    
+    // reject removal of e1 using findAndRemove
+    element = queue.findAndRemove(
         [&e1](Element &e, int index) {
             // e1 is first element
             if (&e == &e1)
@@ -304,11 +327,11 @@ TEST(cocoTest, InterruptQueue_remove) {
             // not called as e1 is not removed
             FAIL();
         });
-    EXPECT_EQ(result, nullptr);
+    EXPECT_EQ(element, nullptr);
 
     // remove e1
     nextCalled = false;
-    result = queue.removeIf(
+    element = queue.findAndRemove(
         [&e1](Element &e, int index) {
             // e1 is first element
             if (&e == &e1)
@@ -324,14 +347,14 @@ TEST(cocoTest, InterruptQueue_remove) {
 
             nextCalled = true;
         });
-    EXPECT_EQ(result, &e1);
+    EXPECT_EQ(element, &e1);
     EXPECT_TRUE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), &e2);
     EXPECT_FALSE(queue.empty());
 
     // remove e2
     nextCalled = false;
-    result = queue.removeIf(
+    element = queue.findAndRemove(
         [&e2](Element &e, int index) {
             // e2 is now the only element
             EXPECT_EQ(index, 0);
@@ -341,7 +364,7 @@ TEST(cocoTest, InterruptQueue_remove) {
             // no next element
             FAIL();
         });
-    EXPECT_EQ(result, &e2);
+    EXPECT_EQ(element, &e2);
     EXPECT_FALSE(nextCalled);
     EXPECT_EQ(queue.frontOrNull(), nullptr);
     EXPECT_EQ(queue.pop(), nullptr);

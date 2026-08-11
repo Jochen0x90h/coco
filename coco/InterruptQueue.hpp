@@ -242,12 +242,90 @@ public:
         return removeExceptFirst(element);
     }
 
-    /// @brief Remove the first element from the queue for which the predicate returns true.
+    /// @brief Remove an element from the queue if the predicate returns true.
+    /// @tparam P Type of the predicate function, e.g. [](int index) { ... } where index is the index of the element in the queue
+    /// @param predicate Predicate to determine if the element should be removed
+    /// @return Pointer to the removed element, or nullptr if no element was removed
+    template <typename P>
+    bool removeIf(T &element, const P &predicate) {
+        Node *prev = &head_;
+        int index = 0;
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return false;
+            if (&static_cast<T &>(*current) == &element) {
+                if (predicate(index)) {
+                    // remove the node
+                    Node *next = current->next;
+                    prev->next = next;
+                    if (next == nullptr)
+                        tail_ = prev;
+
+                    // successfully removed the node
+                    return true;
+                }
+
+                // reject removal of the node
+                return false;
+            }
+            prev = current;
+            ++index;
+        }
+    }
+
+    template <typename G, typename P>
+    bool guardedRemoveIf(const G &guard, T &element, const P &predicate) {
+        return removeIf(element, predicate);
+    }
+
+    /// @brief Remove an element from the queue if the predicate returns true.
+    /// @tparam P Type of the predicate function, e.g. [](int index) { ... } where index is the index of the element in the queue
+    /// @tparam V Type of the next visitor function, e.g. [](int index) { ... } where index is the index of the removed element in the queue
+    /// @param predicate Predicate to determine if the element should be removed
+    /// @param nextVisitor Function to be called when visiting the next element
+    /// @return Pointer to the removed element, or nullptr if no element was removed
+    template <typename P, typename V>
+    bool removeIf(T &element, const P &predicate, const V &nextVisitor) {
+        Node *prev = &head_;
+        int index = 0;
+        while (true) {
+            Node *current = prev->next;
+            if (current == nullptr)
+                return false;
+            if (&static_cast<T &>(*current) == &element) {
+                if (predicate(index)) {
+                    // remove the node
+                    Node *next = current->next;
+                    prev->next = next;
+                    if (next == nullptr)
+                        tail_ = prev;
+                    else
+                        nextVisitor(static_cast<T &>(*next), index);
+
+                    // successfully removed the node
+                    return true;
+                }
+                
+                // reject removal of the node
+                return false;
+            }
+            prev = current;
+            ++index;
+        }
+    }
+
+    template <typename G, typename P, typename V>
+    bool guardedRemoveIf(const G &guard, T &element, const P &predicate, const V &nextVisitor) {
+        return removeIf(element, predicate, nextVisitor);
+    }
+
+    /// @brief Find and remove an element for which the predicate returns true.
     /// @tparam P Type of the predicate function, e.g. [](auto &element, int index) { return index == 0 && element.isReady(); }
     /// @param predicate Predicate to determine if the element should be removed
     /// @return Pointer to the removed element, or nullptr if no element was removed
     template <typename P>
-    T *removeIf(const P &predicate) {
+    T *findAndRemove(const P &predicate) {
         Node *prev = &head_;
         int index = 0;
         while (true) {
@@ -270,18 +348,18 @@ public:
     }
 
     template <typename G, typename P>
-    T *guardedRemoveIf(const G &guard, const P &predicate) {
-        return removeIf(predicate);
+    T *guardedFindAndRemove(const G &guard, const P &predicate) {
+        return findAndRemove(predicate);
     }
 
-    /// @brief Remove the first element from the queue for which the predicate returns true.
+    /// @brief Find and remove an element for which the predicate returns true.
     /// @tparam P Type of the predicate function, e.g. [](auto &element, int index) { return index == 0 && element.isReady(); }
     /// @tparam V Type of the next visitor function, e.g. [](auto &element, int index) { if (index == 0) element.startNext(); }
     /// @param predicate Condition function to determine if the first/front() element should be removed
     /// @param nextVisitor Function to be called when visiting the next element
     /// @return Pointer to the removed element, or nullptr if no element was removed
     template <typename P, typename V>
-    T *removeIf(const P &predicate, const V &nextVisitor) {
+    T *findAndRemove(const P &predicate, const V &nextVisitor) {
         Node *prev = &head_;
         int index = 0;
         while (true) {
@@ -306,8 +384,8 @@ public:
     }
 
     template <typename G, typename V, typename P>
-    T *guardedRemoveIf(const G &guard, const P &predicate, const V &nextVisitor) {
-        return removeIf(predicate, nextVisitor);
+    T *guardedFindAndRemove(const G &guard, const P &predicate, const V &nextVisitor) {
+        return findAndRemove(predicate, nextVisitor);
     }
 
     /// @brief Get first element
