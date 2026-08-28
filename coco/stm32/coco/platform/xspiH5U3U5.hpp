@@ -241,6 +241,7 @@ enum class Timing : uint32_t {
     DEFAULT = 0,
 
     // dummy cycles (0 to 31)
+    DUMMY_CYCLES_0 = 0, // default
     DUMMY_CYCLES_1 = 1 << XSPI_TCR_DCYC_Pos,
     DUMMY_CYCLES_2 = 2 << XSPI_TCR_DCYC_Pos,
     DUMMY_CYCLES_3 = 3 << XSPI_TCR_DCYC_Pos,

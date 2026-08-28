@@ -127,10 +127,19 @@ inline void detectBothEdges(int line) {
     EXTI->FTSR1 = EXTI->FTSR1 | f;
 }
 
+/// @brief Enable interrupt.
+/// First call clearPending() to make sure that no interrupt is already pending.
+/// @param line EXTI line
 inline void enableInterrupt(int line) {
     uint32_t f = 1 << line;
-    EXTI->PR1 = f; // clear pending flags
     EXTI->IMR1 = EXTI->IMR1 | f;
+}
+
+/// @brief Disable interrupt.
+/// @param line EXTI line to modify
+inline void disableInterrupt(int line) {
+    uint32_t f = 1 << line;
+    EXTI->IMR1 = EXTI->IMR1 & ~f;
 }
 
 inline auto pending(int line) {
@@ -148,7 +157,7 @@ inline void clearPending(int line) {
 // ----------------------------------------------------------
 
 /// @brief Detect rising edge on multiple EXTI lines (only lines 0 - 15).
-/// @param lineFlags Flags indicating for which EXTI lines to use
+/// @param lineFlags Flags indicating which EXTI lines to modify
 inline void detectRisingEdgeFlags(int lineFlags) {
     EXTI->RTSR1 = EXTI->RTSR1 | lineFlags;
     EXTI->FTSR1 = EXTI->FTSR1 & ~lineFlags;
@@ -164,9 +173,17 @@ inline void detectBothEdgesFlags(int lineFlags) {
     EXTI->FTSR1 = EXTI->FTSR1 | lineFlags;
 }
 
+/// @brief Enable interrupt flags (only lines 0 - 15).
+/// First call clearPendingFlags() to make sure that no interrupt is already pending.
+/// @param lineFlags Flags indicating which EXTI lines to modify
 inline void enableInterruptFlags(int lineFlags) {
-    EXTI->PR1 = lineFlags; // clear pending flags
     EXTI->IMR1 = EXTI->IMR1 | lineFlags;
+}
+
+/// @brief Disable interrupt flags (only lines 0 - 15).
+/// @param lineFlags Flags indicating which EXTI lines to modify
+inline void disableInterruptFlags(int lineFlags) {
+    EXTI->IMR1 = EXTI->IMR1 & ~ lineFlags;
 }
 
 inline auto pendingFlags(int lineFlags) {
@@ -176,94 +193,6 @@ inline auto pendingFlags(int lineFlags) {
 inline void clearPendingFlags(int lineFlags) {
     EXTI->PR1 = lineFlags;
 }
-
-
-/*
-/// @brief Detect rising edge on EXTIs given by the lineFlags.
-/// @tparam F Maximum set of flags to be used.
-/// @param lineFlags Flags indicating for which EXTIs to set the rising edge detection.
-template <LineFlags F>
-inline void detectRisingEdge(LineFlags lineFlags = F) {
-    if constexpr ((uint64_t(F) & 0xFFFFFFFF) != 0) {
-        uint32_t f = uint32_t(lineFlags);
-        EXTI->RTSR1 = EXTI->RTSR1 | f;
-        EXTI->FTSR1 = EXTI->FTSR1 & ~f;
-    }
-    if constexpr ((uint64_t(F) >> 32) != 0) {
-        uint32_t f = std::make_unsigned_t<LineFlags>(lineFlags) >> 32;
-        EXTI->RTSR2 = EXTI->RTSR2 | f;
-        EXTI->FTSR2 = EXTI->FTSR2 & ~f;
-    }
-}
-
-template <LineFlags F>
-inline void detectFallingEdge(LineFlags lineFlags = F) {
-    if constexpr ((uint64_t(F) & 0xFFFFFFFF) != 0) {
-        uint32_t f = uint32_t(lineFlags);
-        EXTI->RTSR1 = EXTI->RTSR1 & ~f;
-        EXTI->FTSR1 = EXTI->FTSR1 | f;
-    }
-    if constexpr ((uint64_t(F) >> 32) != 0) {
-        uint32_t f = std::make_unsigned_t<LineFlags>(lineFlags) >> 32;
-        EXTI->RTSR2 = EXTI->RTSR2 & ~f;
-        EXTI->FTSR2 = EXTI->FTSR2 | f;
-    }
-}
-
-template <LineFlags F>
-inline void detectBothEdges(LineFlags lineFlags = F) {
-    if constexpr ((uint64_t(F) & 0xFFFFFFFF) != 0) {
-        uint32_t f = uint32_t(lineFlags);
-        EXTI->RTSR1 = EXTI->RTSR1 | f;
-        EXTI->FTSR1 = EXTI->FTSR1 | f;
-    }
-    if constexpr ((uint64_t(F) >> 32) != 0) {
-        uint32_t f = std::make_unsigned_t<LineFlags>(lineFlags) >> 32;
-        EXTI->RTSR2 = EXTI->RTSR2 | f;
-        EXTI->FTSR2 = EXTI->FTSR2 | f;
-    }
-}
-
-template <LineFlags F>
-inline void enableInterrupt(LineFlags lineFlags = F) {
-    if constexpr ((uint64_t(F) & 0xFFFFFFFF) != 0) {
-        uint32_t f = uint32_t(lineFlags);
-        EXTI->PR1 = f; // clear pending flags
-        EXTI->IMR1 = EXTI->IMR1 | f;
-    }
-    if constexpr ((uint64_t(F) >> 32) != 0) {
-        uint32_t f = std::make_unsigned_t<LineFlags>(lineFlags) >> 32;
-        EXTI->PR2 = f; // clear pending flags
-        EXTI->IMR2 = EXTI->IMR2 | f;
-    }
-}
-
-template <LineFlags F>
-inline auto pending(LineFlags lineFlags = F) {
-    std::make_unsigned_t<LineFlags> p = 0;
-    if constexpr ((uint64_t(F) & 0xFFFFFFFF) != 0) {
-        uint32_t f = uint32_t(lineFlags);
-        p |= EXTI->PR1 & f;
-    }
-    if constexpr ((uint64_t(F) >> 32) != 0) {
-        uint32_t f = std::make_unsigned_t<LineFlags>(lineFlags) >> 32;
-        p |= std::make_unsigned_t<LineFlags>(EXTI->PR2 & f) << 32;
-    }
-    return p;
-}
-
-template <LineFlags F>
-inline void clearPending(LineFlags lineFlags = F) {
-    if constexpr ((uint64_t(F) & 0xFFFFFFFF) != 0) {
-        uint32_t f = uint32_t(lineFlags);
-        EXTI->PR1 = f; // clear pending flags
-    }
-    if constexpr ((uint64_t(F) >> 32) != 0) {
-        uint32_t f = std::make_unsigned_t<LineFlags>(lineFlags) >> 32;
-        EXTI->PR2 = f; // clear pending flags
-    }
-}
-*/
 
 } // namespace exti
 } // namespace coco

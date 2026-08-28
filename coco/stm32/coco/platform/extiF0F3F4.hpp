@@ -93,10 +93,19 @@ inline void detectBothEdges(int line) {
     EXTI->FTSR = EXTI->FTSR | f;
 }
 
+/// @brief Enable interrupt.
+/// First call clearPending() to make sure that no interrupt is already pending.
+/// @param line EXTI line to modify
 inline void enableInterrupt(int line) {
     uint32_t f = 1 << line;
-    EXTI->PR = f; // clear pending flags
     EXTI->IMR = EXTI->IMR | f;
+}
+
+/// @brief Disable interrupt.
+/// @param line EXTI line to modify
+inline void disableInterrupt(int line) {
+    uint32_t f = 1 << line;
+    EXTI->IMR1 = EXTI->IMR1 & ~f;
 }
 
 inline auto pending(int line) {
@@ -114,7 +123,7 @@ inline void clearPending(int line) {
 // ----------------------------------------------------------
 
 /// @brief Detect rising edge on multiple EXTI lines (only lines 0 - 15).
-/// @param lineFlags Flags indicating for which EXTI lines to use
+/// @param lineFlags Flags indicating which EXTI lines to modify
 inline void detectRisingEdgeFlags(int lineFlags) {
     EXTI->RTSR = EXTI->RTSR | lineFlags;
     EXTI->FTSR = EXTI->FTSR & ~lineFlags;
@@ -130,9 +139,17 @@ inline void detectBothEdgesFlags(int lineFlags) {
     EXTI->FTSR = EXTI->FTSR | lineFlags;
 }
 
+/// @brief Enable interrupt flags (only lines 0 - 15).
+/// First call clearPendingFlags() to make sure that no interrupt is already pending.
+/// @param lineFlags Flags indicating which EXTI lines to modify
 inline void enableInterruptFlags(int lineFlags) {
-    EXTI->PR = lineFlags; // clear pending flags
     EXTI->IMR = EXTI->IMR | lineFlags;
+}
+
+/// @brief Disable interrupt flags (only lines 0 - 15).
+/// @param lineFlags Flags indicating which EXTI lines to modify
+inline void disableInterruptFlags(int lineFlags) {
+    EXTI->IMR1 = EXTI->IMR1 & ~ lineFlags;
 }
 
 inline auto pendingFlags(int lineFlags) {
@@ -142,59 +159,6 @@ inline auto pendingFlags(int lineFlags) {
 inline void clearPendingFlags(int lineFlags) {
     EXTI->PR = lineFlags;
 }
-
-
-
-/*
-/// @brief Set the port for a given EXTI channel.
-/// @param channel EXTI channel number 0 - 15
-/// @param port Port to set (0 = A, 1 = B, 2 = C, 3 = D, 4 = E, 5 = F, 6 = G, 7 = H)
-inline void setPort(int channel, int port) {
-    int pos4 = (channel & 3) * 4;
-    auto &EXTICR = SYSCFG->EXTICR[channel >> 2];
-    EXTICR = (EXTICR & ~(0xf << pos4)) | (port << pos4);
-}
-
-template <LineFlags F>
-inline void detectRisingEdge(LineFlags lineFlags = F) {
-    uint32_t f = lineFlags;
-    EXTI->RTSR = EXTI->RTSR | f;
-    EXTI->FTSR = EXTI->FTSR & ~f;
-}
-
-template <LineFlags F>
-inline void detectFallingEdge(LineFlags lineFlags = F) {
-    uint32_t f = lineFlags;
-    EXTI->RTSR = EXTI->RTSR & ~f;
-    EXTI->FTSR = EXTI->FTSR | f;
-}
-
-template <LineFlags F>
-inline void detectBothEdges(LineFlags lineFlags = F) {
-    uint32_t f = lineFlags;
-    EXTI->RTSR = EXTI->RTSR | f;
-    EXTI->FTSR = EXTI->FTSR | f;
-}
-
-template <LineFlags F>
-inline void enableInterrupt(LineFlags lineFlags = F) {
-    uint32_t f = lineFlags;
-    EXTI->PR = f; // clear pending flags
-    EXTI->IMR = EXTI->IMR | f;
-}
-
-template <LineFlags F>
-inline auto pending(LineFlags lineFlags = F) {
-    uint32_t f = lineFlags;
-    return EXTI->PR & f;
-}
-
-template <LineFlags F>
-inline void clearPending(LineFlags lineFlags = F) {
-    uint32_t f = lineFlags;
-    EXTI->PR = f; // clear pending flags
-}
-*/
 
 } // namespace exti
 } // namespace coco
