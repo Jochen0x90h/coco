@@ -94,24 +94,28 @@ struct Out {
     /// @brief Stream a single character into the debug output.
     ///
     Out &operator <<(char ch) {
-        write(&ch, 1);
+        debug::write(&ch, 1);
         return *this;
     }
 
     /// @brief Stream a string into the debug output.
     ///
     Out &operator <<(const String &str) {
-        write(str.data(), str.size());
+        debug::write(str.data(), str.size());
         return *this;
     }
 
     /// @brief Stream a string concept into the debug output (C-string, coco::StringBuffer, std::string).
     ///
-    template <typename T> requires (StringConcept<T>)
+    /*template <typename T> requires (StringConcept<T>)
     Out &operator <<(const T &str) {
-        write(str);
+        debug::write(str);
         return *this;
-    }
+    }*/
+
+    //void write(const char *message, int length) {
+    //    debug::write(message, length);
+   // }
 };
 
 extern Out out;

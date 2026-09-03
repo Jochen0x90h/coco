@@ -44,8 +44,13 @@ inline void detectBothEdges(Line line) {
 inline void enableInterrupt(Line line) {
     int l = int(line);
     uint32_t f = 1 << l;
-    EXTI->PR = f; // clear pending flags
     EXTI->IMR = EXTI->IMR | f;
+}
+
+inline void disableInterrupt(Line line) {
+    int l = int(line);
+    uint32_t f = 1 << l;
+    EXTI->IMR = EXTI->IMR & ~f;
 }
 
 inline auto pending(Line line) {
@@ -105,7 +110,7 @@ inline void enableInterrupt(int line) {
 /// @param line EXTI line to modify
 inline void disableInterrupt(int line) {
     uint32_t f = 1 << line;
-    EXTI->IMR1 = EXTI->IMR1 & ~f;
+    EXTI->IMR = EXTI->IMR & ~f;
 }
 
 inline auto pending(int line) {
@@ -149,7 +154,7 @@ inline void enableInterruptFlags(int lineFlags) {
 /// @brief Disable interrupt flags (only lines 0 - 15).
 /// @param lineFlags Flags indicating which EXTI lines to modify
 inline void disableInterruptFlags(int lineFlags) {
-    EXTI->IMR1 = EXTI->IMR1 & ~ lineFlags;
+    EXTI->IMR = EXTI->IMR & ~ lineFlags;
 }
 
 inline auto pendingFlags(int lineFlags) {

@@ -88,19 +88,19 @@ int main() {
     // dma
     dma::DMA1_CH1_INFO.enableClock<dma::Mode::PERIPHERAL_TO_MEMORY>().setCount(50).enable(dma::Config::PRIORITY_HIGH);
 
+    // exti
+    exti::enableInterrupt(exti::Line::GPIO_0);
+    exti::disableInterrupt(exti::Line::GPIO_0);
+    exti::enableInterrupt(0);
+    exti::disableInterrupt(0);
+    exti::enableInterruptFlags(0x0f);
+    exti::disableInterruptFlags(0x0f);
+
     // instruction/data cache
     cache::flush();
 
     // crc
     crc::enableClock().configure(crc::Config::SIZE_32);
-
-    // xspi
-#ifdef QUADSPI
-    xspi::QUADSPI_INFO.enableClock();
-#endif
-#ifdef OCTOSPI1
-    xspi::OCTOSPI1_INFO.enableClock();
-#endif
 
     // system
     system::id();
@@ -119,7 +119,13 @@ int main() {
     uart::USART1_INFO.mapRx(dma::DMA1_CH1_INFO); // note that on some processors only some DMA channels work for USART1 RX, this is noly a compile test
     uart::USART1_INFO.instance().enable().startRx().startTx().setBaudRate(16MHz, 115200Hz).getBaudRate(16MHz);
 
-
+    // xspi
+#ifdef QUADSPI
+    xspi::QUADSPI_INFO.enableClock();
+#endif
+#ifdef OCTOSPI1
+    xspi::OCTOSPI1_INFO.enableClock();
+#endif
 
     return 0;
 }

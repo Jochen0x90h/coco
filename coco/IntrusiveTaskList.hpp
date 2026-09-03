@@ -6,8 +6,10 @@
 namespace coco {
 
 /// @brief Intrusive task list.
-/// @tparam T Task type, inherits from the node type N
-/// @tparam N Node type (with next and prev members), defaults to T::Node
+/// IntrusiveTaskList has doFirst() and doAll() methods that remove and execute tasks. The tasks must have an
+/// operator () and inherit from a node type that has next and prev members, e.g. IntrusiveListNode.
+/// @tparam T Task type with operator (), inherits from the node type N
+/// @tparam N Node type with next and prev members, defaults to IntrusiveListNode
 template <typename T, typename N = IntrusiveListNode>
 class IntrusiveTaskList {
 public:

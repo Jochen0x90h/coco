@@ -1690,9 +1690,11 @@ TEST(cocoTest, StringBuffer) {
     b.resize(0);
 
     // check if stream operators are compatible with different string types
-    b << String();
-    b << std::string();
-    b << std::string_view();
+    b << String("foo");
+    b << std::string("bar");
+    b << std::string_view("baz");
+    EXPECT_EQ(b, "foobarbaz");
+    b.clear();
 
     // check stream operators
     b << dec(int16_t(-99), 3) << ' ';
@@ -1749,6 +1751,14 @@ TEST(cocoTest, StringBuffer) {
     float2 f2 = {1.1f, -5.5f};
     b << dec(i2) << ' ' << hex(i2, 2) << ' ' << flt(f2);
     EXPECT_EQ(b, "10 100 0a 64 1.1 -5.5");*/
+
+    // std::stringstream
+    std::stringstream ss;
+    ss << String("foo ");
+    ss << dec(int16_t(-99), 3) << ' ';
+    ss << hex(uint16_t(0x1337)) << ' ';
+    ss << dec(0.0f);
+    EXPECT_EQ(ss.str(), "foo -099 1337 0");
 }
 
 

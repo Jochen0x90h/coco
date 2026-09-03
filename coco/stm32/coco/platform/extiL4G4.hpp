@@ -63,12 +63,21 @@ inline void enableInterrupt(Line line) {
     int l = int(line);
     if (l < 32) {
         uint32_t f = 1 << l;
-        EXTI->PR1 = f; // clear pending flags
         EXTI->IMR1 = EXTI->IMR1 | f;
     } else {
         uint32_t f = 1 << (l - 32);
-        EXTI->PR2 = f; // clear pending flags
         EXTI->IMR2 = EXTI->IMR2 | f;
+    }
+}
+
+inline void disableInterrupt(Line line) {
+    int l = int(line);
+    if (l < 32) {
+        uint32_t f = 1 << l;
+        EXTI->IMR1 = EXTI->IMR1 & ~f;
+    } else {
+        uint32_t f = 1 << (l - 32);
+        EXTI->IMR2 = EXTI->IMR2 & ~f;
     }
 }
 

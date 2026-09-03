@@ -77,16 +77,26 @@ inline void enableInterrupt(Line line) {
 #if defined(EXTI_RTSR2_RT) || defined(EXTI_RTSR2_RT34)
     if (l >= 32) {
         uint32_t f = 1 << (l - 32);
-        EXTI->RPR2 = f; // clear pending flags
-        EXTI->FPR2 = f; // clear pending flags
         EXTI->IMR2 = EXTI->IMR2 | f;
     } else
 #endif
     {
         uint32_t f = 1 << l;
-        EXTI->RPR1 = f; // clear pending flags
-        EXTI->FPR1 = f; // clear pending flags
         EXTI->IMR1 = EXTI->IMR1 | f;
+    }
+}
+
+inline void disableInterrupt(Line line) {
+    int l = int(line);
+#if defined(EXTI_RTSR2_RT) || defined(EXTI_RTSR2_RT34)
+    if (l >= 32) {
+        uint32_t f = 1 << (l - 32);
+        EXTI->IMR2 = EXTI->IMR2 & ~f;
+    } else
+#endif
+    {
+        uint32_t f = 1 << l;
+        EXTI->IMR1 = EXTI->IMR1 & ~f;
     }
 }
 

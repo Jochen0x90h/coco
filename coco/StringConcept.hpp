@@ -22,4 +22,14 @@ concept StringConcept = IsCStringPointer<T> || IsCStringArray<T>
         {std::size(t)};
     };
 
+
+template <typename S, typename T> requires (StringConcept<T>)
+inline S &operator <<(S &s, const T &str) {
+    //String str2(str);
+    //s.write(str2.data(), str2.size());
+    s << String(str);
+    return s;
+}
+
+
 } // namespace coco

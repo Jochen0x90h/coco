@@ -7,9 +7,6 @@
 #include <cstdint>
 #include <string_view>
 #include <coco/platform/platform.hpp>
-#ifdef NATIVE
-#include <ostream>
-#endif
 
 
 namespace coco {
@@ -261,11 +258,16 @@ inline void assign(char (&str)[N], String const &s) {
     }
 }
 
-#ifdef NATIVE
-inline std::ostream &operator <<(std::ostream &s, const String &str) {
+/// @brief Stream a string into a generic stream.
+/// This method is called for streams that do not have an operator << for coco::String such as std::ostream.
+/// The stream must have a write() method that takes a const char * and a length.
+/// @tparam S stream type
+/// @param s stream
+/// @param str string to stream
+template <typename S>
+inline S &operator <<(S &s, const String &str) {
     s.write(str.data(), str.size());
     return s;
 }
-#endif
 
 } // namespace coco
