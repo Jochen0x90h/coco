@@ -1239,40 +1239,88 @@ TEST(cocoTest, Pack) {
 // -----------
 
 struct PackedValueStruct {
-    uint8_t a;
+    U8 a;
     union {
         U32L u32l;
         U32B u32b;
+        I32L i32l;
+        I32B i32b;
+
         E32L<ExtractEnum> e32l;
         E32B<ExtractEnum> e32b;
 
-        uint8_t data[4];
+        U24L u24l;
+        U24B u24b;
+        I24L i24l;
+        I24B i24b;
+
+        U8 data[4];
     };
 };
 
 TEST(cocoTest, PackedValue) {
     EXPECT_TRUE(std::is_trivially_copyable_v<U32B>);
+    EXPECT_TRUE(std::is_trivially_copyable_v<U24B>);
 
+    EXPECT_EQ(alignof(PackedValueStruct), 1);
     EXPECT_EQ(offsetof(PackedValueStruct, u32l), 1);
     EXPECT_EQ(sizeof(PackedValueStruct), 5);
 
     PackedValueStruct s;
 
     s.u32l = 0x1337;
+    EXPECT_EQ(s.u32l, 0x1337);
     EXPECT_EQ(s.data[0], 0x37);
     EXPECT_EQ(s.data[1], 0x13);
 
     s.u32b = 0x1337;
-    EXPECT_EQ(s.data[3], 0x37);
+    EXPECT_EQ(s.u32b, 0x1337);
     EXPECT_EQ(s.data[2], 0x13);
+    EXPECT_EQ(s.data[3], 0x37);
+
+    s.i32l = -2;
+    EXPECT_EQ(s.i32l, -2);
+    EXPECT_EQ(s.data[0], 0xfe);
+    EXPECT_EQ(s.data[3], 0xff);
+
+    s.i32b = -2;
+    EXPECT_EQ(s.i32b, -2);
+    EXPECT_EQ(s.data[0], 0xff);
+    EXPECT_EQ(s.data[3], 0xfe);
 
     s.e32l = ExtractEnum::FOO_1;
+    EXPECT_EQ(s.e32l, ExtractEnum::FOO_1);
     EXPECT_EQ(s.data[0], 16);
     EXPECT_EQ(s.data[1], 0);
 
     s.e32b = ExtractEnum::FOO_1;
-    EXPECT_EQ(s.data[3], 16);
+    EXPECT_EQ(s.e32b, ExtractEnum::FOO_1);
     EXPECT_EQ(s.data[2], 0);
+    EXPECT_EQ(s.data[3], 16);
+
+    s.u24l = 0x501337;
+    EXPECT_EQ(s.u24l, 0x501337);
+    EXPECT_EQ(s.data[0], 0x37);
+    EXPECT_EQ(s.data[1], 0x13);
+    EXPECT_EQ(s.data[2], 0x50);
+
+    s.u24b = 0x501337;
+    EXPECT_EQ(s.u24b, 0x501337);
+    EXPECT_EQ(s.data[0], 0x50);
+    EXPECT_EQ(s.data[1], 0x13);
+    EXPECT_EQ(s.data[2], 0x37);
+
+    s.i24l = -2;
+    EXPECT_EQ(s.i24l, -2);
+    EXPECT_EQ(s.data[0], 0xfe);
+    EXPECT_EQ(s.data[1], 0xff);
+    EXPECT_EQ(s.data[2], 0xff);
+
+    s.i24b = -2;
+    EXPECT_EQ(s.i24b, -2);
+    EXPECT_EQ(s.data[0], 0xff);
+    EXPECT_EQ(s.data[1], 0xff);
+    EXPECT_EQ(s.data[2], 0xfe);
 
     U32L v1(1337);
     U32L v2(v1);

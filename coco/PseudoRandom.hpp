@@ -6,20 +6,20 @@
 
 namespace coco {
 
-/// @brief Simple xor shift pseudo random number generator
+/// @brief Simple xor shift pseudo random number generator.
 ///
 struct XorShiftRandom {
     uint32_t a;
 
-    /// @brief Constructor
-    /// @param seed seed must not be zero
+    /// @brief Constructor.
+    /// @param seed Random seed, must not be zero
     explicit XorShiftRandom(int seed = 362436000) {
         assert(seed != 0);
         a = seed;
     }
 
-    /// @brief Reset the random number generator
-    /// @param seed seed must not be zero
+    /// @brief Reset the random number generator.
+    /// @param seed Random seed, must not be zero
     void reset(int seed = 362436000) {
         assert(seed != 0);
         a = seed;
@@ -36,7 +36,7 @@ struct XorShiftRandom {
 };
 
 
-/// @brief KISS random number generator
+/// @brief KISS random number generator.
 /// http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf
 /// https://link.springer.com/content/pdf/10.1007/s12095-017-0225-x.pdf
 struct KissRandom {
@@ -45,10 +45,10 @@ struct KissRandom {
     uint32_t z;
     uint32_t c;
 
-    /// @brief Constructor
-    /// @param seed1 first seed
-    /// @param seed2 second seed, must not be zero
-    /// @param seed3 third seed
+    /// @brief Constructor.
+    /// @param seed1 First random seed
+    /// @param seed2 Second random seed, must not be zero
+    /// @param seed3 Third random seed
     explicit KissRandom(int seed1 = 123456789, int seed2 = 362436000, int seed3 = 521288629) {
         assert(seed2 != 0);
         x = seed1;
@@ -57,10 +57,10 @@ struct KissRandom {
         c = 7654321;
     }
 
-    /// @brief Reset the random number generator
-    /// @param seed1 first seed
-    /// @param seed2 second seed, must not be zero
-    /// @param seed3 third seed
+    /// @brief Reset the random number generator.
+    /// @param seed1 First random seed
+    /// @param seed2 Second random seed, must not be zero
+    /// @param seed3 Third random seed
     void reset(int seed1 = 123456789, int seed2 = 362436000, int seed3 = 521288629) {
         assert(seed2 != 0);
         x = seed1;
