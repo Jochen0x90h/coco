@@ -203,7 +203,8 @@ protected:
 
 
 /// @brief Second implementation to be able to add an element to two linked lists.
-/// E.g. class Element : public IntrusiveListNode, public IntrusiveListNode2 {};
+/// E.g. class MyElement : public IntrusiveListNode, public IntrusiveListNode2 {};
+/// Then use IntrusiveList with IntrusiveListNode2: IntrusiveList<MyElement, IntrusiveListNode2> myList2;
 struct IntrusiveListNode2 {
     IntrusiveListNode2 *next;
     IntrusiveListNode2 *prev;

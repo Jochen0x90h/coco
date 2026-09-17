@@ -5,6 +5,7 @@
 #include "dma.hpp"
 #include <coco/enum.hpp>
 #include <coco/Frequency.hpp>
+#include <coco/Time.hpp>
 
 
 /*

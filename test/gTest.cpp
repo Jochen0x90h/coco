@@ -853,7 +853,9 @@ TEST(cocoTest, convert_dec) {
 
     // string to int
     EXPECT_EQ(dec<int>(""), ConvertedValue<int>{});
+    EXPECT_EQ(dec<int>("").value_or(10), 10);
     EXPECT_EQ(dec<int>("1337"), ConvertedValue<int>(1337, 4));
+    EXPECT_EQ(dec<int>("1337").value_or(50), 1337);
     EXPECT_EQ(dec<int>("+1337"), ConvertedValue<int>(1337, 5));
     EXPECT_EQ(dec<int>("-1337"), ConvertedValue<int>(1337, 5));
     EXPECT_EQ(dec<unsigned int>("1337"), ConvertedValue<unsigned int>(1337, 4));
@@ -1251,8 +1253,10 @@ struct PackedValueStruct {
 
         U24L u24l;
         U24B u24b;
+        U24Lo u24lo;
         I24L i24l;
         I24B i24b;
+        I24Bo i24bo;
 
         U8 data[4];
     };
@@ -1310,6 +1314,12 @@ TEST(cocoTest, PackedValue) {
     EXPECT_EQ(s.data[1], 0x13);
     EXPECT_EQ(s.data[2], 0x37);
 
+    s.u24lo = 0x501337;
+    EXPECT_EQ(s.u24lo, 0x501337);
+    EXPECT_EQ(s.data[0], 0x37);
+    EXPECT_EQ(s.data[1], 0x13);
+    EXPECT_EQ(s.data[2], 0x50);
+
     s.i24l = -2;
     EXPECT_EQ(s.i24l, -2);
     EXPECT_EQ(s.data[0], 0xfe);
@@ -1318,6 +1328,12 @@ TEST(cocoTest, PackedValue) {
 
     s.i24b = -2;
     EXPECT_EQ(s.i24b, -2);
+    EXPECT_EQ(s.data[0], 0xff);
+    EXPECT_EQ(s.data[1], 0xff);
+    EXPECT_EQ(s.data[2], 0xfe);
+
+    s.i24bo = -2;
+    EXPECT_EQ(s.i24bo, -2);
     EXPECT_EQ(s.data[0], 0xff);
     EXPECT_EQ(s.data[1], 0xff);
     EXPECT_EQ(s.data[2], 0xfe);

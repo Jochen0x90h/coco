@@ -181,6 +181,7 @@ COCO_ENUM(Mode)
 constexpr auto MODE_DISABLED = Mode::INSTRUCTION_NONE | Mode::ADDRESS_NONE | Mode::DATA_NONE;
 constexpr auto MODE_1_0_0 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_NONE | Mode::DATA_NONE;
 constexpr auto MODE_1_0_1 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_NONE | Mode::DATA_1_LINE;
+constexpr auto MODE_1_1_0 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_NONE;
 constexpr auto MODE_1_1_1 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_1_LINE;
 constexpr auto MODE_1_1_2 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_2_LINES;
 constexpr auto MODE_1_1_4 = Mode::INSTRUCTION_1_LINE | Mode::ADDRESS_1_LINE | Mode::DATA_4_LINES;

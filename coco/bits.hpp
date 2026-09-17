@@ -6,7 +6,7 @@
 
 namespace coco {
 
-// use std::buteswap (since C++23)
+// use std::byteswap (since C++23)
 using std::byteswap;
 
 /// @brief Exract a value from a bitfield using a mask.

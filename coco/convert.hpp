@@ -8,8 +8,13 @@
 
 namespace coco {
 
+/// @brief Result of a string to number conversion.
+/// Is similar to std::optional, but also stores the length of the string that was used for the conversion.
+/// @tparam T
 template <typename T>
 struct ConvertedValue {
+    using value_type = T;
+
     // converted value
     T value;
 
@@ -18,11 +23,15 @@ struct ConvertedValue {
 
 
     operator bool () const {
-        return this->length > 0;
+        return length > 0;
     }
 
     T operator * () const {
-        return this->value;
+        return value;
+    }
+
+    T value_or(T defaultValue) {
+        return length > 0 ? value : defaultValue;
     }
 };
 
