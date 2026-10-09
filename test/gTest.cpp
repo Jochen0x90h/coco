@@ -879,8 +879,13 @@ TEST(cocoTest, convert_dec) {
 }
 
 TEST(cocoTest, convert_hex) {
+    // int to string
     EXPECT_EQ(hex(0x10), "00000010");
     EXPECT_EQ(hex(UINT64_C(0x1234567812345678)), "1234567812345678");
+
+    // pointer to string
+    void *p = (void *)0x12345678;
+    EXPECT_EQ(hex(p, 8), "12345678");
 
     // enum to string
     ExtractEnum e = ExtractEnum::FOO_1;

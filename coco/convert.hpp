@@ -321,7 +321,7 @@ template <typename T>
 /// @brief Convert an integer value to a hex string.
 /// @param value Value
 /// @return Buffer that has an operator String
-template <typename T> requires (std::is_integral_v<T>)
+template <typename T> requires (std::is_integral_v<T> || std::is_pointer_v<T>)
 [[nodiscard]] auto hex(const T &value, int digitCount = sizeof(T) * 2, int minWidth = 0) {
     if constexpr (sizeof(T) <= 4) {
         // 32 bit

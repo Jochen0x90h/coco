@@ -26,7 +26,7 @@ class Project(ConanFile):
     def build_requirements(self):
         if not self.cross():
             # platform is based on a "normal" operating system such as Windows, MacOS, Linux
-            self.test_requires("gtest/1.17.0")
+            self.test_requires("gtest/1.18.0")
 
     keep_imports = True
     def imports(self):

@@ -133,19 +133,21 @@ enum class Config : uint32_t {
     DE_ASSERT_0T = 0, // default
     DE_ASSERT_1T = 1 << (USART_CR1_DEAT_Pos), // 21 - 25
     DE_ASSERT_2T = 2 << (USART_CR1_DEAT_Pos),
+    DE_ASSERT_3T = 3 << (USART_CR1_DEAT_Pos),
     DE_ASSERT_5T = 5 << (USART_CR1_DEAT_Pos),
     DE_ASSERT_10T = 10 << (USART_CR1_DEAT_Pos),
     DE_ASSERT_20T = 20 << (USART_CR1_DEAT_Pos),
-    DE_ASSERT_31T = 31 << (USART_CR1_DEAT_Pos),
+    DE_ASSERT_30T = 30 << (USART_CR1_DEAT_Pos),
 
     // DE deassertion time in sampling cycles (bit time /8 or /16)
     DE_DEASSERT_0T = 0, // default
     DE_DEASSERT_1T = 1 << (USART_CR1_DEDT_Pos), // 16 - 20
     DE_DEASSERT_2T = 2 << (USART_CR1_DEDT_Pos),
+    DE_DEASSERT_3T = 3 << (USART_CR1_DEDT_Pos),
     DE_DEASSERT_5T = 5 << (USART_CR1_DEDT_Pos),
     DE_DEASSERT_10T = 10 << (USART_CR1_DEDT_Pos),
     DE_DEASSERT_20T = 20 << (USART_CR1_DEDT_Pos),
-    DE_DEASSERT_31T = 31 << (USART_CR1_DEDT_Pos),
+    DE_DEASSERT_30T = 30 << (USART_CR1_DEDT_Pos),
 };
 COCO_ENUM(Config);
 
@@ -232,31 +234,28 @@ enum class Interrupt : uint32_t {
     NONE = 0,
 
     // idle line detected
-    IDLE = USART_CR1_IDLEIE,
+    IDLE = USART_CR1_IDLEIE, // 4
 
-    // receive fifo not empty
-    RX_NOT_EMPTY = 1 << 5, //USART_CR1_RXNEIE_RXFNEIE,
+    // receive interrupt
+    RX/*_NOT_EMPTY*/ = 1 << 5, //USART_CR1_RXNEIE_RXFNEIE,
 
     // receive timeout
-    RX_TIMEOUT = USART_CR1_RTOIE,
+    RX_TIMEOUT = USART_CR1_RTOIE, // 26
 
-    // transmit fifo not full
-    TX_NOT_FULL = 1 << 7, //USART_CR1_TXEIE_TXFNFIE,
+    // transmit interrupt
+    TX/*_NOT_FULL*/ = 1 << 7, //USART_CR1_TXEIE_TXFNFIE,
 
     // transmit complete, no more data to send
-    TX_COMPLETE = USART_CR1_TCIE,
+    TX_COMPLETE = USART_CR1_TCIE, // 6
 
     // parity error
-    PARITY_ERROR = USART_CR1_PEIE,
-
-    // overrun error
-    OVERRUN_ERROR = USART_ISR_ORE,
+    PARITY_ERROR = USART_CR1_PEIE, // 8
 
     // character match
-    CHARACTER_MATCH = USART_CR1_CMIE,
+    CHARACTER_MATCH = USART_CR1_CMIE, // 14
 
     // all interrupt flags
-    ALL = IDLE | RX_NOT_EMPTY | RX_TIMEOUT | TX_NOT_FULL | TX_COMPLETE | PARITY_ERROR | CHARACTER_MATCH
+    ALL = IDLE | RX | RX_TIMEOUT | TX | TX_COMPLETE | PARITY_ERROR | CHARACTER_MATCH
 };
 COCO_ENUM(Interrupt);
 
@@ -269,13 +268,13 @@ enum class Status : uint32_t {
     IDLE = USART_ISR_IDLE,
 
     // receive fifo not empty
-    RX_NOT_EMPTY = 1 << 5, //USART_ISR_RXNE_RXFNE,
+    RX/*_NOT_EMPTY*/ = 1 << 5, //USART_ISR_RXNE_RXFNE,
 
     // receive timeout occurred
     RX_TIMEOUT = USART_ISR_RTOF,
 
     // transmit fifo not full
-    TX_NOT_FULL = 1 << 7, //USART_ISR_TXE_TXFNF,
+    TX/*_NOT_FULL*/ = 1 << 7, //USART_ISR_TXE_TXFNF,
 
     // transmit complete, no more data to send
     TX_COMPLETE = USART_ISR_TC,
@@ -293,7 +292,7 @@ enum class Status : uint32_t {
     OVERRUN_ERROR = USART_ISR_ORE,
 
     // error flags
-    ERROR = USART_ISR_ORE | USART_ISR_NE | USART_ISR_FE | USART_ISR_PE,
+    ERROR = PARITY_ERROR | FRAMING_ERROR | NOISE_ERROR | OVERRUN_ERROR,
 
     // all status flags
     ALL = 0xffffffff
@@ -325,7 +324,7 @@ enum class Feature {
     // baud rate calculation of USART/UART
     BAUD_RATE = 1 << 0,
 
-    // baud rate calculationof LPUART
+    // baud rate calculation of LPUART
     LP_BAUD_RATE = 1 << 1,
 
     // receive timeout
@@ -340,9 +339,6 @@ enum class Feature {
     // standard asynchronous mode
     ASYNC_MODE = 1 << 4,
 
-    // LIN mode
-    LIN_MODE = 1 << 5,
-
     // synchronous mode
     SYNC_MASTER_MODE = 1 << 5,
 #ifdef HAVE_USART_SYNC_SLAVE_MODE
@@ -352,8 +348,17 @@ enum class Feature {
     SYNC_MODE = SYNC_MASTER_MODE,
 #endif
 
+    // LIN mode
+    LIN_MODE = 1 << 7,
+
+    // IrDA mode
+    IRDA_MODE = 1 << 8,
+
+    // smartcard mode
+    SMARTCARD_MODE = 1 << 9,
+
     // support for all modes
-    ALL_MODES = ASYNC_MODE | LIN_MODE | SYNC_MODE
+    ALL_MODES = ASYNC_MODE | SYNC_MODE | LIN_MODE | IRDA_MODE | SMARTCARD_MODE
 };
 COCO_ENUM(Feature)
 
@@ -451,17 +456,21 @@ struct Instance {
         auto cr2 = CR2(config) | CR2(format);
         auto cr3 = CR3(config) | uint32_t(dmaRequests);
 
-        // enable a feature if it is the only one of multiple exclusive features
-#ifdef HAVE_USART_LIN_MODE
-        if constexpr ((F & Feature::ALL_MODES) == Feature::LIN_MODE)
-            cr2 |= USART_CR2_LINEN;
-#endif
+        // enable a mode if it is the only mode selected by the feature flags
         if constexpr ((F & Feature::ALL_MODES) == Feature::SYNC_MASTER_MODE)
             cr2 |= USART_CR2_CLKEN;
 #ifdef HAVE_USART_SYNC_SLAVE_MODE
         if constexpr ((F & Feature::ALL_MODES) == Feature::SYNC_SLAVE_MODE)
             cr2 |= USART_CR2_SLVEN;
 #endif
+#ifdef HAVE_USART_LIN_MODE
+        if constexpr ((F & Feature::ALL_MODES) == Feature::LIN_MODE)
+            cr2 |= USART_CR2_LINEN;
+#endif
+        if constexpr ((F & Feature::ALL_MODES) == Feature::IRDA_MODE)
+            cr3 |= USART_CR3_IREN;
+        if constexpr ((F & Feature::ALL_MODES) == Feature::SMARTCARD_MODE)
+            cr3 |= USART_CR3_SCEN;
 
         // set config registers (set CR1 last because it may contain the UE bit)
         uart->CR3 = cr3;
@@ -470,7 +479,7 @@ struct Instance {
         return *this;
     }
 
-    /// @brief Configure and enable the USART/UART (set CR1, CR2, CR3 and BRR).
+    /// @brief Configure the USART/UART (set CR1, CR2, CR3 and BRR).
     /// @tparam T Type of baud parameter (e.g. Hertz<> or Nanoseconds<>)
     /// @param config Configuration
     /// @param format Frame format
@@ -659,7 +668,7 @@ struct Instance {
     }
 
     /// @brief Set standard asynchronous mode.
-    /// Works only if more than one mode is enabled in the features
+    /// Supported only if more than one mode is enabled in the features
     /// @return *this
     auto &setAsyncMode() {
         static_assert((F & Feature::ASYNC_MODE) != 0, "setAsyncMode() not supported");
@@ -668,20 +677,8 @@ struct Instance {
         return *this;
     }
 
-#ifdef HAVE_USART_LIN_MODE
-    /// @brief Set LIN mode
-    /// Works only if more than one mode is enabled in the features
-    /// @return *this
-    auto &setLinMode() {
-        static_assert((F & Feature::LIN_MODE) != 0, "setLinMode() not supported");
-        static_assert((F & Feature::ALL_MODES) != Feature::LIN_MODE, "setLinMode() not supported (LIN mode always on)");
-        uart->CR2 = (uart->CR2 & ~USART_CR2_MODES) | USART_CR2_LINEN;
-        return *this;
-    }
-#endif
-
     /// @brief Set synchronous master mode
-    /// Works only if more than one mode is enabled in the features
+    /// Supported only if more than one mode is enabled in the features
     /// @return *this
     auto &setSyncMasterMode() {
         static_assert((F & Feature::SYNC_MASTER_MODE) != 0, "setSyncMasterMode() not supported");
@@ -692,12 +689,24 @@ struct Instance {
 
 #ifdef HAVE_USART_SYNC_SLAVE_MODE
     /// @brief Set synchronous slave mode
-    /// Works only if more than one mode is enabled in the features
+    /// Supported only if more than one mode is enabled in the features
     /// @return *this
     auto &setSyncSlaveMode() {
         static_assert((F & Feature::SYNC_SLAVE_MODE) != 0, "setSyncSlaveMode() not supported");
         static_assert((F & Feature::ALL_MODES) != Feature::SYNC_SLAVE_MODE, "setSyncSlaveMode() not supported (synchronous slave mode always on)");
         uart->CR2 = (uart->CR2 & ~USART_CR2_MODES) | USART_CR2_SLVEN;
+        return *this;
+    }
+#endif
+
+#ifdef HAVE_USART_LIN_MODE
+    /// @brief Set LIN mode
+    /// Supported only if more than one mode is enabled in the features
+    /// @return *this
+    auto &setLinMode() {
+        static_assert((F & Feature::LIN_MODE) != 0, "setLinMode() not supported");
+        static_assert((F & Feature::ALL_MODES) != Feature::LIN_MODE, "setLinMode() not supported (LIN mode always on)");
+        uart->CR2 = (uart->CR2 & ~USART_CR2_MODES) | USART_CR2_LINEN;
         return *this;
     }
 #endif
@@ -746,7 +755,7 @@ struct Instance {
         return *this;
     }
 
-    /// @brief Disable interrupts.
+    /// @brief Disable DMA requests.
     /// @param dmaRequests DMA request flags to clear
     /// @return *this
     auto &disable(DmaRequest dmaRequests) {
@@ -778,7 +787,7 @@ struct Instance {
     /// @brief Wait until data has been received.
     /// @return *this
     auto &waitRx() {
-        while ((uart->ISR & uint32_t(Status::RX_NOT_EMPTY)) == 0);
+        while ((uart->ISR & uint32_t(Status::RX)) == 0);
         return *this;
     }
 
@@ -807,7 +816,7 @@ struct Instance {
     /// Note that waitTx() can be called directly after enableTx() (is different to NRF52).
     /// @return *this
     auto &waitTx() {
-        while ((uart->ISR & uint32_t(Status::TX_NOT_FULL)) == 0);
+        while ((uart->ISR & uint32_t(Status::TX)) == 0);
         return *this;
     }
 

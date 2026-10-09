@@ -8,7 +8,7 @@ operating system for many use cases. At the same time, it can be used as a progr
 paradigm on classical operating systems (Windows, Linux, MacOS).
 
 ## Import
-Add coco/\<version> to your conanfile where version corresponds to the git tags
+Add coco/\<version> to your conanfile where version corresponds to a git tag.
 
 ## Features
 * Coroutines for asynchronous operation
