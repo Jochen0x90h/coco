@@ -62,8 +62,9 @@ public:
             auto current = next;
             next = next->next;
 
-            if (predicate(static_cast<Task &>(*current))) {
-                current->remove();
+            auto &task = static_cast<Task &>(*current);
+            if (predicate(task.value)) {
+                task.remove();
 
                 // add to temporary head
                 current->prev = head.prev;
