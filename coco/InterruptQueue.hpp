@@ -403,7 +403,7 @@ public:
     /// @brief Get last element
     /// @return Last element or nullptr if the queue is empty
     T &back() {
-        return static_cast<T &>(*this->tail.load());
+        return static_cast<T &>(*this->tail_.load());
     }
 
 protected:

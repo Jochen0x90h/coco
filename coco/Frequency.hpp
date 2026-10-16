@@ -22,25 +22,25 @@ namespace literals {
 
 /// @brief Suffix for hertz, e.g. 3Hz
 ///
-constexpr Hertz<> operator "" Hz(unsigned long long f) {
+constexpr Hertz<> operator ""Hz(unsigned long long f) {
     return Hertz(int(f));
 }
 
 /// @brief Suffix for kilohertz, e.g. 5kHz
 ///
-constexpr Kilohertz<> operator "" kHz(unsigned long long f) {
+constexpr Kilohertz<> operator ""kHz(unsigned long long f) {
     return Kilohertz(int(f));
 }
 
 /// @brief Suffix for megahertz, e.g. 100MHz
 ///
-constexpr Megahertz<> operator "" MHz(unsigned long long f) {
+constexpr Megahertz<> operator ""MHz(unsigned long long f) {
     return Megahertz(int(f));
 }
 
 /// @brief Suffix for gigiahertz, e.g. 5GHz
 ///
-constexpr Gigahertz<> operator "" GHz(unsigned long long f) {
+constexpr Gigahertz<> operator ""GHz(unsigned long long f) {
     return Gigahertz(int(f));
 }
 

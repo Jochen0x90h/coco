@@ -223,7 +223,9 @@ enum class Timing : uint32_t {
     // note that SAMPLE_SHIFT is in enum Format
 
     // delay the data output by 1/4 of the QUADSPI output clock cycle in DDR mode
+#ifdef QUADSPI_CCR_DHHC
     DDR_DELAY_QUARTER = QUADSPI_CCR_DHHC, // CCR bit 30
+#endif
 };
 COCO_ENUM(Timing)
 
