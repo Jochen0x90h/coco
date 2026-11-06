@@ -51,8 +51,11 @@ enum class Interrupt : uint32_t {
     // stop condition detected
     STOP_DETECTED = I2C_CR1_STOPIE,
 
-    // transfer complete and reload
+    // transfer complete
     TRANSFER_COMPLETE = I2C_CR1_TCIE,
+
+    // reload (is same flag as TRANSFER_COMPLETE)
+    RELOAD = I2C_CR1_TCIE,
 
     // interrupt on error (bus error, arbitration lost, overrun/underrun, PEC error, timeout)
     ERROR = I2C_CR1_ERRIE,
@@ -88,7 +91,7 @@ enum class Status : uint32_t {
     // transfer complete (controller mode)
     TRANSFER_COMPLETE = I2C_ISR_TC,
 
-    // reload after NBYTES were transferred (transfer complete reload)
+    // reload after NBYTES were transferred (controller mode and target mode when TARGET_BYTE_CONTROL is set)
     RELOAD = I2C_ISR_TCR,
 
     // bus error (misplaced start/stop, unexpected SCL low, etc.)
